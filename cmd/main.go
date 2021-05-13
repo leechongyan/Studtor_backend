@@ -1,5 +1,6 @@
 package main
 
+// current implementation is for sqlite
 import (
 	"net/http"
 
@@ -17,14 +18,14 @@ func main() {
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Page not found"})
 	})
 
-	// Set up test endpoint "/ping"
+	// "/ping" - example GET request endpoint
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
 
-	// This handler will match /user/1 but will not match /user/ or /user
+	// "/students/:id" - endpoint to retrieve student from db by ID
 	router.GET("/students/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		name, err := sqlite_controller.SelectStudentByID(id)
@@ -34,7 +35,7 @@ func main() {
 		c.String(http.StatusOK, "Hello %s", name)
 	})
 
-	// Set up test endpoint to create random user -> to be converted to POST in future
+	// "/students/create/:name" - endpoint to insert student with name into db -> to be converted to POST in future
 	router.GET("/students/create/:name", func(c *gin.Context) {
 		name := c.Param("name")
 		err := sqlite_controller.InsertStudent(name)
