@@ -14,5 +14,9 @@
 # Config file
 config
 
+# Editor Setting
+.vs
+.env
+
 # Dependency directories (remove the comment below to include it)
 # vendor/

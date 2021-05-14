@@ -1,20 +1,18 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
-	"net/http"
-	goth "github.com/leechongyan/Studtor_backend/authentication_service/internal"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	handler "github.com/leechongyan/Studtor_backend/authentication_service/internal"
 )
 
 func main() {
-	router := mux.NewRouter().StrictSlash(true)
-	// init gothic 
-	goth.InitializeViper()
-	goth.InitGothic()
+	router := gin.Default()
+	handler.InitializeViper()
 
-	router.HandleFunc("/auth/{provider}/callback", goth.GothicCallbackHandler).Methods(http.MethodGet)
-	router.HandleFunc("/auth/{provider}", goth.GothicLoginHandler).Methods(http.MethodGet)
-	router.HandleFunc("/logout/{provider}", goth.GothicLogoutHandler).Methods(http.MethodGet)
+	router.POST("/login", handler.LoginHandler)
+	router.POST("/refresh", handler.RefreshHandler)
+	// router.GET("/", handler.ValidateHandler)
 
-	http.ListenAndServe(":3000", router)
+	router.Run(viper.GetString("port"))
 }
