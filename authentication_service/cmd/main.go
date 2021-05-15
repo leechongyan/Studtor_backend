@@ -1,14 +1,26 @@
-package internal
+package main
 
 import (
 	"fmt"
-
+	routes "github.com/leechongyan/Studtor_backend/authentication_service/routes"
 	"github.com/spf13/viper"
+	"github.com/gin-gonic/gin"
 )
 
-/*
-InitializeViper Function initializes viper to read config.yml file and environment variables in the application.
-*/
+func main() {
+	router := gin.New()
+	router.Use(gin.Logger())
+	InitializeViper()
+
+	authorized  := router.Group("/")
+	routes.AuthRoutes(authorized)
+
+	home := router.Group("/home")
+	routes.UserRoutes(home)
+
+	router.Run(viper.GetString("port"))
+}
+
 func InitializeViper() {
 	// Set the file name of the configurations file
 	viper.SetConfigName("config")
