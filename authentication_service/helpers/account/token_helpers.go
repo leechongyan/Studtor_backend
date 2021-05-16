@@ -1,9 +1,11 @@
 package account
 
 import (
-	"fmt"
 	"log"
 	"time"
+	"errors"
+	"strings"
+
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/database"
 	"github.com/spf13/viper"
@@ -56,7 +58,7 @@ func GenerateAllTokens(email string, firstName string, lastName string, userType
 	return token, refreshToken, err
 }
 
-func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},
@@ -66,26 +68,22 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 	)
 
 	if err != nil {
-		msg = err.Error()
 		return
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
-		msg = fmt.Sprintf("Invalid Token")
-		return
+		return nil, errors.New("Invalid Token")
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		msg = fmt.Sprintf("Token Expired")
-		return
+		return nil, errors.New("Token Expired")
 	}
 
-	return claims, msg
+	return claims, nil
 }
 
-func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) {
-
+func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err error) {
 	oldUser := database.UserCollection[userEmail]
 
 	oldUser.Token = &signedToken
@@ -99,8 +97,24 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 
 	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	oldUser.Updated_at = Updated_at
-
+  
+	// updating database
 	database.UserCollection[userEmail] = oldUser
+	// TODO: Connector to the database not mock object
 
 	return
+}
+
+func ExtractTokenFromHeader(header string) (token string, err error) {
+	splitToken := strings.Split(header, " ")
+
+	if len(splitToken) != 2 {
+		return "", errors.New("Invalid Token Format")
+	}
+
+	if splitToken[0] != "Bearer" {
+		return "", errors.New("Invalid Authorization Method provided")
+	}
+
+	return splitToken[1], nil
 }
