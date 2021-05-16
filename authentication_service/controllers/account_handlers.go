@@ -12,7 +12,6 @@ import (
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
 	"github.com/leechongyan/Studtor_backend/authentication_service/database"
 	"github.com/leechongyan/Studtor_backend/mail_service"
-
 )
 
 var validate = validator.New()
@@ -66,6 +65,7 @@ func SignUp() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		}
+      
 		c.JSON(http.StatusOK, gin.H{"Success": "Successful Sign Up"})
 	}
 }
@@ -141,6 +141,7 @@ func Login() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
+
 
 		c.JSON(http.StatusOK, foundUser)
 	}

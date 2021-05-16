@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 
+
 	"github.com/leechongyan/Studtor_backend/authentication_service/database"
 	"github.com/spf13/viper"
 
@@ -83,7 +84,6 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
 }
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err error) {
-
 	oldUser := database.UserCollection[userEmail]
 
 	oldUser.Token = &signedToken
@@ -97,7 +97,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 
 	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	oldUser.Updated_at = Updated_at
-
+  
 	// updating database
 	database.UserCollection[userEmail] = oldUser
 	// TODO: Connector to the database not mock object
