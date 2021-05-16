@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"bytes"
 	"net/smtp"
+	"errors"
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
 	"github.com/spf13/viper"
 	"text/template"  
   )
   
-  func SendVerificationCode(user models.User, code string) {
+  func SendVerificationCode(user models.User, code string) (err error){
 	serverEmail := viper.GetString("serverEmail") 
 	serverEmailPW := viper.GetString("serverEmailPW") 
   
@@ -28,7 +29,7 @@ import (
 
 	auth := smtp.PlainAuth("", from, password, smtpHost)
 
-	t, _ := template.ParseFiles("../mail_service/template.html")
+	t, _ := template.ParseFiles("../mail_service/templates/verification_template.html")
 	var body bytes.Buffer
   	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	body.Write([]byte(fmt.Sprintf("Subject: Verification Code for Studtor \n%s\n\n", mimeHeaders)))
@@ -42,10 +43,9 @@ import (
 	  })
 
 	  // Sending email.
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
 	if err != nil {
-		fmt.Println(err)
-		return
+		return errors.New("fail to send email")
 	}  
 
 	return

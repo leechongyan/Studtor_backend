@@ -11,7 +11,7 @@ import (
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
 	"github.com/leechongyan/Studtor_backend/authentication_service/database"
-	"github.com/leechongyan/Studtor_backend/authentication_service/mail_service"
+	"github.com/leechongyan/Studtor_backend/mail_service"
 
 )
 
@@ -29,7 +29,8 @@ func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user models.User
 
-		if err := c.BindJSON(&user); err != nil {
+		err := c.BindJSON(&user)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -61,7 +62,10 @@ func SignUp() gin.HandlerFunc {
 		database.UserCollection[*user.Email] = user
 
 		// send an email
-		mail_service.SendVerificationCode(user, new_V_key)
+		err = mail_service.SendVerificationCode(user, new_V_key)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		}
 		c.JSON(http.StatusOK, gin.H{"Success": "Successful Sign Up"})
 	}
 }
@@ -89,8 +93,15 @@ func Verify() gin.HandlerFunc {
 		}
 
 		// if verification all pass and correct then create access token
-		token, refreshToken, _ := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, *user.User_type)
-		helper.UpdateAllTokens(token, refreshToken, *user.Email)
+		token, refreshToken, err := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, *user.User_type)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+		err = helper.UpdateAllTokens(token, refreshToken, *user.Email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 
 		c.JSON(http.StatusOK, gin.H{"Success": "Verified"})
 	}
@@ -121,8 +132,15 @@ func Login() gin.HandlerFunc {
 		}
 
 		// refresh token
-		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
-		helper.UpdateAllTokens(token, refreshToken, *foundUser.Email)
+		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		
+		err = helper.UpdateAllTokens(token, refreshToken, *foundUser.Email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 
 		c.JSON(http.StatusOK, foundUser)
 	}

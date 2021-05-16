@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 
@@ -14,17 +12,21 @@ func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientToken := c.Request.Header.Get("Authorization")
 		if clientToken == "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("No Authorization Header provided")})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "no authorization header provided"})
 			c.Abort()
 			return
 		}
 
-		splitToken := strings.Split(clientToken, "Bearer ")
-		clientToken = splitToken[1]
+		clientToken, err := helper.ExtractTokenFromHeader(clientToken)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.Abort()
+			return
+		}
 
 		claims, err := helper.ValidateToken(clientToken)
-		if err != "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}

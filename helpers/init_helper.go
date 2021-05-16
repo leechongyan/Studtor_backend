@@ -1,27 +1,11 @@
-package main
+package helpers
 
 import (
 	"fmt"
-	routes "github.com/leechongyan/Studtor_backend/authentication_service/routes"
 	"github.com/spf13/viper"
-	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	router := gin.New()
-	router.Use(gin.Logger())
-	InitializeViper()
-
-	authorized  := router.Group("/")
-	routes.AuthRoutes(authorized)
-
-	home := router.Group("/home")
-	routes.UserRoutes(home)
-
-	router.Run(viper.GetString("port"))
-}
-
-func InitializeViper() {
+func InitializeViper() (err error){
 	// Set the file name of the configurations file
 	viper.SetConfigName("config")
 
@@ -34,5 +18,7 @@ func InitializeViper() {
 	viper.SetConfigType("yml")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file, %s", err)
+		return err
 	}
+	return
 }
