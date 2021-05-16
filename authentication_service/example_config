@@ -1,0 +1,6 @@
+port: ":your_port_number"
+
+jwtKey: "your_jwt_key"
+expirationTime: "how_long_token_is_valid"
+serverEmail: "server_email"
+serverEmailPW: "server_email_password"
