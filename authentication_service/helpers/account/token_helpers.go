@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/database"
-	"github.com/leechongyan/Studtor_backend/authentication_service/models"
 	"github.com/spf13/viper"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -87,15 +86,21 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) {
 
-	var updateObj models.User
+	oldUser := database.UserCollection[userEmail]
 
-	*updateObj.Token = signedToken
-	*updateObj.Refresh_token = signedRefreshToken
+	oldUser.Token = &signedToken
+	oldUser.Refresh_token = &signedRefreshToken
+
+	// if is a new creation
+	if oldUser.Created_at.IsZero() {
+		Created_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		oldUser.Created_at = Created_at
+	}
+
 	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	oldUser.Updated_at = Updated_at
 
-	updateObj.Updated_at = Updated_at
-
-	database.UserCollection[userEmail] = updateObj
+	database.UserCollection[userEmail] = oldUser
 
 	return
 }

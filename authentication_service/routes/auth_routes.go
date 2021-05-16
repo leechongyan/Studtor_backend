@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//UserRoutes function
+//Authentication Routes
 func AuthRoutes(incomingRoutes *gin.RouterGroup) {
 	incomingRoutes.POST("/signup", handler.SignUp())
-	// incomingRoutes.POST("/verify", handler.VerifyHandler())
+	incomingRoutes.POST("/verify", handler.Verify())
 	incomingRoutes.POST("/login", handler.Login())
 }

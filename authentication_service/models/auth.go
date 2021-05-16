@@ -13,6 +13,12 @@ type User struct {
 	Token         *string            `json:"token"`
 	User_type     *string            `json:"user_type" validate:"required,eq=ADMIN|eq=USER""`
 	Refresh_token *string            `json:"refresh_token"`
+	V_key		  *string			 `json:"verification_key"`
 	Created_at    time.Time          `json:"created_at"`
 	Updated_at    time.Time          `json:"updated_at"`
+}
+
+type Verifiation struct {
+	Email         *string            `json:"email" validate:"email,required"`
+	V_key		  *string			 `json:"verification_key" validate:"required"`
 }
