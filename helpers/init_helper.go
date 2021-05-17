@@ -2,10 +2,11 @@ package helpers
 
 import (
 	"fmt"
+
 	"github.com/spf13/viper"
 )
 
-func InitializeViper() (err error){
+func InitializeViper() (err error) {
 	// Set the file name of the configurations file
 	viper.SetConfigName("config")
 
