@@ -69,6 +69,7 @@ func SignUp() gin.HandlerFunc {
 		err := mail_service.SendVerificationCode(user, new_V_key)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
+			return
 		}
 
 		c.JSON(http.StatusOK, "Success")
@@ -101,17 +102,8 @@ func Verify() gin.HandlerFunc {
 		}
 
 		// if verification all pass and correct then create access token
-		token, refreshToken, err := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, *user.User_type)
-		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
-			return
-		}
-
-		err = helper.UpdateAllTokens(token, refreshToken, *user.Email)
-		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
-			return
-		}
+		user.Verified = true
+		database.UserCollection[*user.Email] = user
 
 		c.JSON(http.StatusOK, "Success")
 	}
@@ -140,6 +132,13 @@ func Login() gin.HandlerFunc {
 		passwordIsValid := helper.VerifyPassword(*user.Password, *foundUser.Password)
 		if passwordIsValid != true {
 			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// check whether is verified or not
+		if !foundUser.Verified {
+			err := helpers.RaiseNotVerified()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}

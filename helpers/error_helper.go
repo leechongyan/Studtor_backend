@@ -136,3 +136,10 @@ func RaiseInvalidEmail() *RequestError {
 		Err:        errors.New(constants.EMAIL_NOT_VALID),
 	}
 }
+
+func RaiseNotVerified() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusUnauthorized,
+		Err:        errors.New(constants.NOT_VERIFIED),
+	}
+}

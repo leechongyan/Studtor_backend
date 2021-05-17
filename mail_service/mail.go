@@ -46,8 +46,8 @@ func SendVerificationCode(user models.User, code string) (err *helpers.RequestEr
 	// Sending email.
 	e := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
 	if e != nil {
-		err := helpers.RaiseFailureEmailSend()
-		return err
+		err = helpers.RaiseFailureEmailSend()
+		return
 	}
 
 	return

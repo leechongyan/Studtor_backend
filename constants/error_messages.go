@@ -18,4 +18,5 @@ const (
 	CLAIMS_PARSE_FAILURE         string = "Failed to parse claims"
 	FAILURE_PARSE_JSON           string = "Failed to parse request body"
 	VALIDATION_JSON_ERROR        string = "Json validation failed"
+	NOT_VERIFIED                 string = "Email is not verified"
 )
