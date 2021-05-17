@@ -34,7 +34,7 @@ Request Body:
 {
 "first_name": "Jeff",
 "last_name": "Lee",
-"Password": "password1",
+"password": "password1",
 "email": "clee051@e.ntu.edu.sg",
 "user_type" : "USER"
 }
@@ -71,11 +71,8 @@ Request Body:
 
 ```
 {
-"first_name": "Jeff",
-"last_name": "Lee",
-"Password": "password1",
 "email": "clee051@e.ntu.edu.sg",
-"user_type" : "USER"
+"password": "password1"
 }
 ```
 

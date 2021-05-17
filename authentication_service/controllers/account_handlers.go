@@ -111,7 +111,7 @@ func Verify() gin.HandlerFunc {
 
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
+		var user models.Login
 		var foundUser models.User
 
 		if err := c.BindJSON(&user); err != nil {
