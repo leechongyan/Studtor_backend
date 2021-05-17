@@ -25,6 +25,7 @@ func main() {
 	authorized.POST("/signup", handler.SignUp())
 	authorized.POST("/verify", handler.Verify())
 	authorized.POST("/login", handler.Login())
+	authorized.POST("/refresh", handler.RefreshToken())
 
 	// require token
 	home := v1.Group("/home")

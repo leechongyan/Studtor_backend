@@ -3,6 +3,7 @@ package controllers
 import (
 	"strings"
 
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -70,7 +71,7 @@ func SignUp() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Success": "Successful Sign Up"})
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 
@@ -112,7 +113,7 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"Success": "Verified"})
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 
@@ -156,13 +157,55 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, foundUser)
+		c.JSON(http.StatusOK, token)
+	}
+}
+
+func RefreshToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email_byte, e := ioutil.ReadAll(c.Request.Body)
+		email := string(email_byte)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		foundUser, ok := database.UserCollection[email]
+		// check whether user exists
+		if !ok {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		refreshToken := *foundUser.Refresh_token
+		_, err := helper.ValidateToken(refreshToken)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// if refresh is still valid then generate new token
+		token, _, err := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		err = helper.UpdateAllTokens(token, refreshToken, email)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, token)
 	}
 }
 
 func GetMain() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"Success": "Successful Entry"})
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 

@@ -40,9 +40,7 @@ Request Body:
 
 Expected Returns:
 
-{
-"Success": "Successful Sign Up"
-}
+"Success"
 
 #### Verify with verification code
 ##### (POST) localhost:3000/v1/verify
@@ -56,9 +54,7 @@ Request Body:
 
 Expected Returns:
 
-{
-"Success": "Verified"
-}
+"Success"
 
 #### Login to get the access token
 ##### (POST) localhost:3000/v1/login
@@ -75,18 +71,22 @@ Request Body:
 
 Expected Returns:
 
-{
-"first_name": "Jeff",
-"last_name": "Lee",
-"Password": "$2a$14$OBpe.WjBrAXut1UmBoZfSucSokfIaWZ3Y6Noxo4dcE/UkHma5i2AK",
-"email": "clee051@e.ntu.edu.sg",
-"token": "ACCESS_TOKEN",
-"user_type": "USER",
-"refresh_token": "REFRESH_TOKEN",
-"verification_key": "838291",
-"created_at": "2021-05-16T16:19:32+08:00",
-"updated_at": "2021-05-16T16:19:32+08:00"
-}
+"Access Token"
+
+#### Refresh access token
+##### (POST) localhost:3000/v1/refresh
+
+Request Header:
+
+Token: "Bearer: REFRESH_TOKEN"
+
+Request Body:
+
+"clee051@e.ntu.edu.sg"
+
+Expected Returns:
+
+"Access Token"
 
 #### Access authorized pages
 ##### (GET) localhost:3000/v1/home/
@@ -97,9 +97,7 @@ Token: "Bearer: ACCESS_TOKEN"
 
 Expected Returns:
 
-{
-"Success": "Successful Entry"
-}
+"Success"
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
