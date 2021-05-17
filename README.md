@@ -30,6 +30,7 @@ go run main.go
 
 Request Body:
 
+```
 {
 "first_name": "Jeff",
 "last_name": "Lee",
@@ -37,30 +38,38 @@ Request Body:
 "email": "clee051@e.ntu.edu.sg",
 "user_type" : "USER"
 }
+```
 
 Expected Returns:
 
+```
 "Success"
+```
 
 #### Verify with verification code
 ##### (POST) localhost:3000/v1/verify
 
 Request Body:
 
+```
 {
 "email": "clee051@e.ntu.edu.sg",
 "verification_key": "838291"
 }
+```
 
 Expected Returns:
 
+```
 "Success"
+```
 
 #### Login to get the access token
 ##### (POST) localhost:3000/v1/login
 
 Request Body:
 
+```
 {
 "first_name": "Jeff",
 "last_name": "Lee",
@@ -68,10 +77,13 @@ Request Body:
 "email": "clee051@e.ntu.edu.sg",
 "user_type" : "USER"
 }
+```
 
 Expected Returns:
 
+```
 "Access Token"
+```
 
 #### Refresh access token
 ##### (POST) localhost:3000/v1/refresh
@@ -82,11 +94,15 @@ Token: "Bearer: REFRESH_TOKEN"
 
 Request Body:
 
+```
 "clee051@e.ntu.edu.sg"
+```
 
 Expected Returns:
 
+```
 "Access Token"
+```
 
 #### Access authorized pages
 ##### (GET) localhost:3000/v1/home/
@@ -97,7 +113,9 @@ Token: "Bearer: ACCESS_TOKEN"
 
 Expected Returns:
 
+```
 "Success"
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
