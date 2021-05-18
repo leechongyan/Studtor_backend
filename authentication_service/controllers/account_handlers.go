@@ -188,8 +188,14 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		refreshToken := *foundUser.Refresh_token
-		_, err := helper.ValidateToken(refreshToken)
+		refreshToken := foundUser.Refresh_token
+		if refreshToken == nil {
+			err := helpers.RaiseLoginExpired()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		_, err := helper.ValidateToken(*refreshToken)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -202,13 +208,46 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		err = helper.UpdateAllTokens(token, refreshToken, email)
+		err = helper.UpdateAllTokens(token, *refreshToken, email)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		c.JSON(http.StatusOK, token)
+	}
+}
+
+func Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email_byte, e := ioutil.ReadAll(c.Request.Body)
+		email := string(email_byte)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
+		// check whether user exists
+		if e != nil {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// remove refresh token and force user to login again
+		foundUser.Refresh_token = nil
+
+		e = database_service.CurrentDatabaseConnector.SaveUser(foundUser)
+
+		if e != nil {
+			err := helpers.RaiseCannotSaveUserInDatabase()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 

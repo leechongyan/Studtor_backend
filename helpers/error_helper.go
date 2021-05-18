@@ -164,3 +164,10 @@ func RaiseDatabaseError() *RequestError {
 		Err:        errors.New(constants.DATABASE_ERROR),
 	}
 }
+
+func RaiseLoginExpired() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.LOGIN_EXPIRED),
+	}
+}

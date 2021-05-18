@@ -35,6 +35,8 @@ go run main.go
 
 ##### (POST) localhost:3000/v1/login
 
+##### (POST) localhost:3000/v1/logout
+
 ##### (POST) localhost:3000/v1/refresh
 
 ##### (GET) localhost:3000/v1/home/

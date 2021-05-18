@@ -30,6 +30,7 @@ func main() {
 	authorized.POST("/verify", authhandler.Verify())
 	authorized.POST("/login", authhandler.Login())
 	authorized.POST("/refresh", authhandler.RefreshToken())
+	authorized.POST("/logout", authhandler.Logout())
 
 	// require token
 	home := v1.Group("/home")

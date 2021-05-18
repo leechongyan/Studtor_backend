@@ -81,12 +81,23 @@ Expected Returns:
 "Access Token"
 ```
 
+#### Logout 
+##### (POST) localhost:3000/v1/logout
+
+Request Body:
+
+```
+"clee051@e.ntu.edu.sg"
+```
+
+Expected Returns:
+
+```
+"Success"
+```
+
 #### Refresh access token
 ##### (POST) localhost:3000/v1/refresh
-
-Request Header:
-
-Token: "Bearer: REFRESH_TOKEN"
 
 Request Body:
 
