@@ -36,8 +36,9 @@ func GetAllCourses() gin.HandlerFunc {
 			return
 		}
 
-		courses, err := database_service.CurrentDatabaseConnector.GetAllCourses(req.From, req.Size)
-		if err != nil {
+		courses, e := database_service.CurrentDatabaseConnector.GetAllCourses(req.From, req.Size)
+		if e != nil {
+			err = helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -54,8 +55,9 @@ func GetAllTutors() gin.HandlerFunc {
 			return
 		}
 
-		tutors, err := database_service.CurrentDatabaseConnector.GetAllTutors(req.From, req.Size)
-		if err != nil {
+		tutors, e := database_service.CurrentDatabaseConnector.GetAllTutors(req.From, req.Size)
+		if e != nil {
+			err = helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}

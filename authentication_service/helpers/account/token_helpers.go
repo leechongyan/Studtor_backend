@@ -87,10 +87,11 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.Requ
 }
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
-	oldUser, err := database_service.CurrentDatabaseConnector.GetUser(userEmail)
+	oldUser, e := database_service.CurrentDatabaseConnector.GetUser(userEmail)
 
-	if err != nil {
-		return
+	if e != nil {
+		err = helpers.RaiseUserNotInDatabase()
+		return err
 	}
 
 	oldUser.Token = &signedToken
@@ -106,7 +107,11 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 	oldUser.Updated_at = Updated_at
 
 	// updating database
-	err = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
+	e = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
+	if e != nil {
+		err = helpers.RaiseCannotSaveUserInDatabase()
+		return err
+	}
 	// TODO: Connector to the database not mock object
 	return
 }

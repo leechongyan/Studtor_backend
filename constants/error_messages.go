@@ -21,4 +21,5 @@ const (
 	NOT_VERIFIED                 string = "Email is not verified"
 	USER_NOT_IN_DATABASE         string = "User is not in database"
 	CANNOT_SAVE_USER_IN_DATABASE string = "Cannot save user in database"
+	DATABASE_ERROR               string = "Database error"
 )

@@ -49,8 +49,8 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// check whether this email exist
-		_, err := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
-		if err == nil {
+		_, e = database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		if e == nil {
 			err := helpers.RaiseExistentAccount()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -63,14 +63,15 @@ func SignUp() gin.HandlerFunc {
 		user.V_key = &new_V_key
 
 		// save user in db
-		err = database_service.CurrentDatabaseConnector.SaveUser(user)
-		if err != nil {
+		e = database_service.CurrentDatabaseConnector.SaveUser(user)
+		if e != nil {
+			err := helpers.RaiseCannotSaveUserInDatabase()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		// send an email
-		err = mail_service.SendVerificationCode(user, new_V_key)
+		err := mail_service.SendVerificationCode(user, new_V_key)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -93,7 +94,7 @@ func Verify() gin.HandlerFunc {
 		user, err := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
 
 		if err != nil {
-			err := helpers.RaiseNonExistentAccount()
+			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -108,9 +109,9 @@ func Verify() gin.HandlerFunc {
 
 		// if verification all pass and correct then create access token
 		user.Verified = true
-		err = database_service.CurrentDatabaseConnector.SaveUser(user)
-		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+		e := database_service.CurrentDatabaseConnector.SaveUser(user)
+		if e != nil {
+			c.JSON(http.StatusInternalServerError, e.Error())
 			return
 		}
 
@@ -123,15 +124,15 @@ func Login() gin.HandlerFunc {
 		var user models.Login
 		var foundUser models.User
 
-		if err := c.BindJSON(&user); err != nil {
+		if e := c.BindJSON(&user); e != nil {
 			err := helpers.RaiseCannotParseJson()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		foundUser, err := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
 		// check whether user exists
-		if err != nil {
+		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -179,16 +180,16 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, err := database_service.CurrentDatabaseConnector.GetUser(email)
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
 		// check whether user exists
-		if err != nil {
+		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		refreshToken := *foundUser.Refresh_token
-		_, err = helper.ValidateToken(refreshToken)
+		_, err := helper.ValidateToken(refreshToken)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return

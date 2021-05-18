@@ -157,3 +157,10 @@ func RaiseCannotSaveUserInDatabase() *RequestError {
 		Err:        errors.New(constants.CANNOT_SAVE_USER_IN_DATABASE),
 	}
 }
+
+func RaiseDatabaseError() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.DATABASE_ERROR),
+	}
+}

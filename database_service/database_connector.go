@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
-	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 )
 
@@ -12,10 +11,10 @@ var CurrentDatabaseConnector DatabaseConnector
 
 type DatabaseConnector interface {
 	// expose all the possible database api
-	SaveUser(user models.User) (err *helpers.RequestError)
-	GetUser(email string) (user models.User, err *helpers.RequestError)
-	GetAllCourses(from string, size int) (courses []string, err *helpers.RequestError)
-	GetAllTutors(from string, size int) (tutors []string, err *helpers.RequestError)
+	SaveUser(user models.User) (err error)
+	GetUser(email string) (user models.User, err error)
+	GetAllCourses(from string, size int) (courses []string, err error)
+	GetAllTutors(from string, size int) (tutors []string, err error)
 }
 
 func InitDatabase() {
