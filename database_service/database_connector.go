@@ -14,6 +14,8 @@ type DatabaseConnector interface {
 	// expose all the possible database api
 	SaveUser(user models.User) (err *helpers.RequestError)
 	GetUser(email string) (user models.User, err *helpers.RequestError)
+	GetAllCourses(from string, size int) (courses []string, err *helpers.RequestError)
+	GetAllTutors(from string, size int) (tutors []string, err *helpers.RequestError)
 }
 
 func InitDatabase() {

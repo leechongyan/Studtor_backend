@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"strings"
 
 	"io/ioutil"
@@ -66,7 +65,8 @@ func SignUp() gin.HandlerFunc {
 		// save user in db
 		err = database_service.CurrentDatabaseConnector.SaveUser(user)
 		if err != nil {
-			fmt.Print("EROR in saving")
+			c.JSON(err.StatusCode, err.Error())
+			return
 		}
 
 		// send an email
@@ -109,9 +109,7 @@ func Verify() gin.HandlerFunc {
 		// if verification all pass and correct then create access token
 		user.Verified = true
 		err = database_service.CurrentDatabaseConnector.SaveUser(user)
-
 		if err != nil {
-			err := helpers.RaiseCannotSaveUserInDatabase()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}

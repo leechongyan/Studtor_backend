@@ -39,6 +39,10 @@ go run main.go
 
 ##### (GET) localhost:3000/v1/home/
 
+##### (GET) localhost:3000/v1/home/getallcourses/?from=0&size=2
+
+##### (GET) localhost:3000/v1/home/getalltutors/?from=0&size=2
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 

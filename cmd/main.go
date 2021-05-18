@@ -2,10 +2,11 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	handler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
+	authhandler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
 	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
 	"github.com/leechongyan/Studtor_backend/database_service"
 	"github.com/leechongyan/Studtor_backend/helpers"
+	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
 	"github.com/spf13/viper"
 )
 
@@ -25,15 +26,17 @@ func main() {
 
 	// does not require token
 	authorized := v1.Group("/")
-	authorized.POST("/signup", handler.SignUp())
-	authorized.POST("/verify", handler.Verify())
-	authorized.POST("/login", handler.Login())
-	authorized.POST("/refresh", handler.RefreshToken())
+	authorized.POST("/signup", authhandler.SignUp())
+	authorized.POST("/verify", authhandler.Verify())
+	authorized.POST("/login", authhandler.Login())
+	authorized.POST("/refresh", authhandler.RefreshToken())
 
 	// require token
 	home := v1.Group("/home")
 	home.Use(middleware.Authentication())
-	home.GET("/", handler.GetMain())
+	home.GET("/", authhandler.GetMain())
+	home.GET("/getallcourses", tuthandler.GetAllCourses())
+	home.GET("/getalltutors", tuthandler.GetAllTutors())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))
