@@ -1,6 +1,6 @@
 # Studtor_backend
 
-![Alt text](/images/workflow.jpg?raw=true "Authentication Flow")
+![Alt text](https://github.com/leechongyan/Studtor_backend/tree/database_interface/images/workflow.jpg "Authentication Flow")
 
 ## Set Up
 
