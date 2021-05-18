@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	handler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
 	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
+	"github.com/leechongyan/Studtor_backend/database_service"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 )
@@ -13,6 +14,8 @@ func main() {
 	router.Use(gin.Logger())
 
 	err := helpers.InitializeViper()
+	database_service.InitDatabase()
+
 	if err != nil {
 		return
 	}

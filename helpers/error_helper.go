@@ -143,3 +143,17 @@ func RaiseNotVerified() *RequestError {
 		Err:        errors.New(constants.NOT_VERIFIED),
 	}
 }
+
+func RaiseUserNotInDatabase() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.USER_NOT_IN_DATABASE),
+	}
+}
+
+func RaiseCannotSaveUserInDatabase() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.CANNOT_SAVE_USER_IN_DATABASE),
+	}
+}

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"strings"
 
 	"io/ioutil"
@@ -9,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/leechongyan/Studtor_backend/authentication_service/database"
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
+	"github.com/leechongyan/Studtor_backend/database_service"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 )
@@ -49,8 +50,8 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// check whether this email exist
-		_, ok := database.UserCollection[*user.Email]
-		if ok {
+		_, err := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		if err == nil {
 			err := helpers.RaiseExistentAccount()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -63,10 +64,13 @@ func SignUp() gin.HandlerFunc {
 		user.V_key = &new_V_key
 
 		// save user in db
-		database.UserCollection[*user.Email] = user
+		err = database_service.CurrentDatabaseConnector.SaveUser(user)
+		if err != nil {
+			fmt.Print("EROR in saving")
+		}
 
 		// send an email
-		err := mail_service.SendVerificationCode(user, new_V_key)
+		err = mail_service.SendVerificationCode(user, new_V_key)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -86,8 +90,9 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		user, ok := database.UserCollection[*verification.Email]
-		if !ok {
+		user, err := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
+
+		if err != nil {
 			err := helpers.RaiseNonExistentAccount()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -103,7 +108,13 @@ func Verify() gin.HandlerFunc {
 
 		// if verification all pass and correct then create access token
 		user.Verified = true
-		database.UserCollection[*user.Email] = user
+		err = database_service.CurrentDatabaseConnector.SaveUser(user)
+
+		if err != nil {
+			err := helpers.RaiseCannotSaveUserInDatabase()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
 
 		c.JSON(http.StatusOK, "Success")
 	}
@@ -120,9 +131,9 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, ok := database.UserCollection[*user.Email]
+		foundUser, err := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
 		// check whether user exists
-		if !ok {
+		if err != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -170,16 +181,16 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, ok := database.UserCollection[email]
+		foundUser, err := database_service.CurrentDatabaseConnector.GetUser(email)
 		// check whether user exists
-		if !ok {
+		if err != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		refreshToken := *foundUser.Refresh_token
-		_, err := helper.ValidateToken(refreshToken)
+		_, err = helper.ValidateToken(refreshToken)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return

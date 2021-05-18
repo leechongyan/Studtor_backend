@@ -1,5 +1,6 @@
 # Studtor_backend
 
+![Alt text](/images/workflow.jpg?raw=true "Authentication Flow")
 
 ## Set Up
 

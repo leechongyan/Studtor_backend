@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leechongyan/Studtor_backend/authentication_service/database"
+	"github.com/leechongyan/Studtor_backend/database_service"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 
@@ -87,7 +87,11 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.Requ
 }
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
-	oldUser := database.UserCollection[userEmail]
+	oldUser, err := database_service.CurrentDatabaseConnector.GetUser(userEmail)
+
+	if err != nil {
+		return
+	}
 
 	oldUser.Token = &signedToken
 	oldUser.Refresh_token = &signedRefreshToken
@@ -102,9 +106,8 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 	oldUser.Updated_at = Updated_at
 
 	// updating database
-	database.UserCollection[userEmail] = oldUser
+	err = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
 	// TODO: Connector to the database not mock object
-
 	return
 }
 

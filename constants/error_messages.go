@@ -19,4 +19,6 @@ const (
 	FAILURE_PARSE_JSON           string = "Failed to parse request body"
 	VALIDATION_JSON_ERROR        string = "Json validation failed"
 	NOT_VERIFIED                 string = "Email is not verified"
+	USER_NOT_IN_DATABASE         string = "User is not in database"
+	CANNOT_SAVE_USER_IN_DATABASE string = "Cannot save user in database"
 )
