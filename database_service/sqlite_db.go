@@ -1,15 +1,16 @@
 package database_service
 
 import (
-	"database/sql"
-	"fmt"
-	"io/ioutil"
+	"errors"
 	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
+	db_model "github.com/leechongyan/Studtor_backend/database_service/models"
+	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // sqlite db
@@ -20,8 +21,7 @@ type SQLiteDB struct {
 }
 
 func (db *SQLiteDB) Init() {
-	db.DatabaseFilename = "./build/studtor.db"
-	initDatabaseScript := "./scripts/init-sqlite-db.sql"
+	db.DatabaseFilename = "../studtor.db"
 
 	// check if database already exists
 	if _, err := os.Stat(db.DatabaseFilename); err == nil {
@@ -33,26 +33,16 @@ func (db *SQLiteDB) Init() {
 		log.Println("Database file " + db.DatabaseFilename + " does not exist.")
 		log.Println("Creating new database file...")
 
-		// Run database initialization scripts
-		log.Println("Reading database initialization scripts from " + initDatabaseScript + "...")
-		c, ioErr := ioutil.ReadFile(initDatabaseScript)
-		if ioErr != nil {
-			// err reading file
-			log.Fatal("err reading database initialization scripts.")
-		}
-
 		// Initialize database
-		conn, err := sql.Open("sqlite3", db.DatabaseFilename)
+		log.Println("Migrating schema from GORM...")
+		conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer conn.Close()
-		stmt := string(c)
-		_, err = conn.Exec(stmt)
-		if err != nil {
-			// handle err.
-			log.Fatal(err)
-		}
+		// Migrate the schema
+		conn.AutoMigrate(&db_model.User{})
+		conn.AutoMigrate(&db_model.Course{})
+		conn.AutoMigrate(&db_model.Tutor{})
 		log.Println("Database initialized successfully.")
 	} else {
 		// Schrodinger: file may or may not exist. See err for details.
@@ -61,113 +51,138 @@ func (db *SQLiteDB) Init() {
 	}
 }
 
+// SaveUser saves the user to the database.
+// Note that if the user is a new user, several fields
+// would not have been initialized yet.
 func (db SQLiteDB) SaveUser(user models.User) (err error) {
-	// try opening database
-	conn, err := sql.Open("sqlite3", db.DatabaseFilename)
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
-		log.Fatal(err)
-		return
-	}
-	defer conn.Close()
-
-	tx, err := conn.Begin()
-	if err != nil {
-		// err starting connection
-		log.Fatal(err)
-		return
-	}
-
-	stmt, err := tx.Prepare(
-		"INSERT INTO students(first_name,last_name,password,email,token,user_type,refresh_token,v_key,verified,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	_, err = stmt.Exec(
-		user.First_name,
-		user.Last_name,
-		user.Password,
-		user.Email,
-		user.Token,
-		user.User_type,
-		user.Refresh_token,
-		user.V_key,
-		convertBooleanToInt(user.Verified),
-		user.Created_at.String(),
-		user.Updated_at.String())
-	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	defer stmt.Close()
-	tx.Commit()
+	var db_user db_model.User
+	found := true
+
+	// Get user if exists
+	result := conn.First(&db_user, "email = ?", *user.Email)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		// row not found
+		found = false
+	}
+
+	// Update user
+	db_user.First_name = *user.First_name
+	db_user.Last_name = *user.Last_name
+	db_user.Password = *user.Password
+	db_user.Email = *user.Email
+	db_user.User_type = *user.User_type
+	if user.Token != nil {
+		db_user.Token.String = *user.Token
+		db_user.Token.Valid = true
+	}
+	if user.Refresh_token != nil {
+		db_user.Refresh_token.String = *user.Refresh_token
+		db_user.Refresh_token.Valid = true
+	}
+	if user.V_key != nil {
+		db_user.V_key.String = *user.V_key
+		db_user.V_key.Valid = true
+	}
+
+	if user.Verified {
+		db_user.Verified = 1
+	} else {
+		db_user.Verified = 0
+	}
+
+	if user.Created_at.IsZero() {
+		db_user.Created_at.Time = user.Created_at
+		db_user.Created_at.Valid = true
+	}
+	if user.Updated_at.IsZero() {
+		db_user.Updated_at.Time = user.Updated_at
+		db_user.Updated_at.Valid = true
+	}
+
+	if found {
+		// update existing record
+		result = conn.Save(&db_user)
+		if result.Error != nil {
+			err = result.Error
+			return
+		}
+	} else {
+		// create new record
+		result = conn.Create(&db_user)
+		if result.Error != nil {
+			err = result.Error
+			return
+		}
+	}
 
 	return
 }
 
+// GetUser retrieves the user to the database.
 func (db SQLiteDB) GetUser(email string) (user models.User, err error) {
-	// try opening database
-	conn, err := sql.Open("sqlite3", db.DatabaseFilename)
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
-		log.Fatal(err)
-		return
-	}
-	defer conn.Close()
-
-	tx, err := conn.Begin()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	var verified string
-	var created_at string
-	var updated_at string
-
-	stmt, err := tx.Prepare("SELECT first_name,last_name,password,token,user_type,refresh_token,v_key,verified,created_at,updated_at FROM users where email = ?")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	defer stmt.Close()
-
-	user = models.User{}
-	err = stmt.QueryRow(email).Scan(
-		&user.First_name,
-		&user.Last_name,
-		&user.Password,
-		&user.Token,
-		&user.User_type,
-		&user.Refresh_token,
-		&user.V_key,
-		&verified,
-		&created_at,
-		&updated_at)
-	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	// Convert variables to their golang datatypes
-	i, err := strconv.Atoi(verified)
-	user.Verified = convertIntToBool(i)
+	var db_user db_model.User
 
-	// Use default format: https://golang.org/pkg/time/#Time.String
-	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	user.Created_at, err = time.Parse(layout, created_at)
-	if err != nil {
-		log.Fatal(err)
+	// Get user if exists
+	result := conn.First(&db_user, "email = ?", email)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
 		return
 	}
-	user.Updated_at, err = time.Parse(layout, updated_at)
-	if err != nil {
-		log.Fatal(err)
-		return
+
+	user = models.User{}
+
+	// Convert variables to their golang datatypes
+	user.First_name = &db_user.First_name
+	user.Last_name = &db_user.Last_name
+	user.Password = &db_user.Password
+	email_ref := email
+	user.Email = &email_ref
+	user.User_type = &db_user.User_type
+
+	if db_user.Token.Valid {
+		// token is not null
+		user.Token = &db_user.Token.String
 	}
+
+	if db_user.Refresh_token.Valid {
+		// refresh_token is not null
+		user.Refresh_token = &db_user.Refresh_token.String
+	}
+	if db_user.V_key.Valid {
+		// v_key is not null
+		user.V_key = &db_user.V_key.String
+	}
+	if db_user.Verified == 0 {
+		user.Verified = false
+	} else {
+		user.Verified = true
+
+	}
+
+	if db_user.Created_at.Valid {
+		// Created_at is not null
+		user.Created_at = db_user.Created_at.Time
+	}
+	if db_user.Updated_at.Valid {
+		// Created_at is not null
+		user.Updated_at = db_user.Updated_at.Time
+	}
+
 	return
 }
 
@@ -175,38 +190,27 @@ func (db SQLiteDB) GetAllCourses(from string, size int) (courses []string, err e
 	// convert from to int
 	i, _ := strconv.Atoi(from)
 
-	// try opening database
-	conn, err := sql.Open("sqlite3", db.DatabaseFilename)
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
-	defer conn.Close()
 
+	var db_courses []db_model.Course
 	courses = make([]string, 0)
 
 	// fetch courses
-	stmt := fmt.Sprintf("SELECT course_code FROM courses WHERE course_id >= %d AND course_id <= %d", i, i+size)
-	rows, err := conn.Query(stmt)
-	if err != nil {
-		log.Fatal(err)
+	result := conn.Where("id >= ? AND id <= ?", i, i+size).Find(&db_courses)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
 		return
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var course_code string
-		err = rows.Scan(&course_code)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		courses = append(courses, course_code)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-		return
+
+	// save db_courses to courses
+	for i := 0; i < int(result.RowsAffected); i++ {
+		courses = append(courses, db_courses[i].Course_code)
 	}
 	return
 }
@@ -215,54 +219,27 @@ func (db SQLiteDB) GetAllTutors(from string, size int) (tutors []string, err err
 	// convert from to int
 	i, _ := strconv.Atoi(from)
 
-	// try opening database
-	conn, err := sql.Open("sqlite3", db.DatabaseFilename)
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
-	defer conn.Close()
 
+	var db_tutors []db_model.Tutor
 	tutors = make([]string, 0)
 
 	// fetch courses
-	stmt := fmt.Sprintf("SELECT tutor_name FROM tutors WHERE tutor_id >= %d AND tutor_id <= %d", i, i+size)
-	rows, err := conn.Query(stmt)
-	if err != nil {
-		log.Fatal(err)
+	result := conn.Where("id >= ? AND id <= ?", i, i+size).Find(&db_tutors)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
 		return
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var tutor_name string
-		err = rows.Scan(&tutor_name)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		tutors = append(tutors, tutor_name)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-		return
+
+	// save db_courses to courses
+	for i := 0; i < int(result.RowsAffected); i++ {
+		tutors = append(tutors, db_tutors[i].Tutor_name)
 	}
 	return
-}
-
-func convertBooleanToInt(b bool) int {
-	if b {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-func convertIntToBool(i int) bool {
-	if i != 0 {
-		return true
-	} else {
-		return false
-	}
 }
