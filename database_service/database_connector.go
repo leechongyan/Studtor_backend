@@ -26,4 +26,11 @@ func InitDatabase() {
 		return
 	}
 	// place the db that you want to instantiate here
+	isSqlite, _ := strconv.ParseBool(viper.GetString("sqlite_database"))
+	if isSqlite {
+		sqlitedb := &SQLiteDB{}
+		sqlitedb.Init()
+		CurrentDatabaseConnector = sqlitedb
+		return
+	}
 }
