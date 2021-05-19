@@ -64,3 +64,47 @@ func GetAllTutors() gin.HandlerFunc {
 		c.JSON(http.StatusOK, tutors)
 	}
 }
+
+func PutAvailableTimeTutor() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var slot_query models.Slot_query
+
+		e := c.BindJSON(&slot_query)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		e = database_service.CurrentDatabaseConnector.SaveTutorAvailableTimes(slot_query)
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, "Success")
+	}
+}
+
+func GetAvailableTimeTutor() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var slot_query models.Slot_query
+
+		e := c.BindJSON(&slot_query)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		availability, e := database_service.CurrentDatabaseConnector.GetTutorAvailableTimes(slot_query)
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, availability)
+	}
+}

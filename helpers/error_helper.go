@@ -167,7 +167,7 @@ func RaiseDatabaseError() *RequestError {
 
 func RaiseLoginExpired() *RequestError {
 	return &RequestError{
-		StatusCode: http.StatusUnauthorized,
+		StatusCode: http.StatusInternalServerError,
 		Err:        errors.New(constants.LOGIN_EXPIRED),
 	}
 }

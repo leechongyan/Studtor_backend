@@ -1,6 +1,6 @@
 # Studtor_backend
 
-Server for Studtor_frontend
+Server for Studtor_frontend 
 
 ## Set Up
 
@@ -41,9 +41,15 @@ go run main.go
 
 ##### (GET) localhost:3000/v1/home/
 
+#### Tuition Service (Refer to Readme in Tuition Service for more details)
+
 ##### (GET) localhost:3000/v1/home/getallcourses/?from=0&size=2
 
 ##### (GET) localhost:3000/v1/home/getalltutors/?from=0&size=2
+
+##### (POST) localhost:3000/v1/home/putavailabletimetutor
+
+##### (POST) localhost:3000/v1/home/getavailabletimetutor
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

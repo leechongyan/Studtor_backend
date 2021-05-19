@@ -1,5 +1,13 @@
 # Authentication Service
 
+Authentication Service provides authentication service for Studtor backend with the following requirements:
+- [x] Only edu email is accepted
+- [x] Verification code sent to edu email to validate account
+- [x] Access Token and Refresh Token will be generated after login
+- [x] Access Token will be used to access authorized pages
+- [x] Refresh Token will be used to get a new Access Token if existing Access Token has expired
+- [x] Refresh Token will be deleted after logout
+
 ![Alt text](https://github.com/leechongyan/Studtor_backend/blob/database_interface/images/workflow.JPG "Authentication Flow")
 
 ## Set Up
