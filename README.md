@@ -48,9 +48,21 @@ go run main.go
 
 ##### (GET) localhost:3000/v1/home/getalltutors/?from=0&size=2
 
+##### (GET) localhost:3000/v1/home/getalltutorsforacourse/?course_code=CZ1003&from=0&size=2
+
 ##### (POST) localhost:3000/v1/home/putavailabletimetutor
 
+##### (POST) localhost:3000/v1/home/deleteavailabletimetutor
+
+##### (POST) localhost:3000/v1/home/getallbookedtimetutor
+
 ##### (POST) localhost:3000/v1/home/getavailabletimetutor
+
+##### (POST) localhost:3000/v1/home/booktimetutor
+
+##### (POST) localhost:3000/v1/home/unbooktimetutor
+
+##### (POST) localhost:3000/v1/home/getallbookedtimestudent
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

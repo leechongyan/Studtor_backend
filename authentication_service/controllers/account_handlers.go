@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
@@ -15,8 +14,6 @@ import (
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 )
-
-var validate = validator.New()
 
 func CheckEmailDomain(email string, domain string) bool {
 	components := strings.Split(email, "@")
@@ -29,18 +26,12 @@ func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user models.User
 
-		e := c.BindJSON(&user)
-		if e != nil {
-			err := helpers.RaiseCannotParseJson()
+		err := helpers.ExtractPostRequestBody(c, &user)
+		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		validationErr := validate.Struct(user)
-		if validationErr != nil {
-			err := helpers.RaiseValidationErrorJson()
-			c.JSON(err.StatusCode, err.Error())
-			return
-		}
+
 		// validate whether the email is valid with edu
 		if !CheckEmailDomain(*user.Email, "edu") {
 			err := helpers.RaiseInvalidEmail()
@@ -49,7 +40,7 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// check whether this email exist
-		_, e = database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		_, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
 		if e == nil {
 			err := helpers.RaiseExistentAccount()
 			c.JSON(err.StatusCode, err.Error())
@@ -71,7 +62,7 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// send an email
-		err := mail_service.SendVerificationCode(user, new_V_key)
+		err = mail_service.SendVerificationCode(user, new_V_key)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -85,15 +76,15 @@ func Verify() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var verification models.Verifiation
 
-		if err := c.BindJSON(&verification); err != nil {
-			err := helpers.RaiseCannotParseJson()
+		err := helpers.ExtractPostRequestBody(c, &verification)
+		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		user, err := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
+		user, e := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
 
-		if err != nil {
+		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -109,7 +100,7 @@ func Verify() gin.HandlerFunc {
 
 		// if verification all pass and correct then create access token
 		user.Verified = true
-		e := database_service.CurrentDatabaseConnector.SaveUser(user)
+		e = database_service.CurrentDatabaseConnector.SaveUser(user)
 		if e != nil {
 			c.JSON(http.StatusInternalServerError, e.Error())
 			return
@@ -124,8 +115,8 @@ func Login() gin.HandlerFunc {
 		var user models.Login
 		var foundUser models.User
 
-		if e := c.BindJSON(&user); e != nil {
-			err := helpers.RaiseCannotParseJson()
+		err := helpers.ExtractPostRequestBody(c, &user)
+		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}

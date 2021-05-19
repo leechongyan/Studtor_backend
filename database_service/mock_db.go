@@ -52,11 +52,35 @@ func (db Mockdb) GetAllTutors(from string, size int) (tutors []string, err error
 	return c[i : i+size], nil
 }
 
-func (db Mockdb) SaveTutorAvailableTimes(slot tut_model.Slot_query) (err error) {
+func (db Mockdb) GetAllTutorsForACourse(courseID string, from string, size int) (tutors []string, err error) {
+	c := [...]string{"Chin", "Kangyu", "Jordan", "Chongyan"}
+	// convert from to int
+	i, _ := strconv.Atoi(from)
+	return c[i : i+size], nil
+}
+
+func (db Mockdb) SaveTutorAvailableTimes(slot tut_model.TimeFrame_query) (err error) {
 	return
 }
 
-func (db Mockdb) GetTutorAvailableTimes(slot tut_model.Slot_query) (availableTimes Timeslots, err error) {
+func (db Mockdb) DeleteTutorAvailableTimes(slot tut_model.TimeFrame_query) (err error) {
+	return
+}
+
+func (db Mockdb) GetTutorBookedTimes(slot tut_model.TimeFrame_query) (bookedTimes Timeslots, err error) {
+	// should have course code for the booked time slots as well
+	slots := make(map[string][]time.Time)
+	slots["CZ1003"] = []time.Time{time.Now(), time.Now()}
+	slots["CZ1004"] = []time.Time{time.Now(), time.Now()}
+	bookedTimes = make(Timeslots)
+	bookedTimes["first_name"] = "Jeff"
+	bookedTimes["last_name"] = "Lee"
+	bookedTimes["email"] = "clee051@e.ntu.edu.sg"
+	bookedTimes["time_slots"] = slots
+	return
+}
+
+func (db Mockdb) GetTutorAvailableTimes(slot tut_model.TimeFrame_query) (availableTimes Timeslots, err error) {
 	// extract from
 	// query database from and to
 	// from := slot.From
@@ -73,5 +97,26 @@ func (db Mockdb) GetTutorAvailableTimes(slot tut_model.Slot_query) (availableTim
 	availableTimes["last_name"] = "Lee"
 	availableTimes["email"] = "clee051@e.ntu.edu.sg"
 	availableTimes["time_slots"] = slots
+	return
+}
+
+func (db Mockdb) BookTutorTime(student_email string, slot tut_model.TimeFrame_query) (err error) {
+	return nil
+}
+
+func (db Mockdb) UnBookTutorTime(student_email string, slot tut_model.TimeFrame_query) (err error) {
+	return nil
+}
+
+func (db Mockdb) GetStudentBookedTimes(slot tut_model.TimeFrame_query) (bookedTimes Timeslots, err error) {
+	// should have course code for the booked time slots as well
+	slots := make(map[string][]time.Time)
+	slots["CZ1003"] = []time.Time{time.Now(), time.Now()}
+	slots["CZ1004"] = []time.Time{time.Now(), time.Now()}
+	bookedTimes = make(Timeslots)
+	bookedTimes["first_name"] = "Jeff"
+	bookedTimes["last_name"] = "Lee"
+	bookedTimes["email"] = "clee051@e.ntu.edu.sg"
+	bookedTimes["time_slots"] = slots
 	return
 }

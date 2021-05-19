@@ -35,11 +35,25 @@ func main() {
 	// require token
 	home := v1.Group("/home")
 	home.Use(middleware.Authentication())
+
+	// ping to validate authorized status
 	home.GET("/", authhandler.GetMain())
+
+	// for general usage
 	home.GET("/getallcourses", tuthandler.GetAllCourses())
-	home.GET("/getalltutors", tuthandler.GetAllTutors())
+
+	// for tutor usage
 	home.POST("/putavailabletimetutor", tuthandler.PutAvailableTimeTutor())
+	home.POST("/deleteavailabletimetutor", tuthandler.DeleteAvailableTimeTutor())
+	home.POST("/getallbookedtimetutor", tuthandler.GetAllBookedTimeTutor())
+
+	// for student usage
+	home.GET("/getalltutors", tuthandler.GetAllTutors())
+	home.GET("/getalltutorsforacourse", tuthandler.GetAllTutorsForACourse())
 	home.POST("/getavailabletimetutor", tuthandler.GetAvailableTimeTutor())
+	home.POST("/booktimetutor", tuthandler.BookTimeTutor())
+	home.POST("/unbooktimetutor", tuthandler.UnbookTimeTutor())
+	home.POST("/getallbookedtimestudent", tuthandler.GetAllBookedTimeStudent())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))
