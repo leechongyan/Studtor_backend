@@ -2,6 +2,7 @@ package account
 
 import (
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,19 +24,22 @@ type SignedDetails struct {
 var SECRET_KEY string = viper.GetString("jwtKey")
 
 func GenerateAllTokens(email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
+	access_hr, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
+	refresh_hr, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
+
 	claims := &SignedDetails{
 		Email:      email,
 		First_name: firstName,
 		Last_name:  lastName,
 		User_type:  userType,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(access_hr)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refresh_hr)).Unix(),
 		},
 	}
 

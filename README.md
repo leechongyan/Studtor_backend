@@ -11,7 +11,8 @@ Configure the config file:
 port: ":3000"
 
 jwtKey: "9761278367815487"
-expirationTime: "10"
+accessExpirationTime: "1"
+refreshExpirationTime: "2"
 serverEmail: "studtorr@gmail.com"
 serverEmailPW: "password"
 
