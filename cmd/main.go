@@ -38,6 +38,8 @@ func main() {
 	home.GET("/", authhandler.GetMain())
 	home.GET("/getallcourses", tuthandler.GetAllCourses())
 	home.GET("/getalltutors", tuthandler.GetAllTutors())
+	home.POST("/putavailabletimetutor", tuthandler.PutAvailableTimeTutor())
+	home.POST("/getavailabletimetutor", tuthandler.GetAvailableTimeTutor())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))
