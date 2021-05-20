@@ -20,7 +20,7 @@ type User struct {
 	Updated_at    time.Time `json:"updated_at"`
 }
 
-type Verifiation struct {
+type Verification struct {
 	Email *string `json:"email" validate:"email,required"`
 	V_key *string `json:"verification_key" validate:"required"`
 }

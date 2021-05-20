@@ -40,6 +40,7 @@ func main() {
 	home.GET("/", authhandler.GetMain())
 
 	// for general usage
+	home.GET("/user/*user", authhandler.GetUser())
 	home.GET("/courses", tuthandler.GetAllCourses())
 
 	// for tutor usage

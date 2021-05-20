@@ -18,7 +18,9 @@ Tuition Service provides service for querying tuition matters:
 
 #### Get all courses from a specified course code up to a specified size
 
-##### (GET) localhost:3000/v1/home/getallcourses/?from=0&size=2
+##### (GET) localhost:3000/v1/courses
+
+##### Optional Arguments: ?from=0&size=2
 
 Expected Returns:
 
@@ -29,41 +31,14 @@ Expected Returns:
 ]
 ```
 
-#### Get all tutors from a specified tutor ID up to a specified size
-
-##### (GET) localhost:3000/v1/home/getalltutors/?from=0&size=2
-
-Expected Returns:
-
-```
-[
-    "Chin",
-    "Kangyu"
-]
-```
-
-#### Get all tutors for a particular course from a specified tutor ID up to a specified size
-
-##### (GET) localhost:3000/v1/home/getalltutorsforacourse/?course_code=CZ1003&from=0&size=2
-
-Expected Returns:
-
-```
-[
-    "Chin",
-    "Kangyu"
-]
-```
-
 #### Save an available time slot for a tutor
 
-##### (POST) localhost:3000/v1/home/putavailabletimetutor
+##### (POST) localhost:3000/v1/home/putavailabletime
 
 Request Body:
 
 ```
 {
-  "email": "clee051@e.ntu.edu.sg",
   "from": "2018-09-22T12:42:31Z",
   "to": "2018-09-25T12:50:31Z"
 }
@@ -77,13 +52,12 @@ Expected Returns:
 
 #### Delete an available time slot for a tutor
 
-##### (POST) localhost:3000/v1/home/deleteavailabletimetutor
+##### (POST) localhost:3000/v1/home/deleteavailabletime
 
 Request Body:
 
 ```
 {
-  "email": "clee051@e.ntu.edu.sg",
   "from": "2018-09-22T12:42:31Z",
   "to": "2018-09-25T12:50:31Z"
 }
@@ -95,53 +69,36 @@ Expected Returns:
 "Success"
 ```
 
-#### Get all the booked times for a tutor
+#### Get all tutors for a particular course from a specified tutor ID up to a specified size
 
-##### (POST) localhost:3000/v1/home/getallbookedtimetutor
+##### (GET) localhost:3000/v1/tutors/*course
 
-Request Body:
-
-```
-{
-  "email": "clee051@e.ntu.edu.sg",
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
-}
-```
+##### Optional Arguments: ?from_id=0&size=2
 
 Expected Returns:
 
 ```
-{
-    "email": "clee051@e.ntu.edu.sg",
-    "first_name": "Jeff",
-    "last_name": "Lee",
-    "time_slots": {
-        "CZ1003": [
-            "2021-05-20T00:16:03.2733615+08:00",
-            "2021-05-20T00:16:03.2733615+08:00"
-        ],
-        "CZ1004": [
-            "2021-05-20T00:16:03.2733615+08:00",
-            "2021-05-20T00:16:03.2733615+08:00"
-        ]
+[
+    {
+        "code": "CZ1003",
+        "students": 10,
+        "title": "Computational Thinking",
+        "tutors": 15
+    },
+    {
+        "code": "CZ3003",
+        "students": 4,
+        "title": "Object Thinking",
+        "tutors": 20
     }
-}
+]
 ```
 
 #### Get all available time slot for a tutor with a start date and end date
 
-##### (POST) localhost:3000/v1/home/getavailabletimetutor
+##### (GET) localhost:3000/v1/availabletime/:tutor
 
-Request Body:
-
-```
-{
-  "email": "clee051@e.ntu.edu.sg",
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
-}
-```
+##### Optional Arguments: ?from=2018-09-25T12:50:31Z&to=2018-09-25T12:50:31Z
 
 Expected Returns:
 
@@ -163,17 +120,44 @@ Expected Returns:
 }
 ```
 
+#### Get all the booked times for a user
+
+##### (GET) localhost:3000/v1/bookedtime/:user
+
+##### Optional Arguments: ?from=2018-09-25T12:50:31Z&to=2018-09-25T12:50:31Z
+
+Expected Returns:
+
+```
+{
+    "email": "clee051@e.ntu.edu.sg",
+    "first_name": "Jeff",
+    "last_name": "Lee",
+    "time_slots": {
+        "CZ1003": [
+            "2021-05-20T00:16:03.2733615+08:00",
+            "2021-05-20T00:16:03.2733615+08:00"
+        ],
+        "CZ1004": [
+            "2021-05-20T00:16:03.2733615+08:00",
+            "2021-05-20T00:16:03.2733615+08:00"
+        ]
+    }
+}
+```
+
 #### Book the time of a tutor
 
-##### (POST) localhost:3000/v1/home/booktimetutor
+##### (POST) localhost:3000/v1/book
 
 Request Body:
 
 ```
 {
-  "email": "clee051@e.ntu.edu.sg",
+  "course": "CZ1003",
   "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
+  "to": "2018-09-25T12:50:31Z",
+  "tutor": "Jeff"
 }
 ```
 
@@ -185,15 +169,16 @@ Expected Returns:
 
 #### Unbook the time of a tutor
 
-##### (POST) localhost:3000/v1/home/unbooktimetutor
+##### (POST) localhost:3000/v1/unbook
 
 Request Body:
 
 ```
 {
-  "email": "clee051@e.ntu.edu.sg",
+  "course": "CZ1003",
   "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
+  "to": "2018-09-25T12:50:31Z",
+  "tutor": "Jeff"
 }
 ```
 
@@ -201,40 +186,6 @@ Expected Returns:
 
 ```
 "Success"
-```
-
-#### Get all the booked times of a student
-
-##### (POST) localhost:3000/v1/home/getallbookedtimestudent
-
-Request Body:
-
-```
-{
-  "email": "clee051@e.ntu.edu.sg",
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
-}
-```
-
-Expected Returns:
-
-```
-{
-    "email": "clee051@e.ntu.edu.sg",
-    "first_name": "Jeff",
-    "last_name": "Lee",
-    "time_slots": {
-        "CZ1003": [
-            "2021-05-20T00:17:09.8745778+08:00",
-            "2021-05-20T00:17:09.8745778+08:00"
-        ],
-        "CZ1004": [
-            "2021-05-20T00:17:09.8745778+08:00",
-            "2021-05-20T00:17:09.8745778+08:00"
-        ]
-    }
-}
 ```
 
 ## Contributing

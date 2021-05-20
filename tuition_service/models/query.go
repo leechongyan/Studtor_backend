@@ -15,14 +15,19 @@ type ObjectPaginated_query struct {
 // default start from start
 // default end at end
 type TimePaginated_query struct {
-	From time.Time `form:"from_id"`
+	From time.Time `form:"from"`
 	To   time.Time `form:"to"`
+}
+
+type TimeSlot struct {
+	From time.Time `json:"from" validate:"required"`
+	To   time.Time `json:"to" validate:"required"`
 }
 
 // for booking a slot, all fields are required
 type BookSlot struct {
 	Course *string   `json:"course" validate:"required"`
-	From   time.Time `json:"from_id" validate:"required"`
+	From   time.Time `json:"from" validate:"required"`
 	To     time.Time `json:"to" validate:"required"`
 	Tutor  *string   `json:"tutor" validate:"required"`
 }

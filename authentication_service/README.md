@@ -34,7 +34,7 @@ mock_database: "true"
 
 #### Sign up for an account
 
-##### (POST) localhost:3000/v1/signup
+##### (POST) localhost:3000/v1/auth/signup
 
 Request Body:
 
@@ -55,7 +55,7 @@ Expected Returns:
 ```
 
 #### Verify with verification code
-##### (POST) localhost:3000/v1/verify
+##### (POST) localhost:3000/v1/auth/verify
 
 Request Body:
 
@@ -73,7 +73,7 @@ Expected Returns:
 ```
 
 #### Login to get the access token
-##### (POST) localhost:3000/v1/login
+##### (POST) localhost:3000/v1/auth/login
 
 Request Body:
 
@@ -91,7 +91,7 @@ Expected Returns:
 ```
 
 #### Logout 
-##### (POST) localhost:3000/v1/logout
+##### (POST) localhost:3000/v1/auth/logout
 
 Request Body:
 
@@ -106,7 +106,7 @@ Expected Returns:
 ```
 
 #### Refresh access token
-##### (POST) localhost:3000/v1/refresh
+##### (POST) localhost:3000/v1/auth/refresh
 
 Request Body:
 
@@ -121,7 +121,8 @@ Expected Returns:
 ```
 
 #### Access authorized pages
-##### (GET) localhost:3000/v1/home/
+This is for testing authority
+##### (GET) localhost:3000/v1
 
 Request Header:
 
@@ -131,6 +132,24 @@ Expected Returns:
 
 ```
 "Success"
+```
+
+#### Get User Information
+If no user id is specified, then the current user will be returned
+##### (GET) localhost:3000/v1/user/*user
+
+Request Header:
+
+Token: "Bearer: ACCESS_TOKEN"
+
+Expected Returns:
+
+```
+{
+    "first_name": "Jeff",
+    "id": "10",
+    "last_name": "Lee"
+}
 ```
 
 ## Contributing

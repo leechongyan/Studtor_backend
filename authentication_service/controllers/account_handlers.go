@@ -74,7 +74,7 @@ func SignUp() gin.HandlerFunc {
 
 func Verify() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var verification models.Verifiation
+		var verification models.Verification
 
 		err := helpers.ExtractPostRequestBody(c, &verification)
 		if err != nil {
@@ -245,6 +245,33 @@ func Logout() gin.HandlerFunc {
 func GetMain() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, "Success")
+	}
+}
+
+func GetUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		profile := make(map[string]interface{})
+		user := c.Param("user")
+		// get current user
+		if user == "" {
+			profile["id"] = c.GetString("id")
+			profile["first_name"] = c.GetString("first_name")
+			profile["last_name"] = c.GetString("last_name")
+			c.JSON(http.StatusOK, profile)
+			return
+		}
+
+		// get other user
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(user)
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		profile["id"] = foundUser.Id
+		profile["first_name"] = foundUser.First_name
+		profile["last_name"] = foundUser.Last_name
+		c.JSON(http.StatusOK, profile)
 	}
 }
 

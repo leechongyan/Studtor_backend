@@ -30,39 +30,38 @@ go run main.go
 
 #### Authentication Service (Refer to Readme in Authentication Service for more details)
 
-##### (POST) localhost:3000/v1/signup
+##### (POST) localhost:3000/v1/auth/signup
 
-##### (POST) localhost:3000/v1/verify
+##### (POST) localhost:3000/v1/auth/verify
 
-##### (POST) localhost:3000/v1/login
+##### (POST) localhost:3000/v1/auth/login
 
-##### (POST) localhost:3000/v1/logout
+##### (POST) localhost:3000/v1/auth/logout
 
-##### (POST) localhost:3000/v1/refresh
+##### (POST) localhost:3000/v1/auth/refresh
 
-##### (GET) localhost:3000/v1/home/
+##### (GET) localhost:3000/v1
+
+##### (GET) localhost:3000/v1/:user
 
 #### Tuition Service (Refer to Readme in Tuition Service for more details)
 
-##### (GET) localhost:3000/v1/home/getallcourses/?from=0&size=2
+##### (GET) localhost:3000/v1/courses
 
-##### (GET) localhost:3000/v1/home/getalltutors/?from=0&size=2
+##### (POST) localhost:3000/v1/putavailabletime
 
-##### (GET) localhost:3000/v1/home/getalltutorsforacourse/?course_code=CZ1003&from=0&size=2
+##### (POST) localhost:3000/v1/deleteavailabletime
 
-##### (POST) localhost:3000/v1/home/putavailabletimetutor
+##### (GET) localhost:3000/v1/tutors/*course
 
-##### (POST) localhost:3000/v1/home/deleteavailabletimetutor
+##### (GET) localhost:3000/v1/availabletime/:tutor
 
-##### (POST) localhost:3000/v1/home/getallbookedtimetutor
+##### (GET) localhost:3000/v1/bookedtime/:user
 
-##### (POST) localhost:3000/v1/home/getavailabletimetutor
+##### (POST) localhost:3000/v1/book
 
-##### (POST) localhost:3000/v1/home/booktimetutor
+##### (POST) localhost:3000/v1/unbook
 
-##### (POST) localhost:3000/v1/home/unbooktimetutor
-
-##### (POST) localhost:3000/v1/home/getallbookedtimestudent
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

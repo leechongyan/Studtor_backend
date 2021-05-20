@@ -68,7 +68,7 @@ func GetAllTutors() gin.HandlerFunc {
 
 func PutAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimePaginated_query
+		var slot_query models.TimeSlot
 
 		err := helpers.ExtractPostRequestBody(c, &slot_query)
 		if err != nil {
@@ -95,7 +95,7 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimePaginated_query
+		var slot_query models.TimeSlot
 
 		err := helpers.ExtractPostRequestBody(c, &slot_query)
 		if err != nil {

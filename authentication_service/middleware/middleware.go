@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/helpers"
@@ -31,7 +33,7 @@ func Authentication() gin.HandlerFunc {
 		}
 
 		c.Set("email", claims.Email)
-		c.Set("id", claims.Id)
+		c.Set("id", strconv.Itoa(claims.ID))
 		c.Set("first_name", claims.First_name)
 		c.Set("last_name", claims.Last_name)
 		c.Set("user_type", claims.User_type)

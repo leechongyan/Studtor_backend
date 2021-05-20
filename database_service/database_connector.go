@@ -36,7 +36,7 @@ func InitDatabase() {
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
-	// sqlitedb := &SQLiteDB{}
-	// sqlitedb.Init()
-	// CurrentDatabaseConnector = sqlitedb
+	sqlitedb := &SQLiteDB{}
+	sqlitedb.Init()
+	CurrentDatabaseConnector = sqlitedb
 }
