@@ -4,20 +4,25 @@ import (
 	"time"
 )
 
-// type Course_query struct {
-// 	Course_code string `form:"course_code" validate:"required"`
-// 	From        string `form:"from" validate:"required"`
-// 	Size        int    `form:"size" validate:"required"`
-// }
+// when querying, from_id and size are optional field
+// default start from start
+// default return all
+type ObjectPaginated_query struct {
+	From_id *string `form:"from_id"`
+	Size    *int    `form:"size"`
+}
 
-// type Paginated_query struct {
-// 	From string `form:"from" validate:"required"`
-// 	Size int    `form:"size" validate:"required"`
-// }
+// default start from start
+// default end at end
+type TimePaginated_query struct {
+	From time.Time `form:"from_id"`
+	To   time.Time `form:"to"`
+}
 
-type TimeFrame_query struct {
-	Email  *string   `json:"email" validate:"email,required"`
+// for booking a slot, all fields are required
+type BookSlot struct {
 	Course *string   `json:"course" validate:"required"`
-	From   time.Time `json:"from"`
-	To     time.Time `json:"to"`
+	From   time.Time `json:"from_id" validate:"required"`
+	To     time.Time `json:"to" validate:"required"`
+	Tutor  *string   `json:"tutor" validate:"required"`
 }

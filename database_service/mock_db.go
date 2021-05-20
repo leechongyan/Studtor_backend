@@ -25,6 +25,9 @@ func (db *Mockdb) Init() {
 }
 
 func (db Mockdb) SaveUser(user auth_model.User) (err error) {
+	// create a unique id for the user
+	id := 10
+	user.Id = &id
 	db.UserCollection[*user.Email] = user
 	return
 }

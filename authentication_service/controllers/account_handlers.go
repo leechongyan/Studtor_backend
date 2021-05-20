@@ -145,7 +145,7 @@ func Login() gin.HandlerFunc {
 		}
 
 		// refresh token
-		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -193,7 +193,7 @@ func RefreshToken() gin.HandlerFunc {
 		}
 
 		// if refresh is still valid then generate new token
-		token, _, err := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		token, _, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return

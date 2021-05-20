@@ -15,6 +15,7 @@ import (
 
 type SignedDetails struct {
 	Email      string
+	ID         int
 	First_name string
 	Last_name  string
 	User_type  string
@@ -23,12 +24,13 @@ type SignedDetails struct {
 
 var SECRET_KEY string = viper.GetString("jwtKey")
 
-func GenerateAllTokens(email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
+func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
 	access_hr, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
 	refresh_hr, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
 
 	claims := &SignedDetails{
 		Email:      email,
+		ID:         id,
 		First_name: firstName,
 		Last_name:  lastName,
 		User_type:  userType,
