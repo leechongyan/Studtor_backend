@@ -1,20 +1,21 @@
-package mail_service 
+package mail_service
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"net/smtp"
-	"errors"
+
+	"text/template"
 
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
+	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
-	"text/template"  
-  )
-  
-  func SendVerificationCode(user models.User, code string) (err error){
-	serverEmail := viper.GetString("serverEmail") 
-	serverEmailPW := viper.GetString("serverEmailPW") 
-  
+)
+
+func SendVerificationCode(user models.User, code string) (err *helpers.RequestError) {
+	serverEmail := viper.GetString("serverEmail")
+	serverEmailPW := viper.GetString("serverEmailPW")
+
 	// Sender data.
 	from := serverEmail
 	password := serverEmailPW
@@ -31,22 +32,23 @@ import (
 
 	t, _ := template.ParseFiles("../mail_service/templates/verification_template.html")
 	var body bytes.Buffer
-  	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	body.Write([]byte(fmt.Sprintf("Subject: Verification Code for Studtor \n%s\n\n", mimeHeaders)))
 
 	t.Execute(&body, struct {
 		Name    string
 		Message string
-	  }{
+	}{
 		Name:    *user.First_name + " " + *user.Last_name,
 		Message: code,
-	  })
+	})
 
-	  // Sending email.
-	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
-	if err != nil {
-		return errors.New("fail to send email")
-	}  
+	// Sending email.
+	e := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
+	if e != nil {
+		err = helpers.RaiseFailureEmailSend()
+		return
+	}
 
 	return
-  }
+}

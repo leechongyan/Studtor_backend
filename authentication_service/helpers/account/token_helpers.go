@@ -2,20 +2,20 @@ package account
 
 import (
 	"log"
-	"time"
-	"errors"
+	"strconv"
 	"strings"
+	"time"
 
-
-	"github.com/leechongyan/Studtor_backend/authentication_service/database"
+	"github.com/leechongyan/Studtor_backend/database_service"
+	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 
 	jwt "github.com/dgrijalva/jwt-go"
-
 )
 
 type SignedDetails struct {
 	Email      string
+	ID         int
 	First_name string
 	Last_name  string
 	User_type  string
@@ -24,42 +24,48 @@ type SignedDetails struct {
 
 var SECRET_KEY string = viper.GetString("jwtKey")
 
-func GenerateAllTokens(email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
+	access_hr, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
+	refresh_hr, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
+
 	claims := &SignedDetails{
 		Email:      email,
+		ID:         id,
 		First_name: firstName,
 		Last_name:  lastName,
 		User_type:  userType,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(access_hr)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refresh_hr)).Unix(),
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	token, e := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
 
-	if err != nil {
+	if e != nil {
 		log.Panic(err)
+		err = helpers.RaiseFailureGenerateClaim()
 		return
 	}
 
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
+	refreshToken, e := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
 
-	if err != nil {
+	if e != nil {
 		log.Panic(err)
+		err = helpers.RaiseFailureGenerateClaim()
 		return
 	}
 
 	return token, refreshToken, err
 }
 
-func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
-	token, err := jwt.ParseWithClaims(
+func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.RequestError) {
+	token, e := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
@@ -67,24 +73,32 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
 		},
 	)
 
-	if err != nil {
-		return
+	if e != nil {
+		err = helpers.RaiseCannotParseClaims()
+		return nil, err
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
-		return nil, errors.New("Invalid Token")
+		err = helpers.RaiseInvalidToken()
+		return nil, err
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		return nil, errors.New("Token Expired")
+		err = helpers.RaiseExpiredToken()
+		return nil, err
 	}
 
 	return claims, nil
 }
 
-func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err error) {
-	oldUser := database.UserCollection[userEmail]
+func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
+	oldUser, e := database_service.CurrentDatabaseConnector.GetUser(userEmail)
+
+	if e != nil {
+		err = helpers.RaiseUserNotInDatabase()
+		return err
+	}
 
 	oldUser.Token = &signedToken
 	oldUser.Refresh_token = &signedRefreshToken
@@ -97,23 +111,28 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 
 	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	oldUser.Updated_at = Updated_at
-  
-	// updating database
-	database.UserCollection[userEmail] = oldUser
-	// TODO: Connector to the database not mock object
 
+	// updating database
+	e = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
+	if e != nil {
+		err = helpers.RaiseCannotSaveUserInDatabase()
+		return err
+	}
+	// TODO: Connector to the database not mock object
 	return
 }
 
-func ExtractTokenFromHeader(header string) (token string, err error) {
+func ExtractTokenFromHeader(header string) (token string, err *helpers.RequestError) {
 	splitToken := strings.Split(header, " ")
 
 	if len(splitToken) != 2 {
-		return "", errors.New("Invalid Token Format")
+		err = helpers.RaiseInvalidTokenFormat()
+		return "", err
 	}
 
 	if splitToken[0] != "Bearer" {
-		return "", errors.New("Invalid Authorization Method provided")
+		err = helpers.RaiseInvalidAuthorizationMethod()
+		return "", err
 	}
 
 	return splitToken[1], nil

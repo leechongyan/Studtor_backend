@@ -1,29 +1,26 @@
 package account
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
+	"github.com/leechongyan/Studtor_backend/helpers"
 )
 
-func CheckUserType(c *gin.Context, role string) (err error) {
+func CheckUserType(c *gin.Context, role string) (err *helpers.RequestError) {
 	userType := c.GetString("user_type")
-	err = nil
 	if userType != role {
-		err = errors.New("Unauthorized")
+		err = helpers.RaiseUnauthorizedAccess()
 		return err
 	}
 
 	return err
 }
 
-func MatchUserTypeToUid(c *gin.Context, userId string) (err error) {
+func MatchUserTypeToUid(c *gin.Context, userId string) (err *helpers.RequestError) {
 	userType := c.GetString("user_type")
 	uid := c.GetString("uid")
-	err = nil
 
 	if userType == "USER" && uid != userId {
-		err = errors.New("Unauthorized")
+		err = helpers.RaiseUnauthorizedAccess()
 		return err
 	}
 	err = CheckUserType(c, userType)

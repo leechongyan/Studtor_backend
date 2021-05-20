@@ -3,18 +3,17 @@ package controllers
 import (
 	"strings"
 
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
-	"github.com/leechongyan/Studtor_backend/authentication_service/database"
+	"github.com/leechongyan/Studtor_backend/database_service"
+	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 )
-
-var validate = validator.New()
 
 func CheckEmailDomain(email string, domain string) bool {
 	components := strings.Split(email, "@")
@@ -23,31 +22,28 @@ func CheckEmailDomain(email string, domain string) bool {
 	return strings.Contains(dom, domain)
 }
 
-
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user models.User
 
-		err := c.BindJSON(&user)
+		err := helpers.ExtractPostRequestBody(c, &user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		validationErr := validate.Struct(user)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-			return
-		}
-		// validate whether the email is valid with edu
-		if !CheckEmailDomain(*user.Email, "edu") {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "email is not valid"})
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		// check whether this email exist 
-		_, ok := database.UserCollection[*user.Email]
-		if ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "email already exists"})
+		// validate whether the email is valid with edu
+		if !CheckEmailDomain(*user.Email, "edu") {
+			err := helpers.RaiseInvalidEmail()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// check whether this email exist
+		_, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		if e == nil {
+			err := helpers.RaiseExistentAccount()
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 		password := helper.HashPassword(*user.Password)
@@ -58,98 +54,224 @@ func SignUp() gin.HandlerFunc {
 		user.V_key = &new_V_key
 
 		// save user in db
-		database.UserCollection[*user.Email] = user
+		e = database_service.CurrentDatabaseConnector.SaveUser(user)
+		if e != nil {
+			err := helpers.RaiseCannotSaveUserInDatabase()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
 
 		// send an email
 		err = mail_service.SendVerificationCode(user, new_V_key)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
+			c.JSON(err.StatusCode, err.Error())
+			return
 		}
-      
-		c.JSON(http.StatusOK, gin.H{"Success": "Successful Sign Up"})
+
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 
 func Verify() gin.HandlerFunc {
-	return func(c *gin.Context){
-		var verification models.Verifiation
+	return func(c *gin.Context) {
+		var verification models.Verification
 
-		if err := c.BindJSON(&verification); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		err := helpers.ExtractPostRequestBody(c, &verification)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		user, ok := database.UserCollection[*verification.Email]
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "account does not exist"})
+		user, e := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
+
+		if e != nil {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		v_k := *user.V_key
 		// check whether verification code is correct
 		if v_k != *verification.V_key {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "wrong validation code"})
+			err := helpers.RaiseWrongValidation()
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		// if verification all pass and correct then create access token
-		token, refreshToken, err := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, *user.User_type)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		user.Verified = true
+		e = database_service.CurrentDatabaseConnector.SaveUser(user)
+		if e != nil {
+			c.JSON(http.StatusInternalServerError, e.Error())
+			return
 		}
 
-		err = helper.UpdateAllTokens(token, refreshToken, *user.Email)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-
-		c.JSON(http.StatusOK, gin.H{"Success": "Verified"})
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
+		var user models.Login
 		var foundUser models.User
 
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		err := helpers.ExtractPostRequestBody(c, &user)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		foundUser, ok := database.UserCollection[*user.Email]
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
 		// check whether user exists
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "email or password is incorrect"})
+		if e != nil {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		// check whether password exists 
-		passwordIsValid, msg := helper.VerifyPassword(*user.Password, *foundUser.Password)
+		// check whether password exists
+		passwordIsValid := helper.VerifyPassword(*user.Password, *foundUser.Password)
 		if passwordIsValid != true {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// check whether is verified or not
+		if !foundUser.Verified {
+			err := helpers.RaiseNotVerified()
+			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		// refresh token
-		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(err.StatusCode, err.Error())
+			return
 		}
-		
+
 		err = helper.UpdateAllTokens(token, refreshToken, *foundUser.Email)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(err.StatusCode, err.Error())
+			return
 		}
 
+		c.JSON(http.StatusOK, token)
+	}
+}
 
-		c.JSON(http.StatusOK, foundUser)
+func RefreshToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email_byte, e := ioutil.ReadAll(c.Request.Body)
+		email := string(email_byte)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
+		// check whether user exists
+		if e != nil {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		refreshToken := foundUser.Refresh_token
+		if refreshToken == nil {
+			err := helpers.RaiseLoginExpired()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		_, err := helper.ValidateToken(*refreshToken)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// if refresh is still valid then generate new token
+		token, _, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		err = helper.UpdateAllTokens(token, *refreshToken, email)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, token)
+	}
+}
+
+func Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email_byte, e := ioutil.ReadAll(c.Request.Body)
+		email := string(email_byte)
+		if e != nil {
+			err := helpers.RaiseCannotParseJson()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
+		// check whether user exists
+		if e != nil {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		// remove refresh token and force user to login again
+		foundUser.Refresh_token = nil
+
+		e = database_service.CurrentDatabaseConnector.SaveUser(foundUser)
+
+		if e != nil {
+			err := helpers.RaiseCannotSaveUserInDatabase()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, "Success")
 	}
 }
 
 func GetMain() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"Success": "Successful Entry"})
+		c.JSON(http.StatusOK, "Success")
+	}
+}
+
+func GetUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		profile := make(map[string]interface{})
+		user := c.Param("user")
+		// get current user
+		if user == "" {
+			profile["id"] = c.GetString("id")
+			profile["first_name"] = c.GetString("first_name")
+			profile["last_name"] = c.GetString("last_name")
+			c.JSON(http.StatusOK, profile)
+			return
+		}
+
+		// get other user
+		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(user)
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		profile["id"] = foundUser.Id
+		profile["first_name"] = foundUser.First_name
+		profile["last_name"] = foundUser.Last_name
+		c.JSON(http.StatusOK, profile)
 	}
 }
 
