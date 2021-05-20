@@ -16,14 +16,14 @@ type DatabaseConnector interface {
 	SaveUser(user auth_model.User) (err error)
 	GetUser(email string) (user auth_model.User, err error)
 
-	GetAllCourses(db_options DB_options) (courses []interface{}, err error)
-	GetAllTutors(db_options DB_options) (tutors []string, err error)
-	SaveTutorAvailableTimes(db_options DB_options) (err error)
-	DeleteTutorAvailableTimes(db_options DB_options) (err error)
-	GetTutorAvailableTimes(db_options DB_options) (availableTimes Timeslots, err error)
-	BookTutorTime(db_options DB_options) (err error)
-	UnBookTutorTime(db_options DB_options) (err error)
-	GetBookedTimes(db_options DB_options) (bookedTimes Timeslots, err error)
+	GetAllCourses(db_options options) (courses []interface{}, err error)
+	GetAllTutors(db_options options) (tutors []string, err error)
+	SaveTutorAvailableTimes(db_options options) (err error)
+	DeleteTutorAvailableTimes(db_options options) (err error)
+	GetTutorAvailableTimes(db_options options) (availableTimes Timeslots, err error)
+	BookTutorTime(db_options options) (err error)
+	UnBookTutorTime(db_options options) (err error)
+	GetBookedTimes(db_options options) (bookedTimes Timeslots, err error)
 }
 
 func InitDatabase() {
@@ -39,4 +39,11 @@ func InitDatabase() {
 	sqlitedb := &SQLiteDB{}
 	sqlitedb.Init()
 	CurrentDatabaseConnector = sqlitedb
+    options := InitOptions()
+	options.SetCourse("CZ3002").SetSize(10).GetBookedTimes()
+	options.SetCourse("3002")
+	
+	// Service layer - service decides how much to query 
+	// Service function takes in options object 
+	options.SetSize(3).GetBookedTimes()
 }
