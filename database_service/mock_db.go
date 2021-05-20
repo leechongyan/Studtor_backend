@@ -2,11 +2,11 @@ package database_service
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	auth_model "github.com/leechongyan/Studtor_backend/authentication_service/models"
-	tut_model "github.com/leechongyan/Studtor_backend/tuition_service/models"
 
 	"github.com/leechongyan/Studtor_backend/constants"
 )
@@ -38,36 +38,44 @@ func (db Mockdb) GetUser(email string) (user auth_model.User, err error) {
 	return
 }
 
-func (db Mockdb) GetAllCourses(from string, size int) (courses []string, err error) {
-	c := [...]string{"CZ1001", "CZ2001", "CZ3001", "CZ4001"}
+func (db Mockdb) GetAllCourses(db_options DB_options) (courses []interface{}, err error) {
+	fmt.Print("START DEBUGGING")
+	course1 := make(map[string]interface{})
+	course1["code"] = "CZ1003"
+	course1["title"] = "Computational Thinking"
+	course1["students"] = 10
+	course1["tutors"] = 15
+	fmt.Print(course1)
+	course2 := make(map[string]interface{})
+	course2["code"] = "CZ3003"
+	course2["title"] = "Object Thinking"
+	course2["students"] = 4
+	course2["tutors"] = 20
+	fmt.Print("START DEBUGGING2")
+	c := make([]interface{}, 2)
+	fmt.Print("START DEBUGGING3")
+	c[0] = course1
+	c[1] = course2
 	// convert from to int
-	i, _ := strconv.Atoi(from)
-	return c[i : i+size], nil
+	return c, nil
 }
 
-func (db Mockdb) GetAllTutors(from string, size int) (tutors []string, err error) {
+func (db Mockdb) GetAllTutors(db_options DB_options) (tutors []string, err error) {
 	c := [...]string{"Chin", "Kangyu", "Jordan", "Chongyan"}
 	// convert from to int
-	i, _ := strconv.Atoi(from)
-	return c[i : i+size], nil
+	i, _ := strconv.Atoi(*db_options.From_id)
+	return c[i : i+*db_options.Size], nil
 }
 
-func (db Mockdb) GetAllTutorsForACourse(courseID string, from string, size int) (tutors []string, err error) {
-	c := [...]string{"Chin", "Kangyu", "Jordan", "Chongyan"}
-	// convert from to int
-	i, _ := strconv.Atoi(from)
-	return c[i : i+size], nil
-}
-
-func (db Mockdb) SaveTutorAvailableTimes(slot tut_model.TimeFrame_query) (err error) {
+func (db Mockdb) SaveTutorAvailableTimes(db_options DB_options) (err error) {
 	return
 }
 
-func (db Mockdb) DeleteTutorAvailableTimes(slot tut_model.TimeFrame_query) (err error) {
+func (db Mockdb) DeleteTutorAvailableTimes(db_options DB_options) (err error) {
 	return
 }
 
-func (db Mockdb) GetTutorBookedTimes(slot tut_model.TimeFrame_query) (bookedTimes Timeslots, err error) {
+func (db Mockdb) GetBookedTimes(db_options DB_options) (bookedTimes Timeslots, err error) {
 	// should have course code for the booked time slots as well
 	slots := make(map[string][]time.Time)
 	slots["CZ1003"] = []time.Time{time.Now(), time.Now()}
@@ -80,7 +88,7 @@ func (db Mockdb) GetTutorBookedTimes(slot tut_model.TimeFrame_query) (bookedTime
 	return
 }
 
-func (db Mockdb) GetTutorAvailableTimes(slot tut_model.TimeFrame_query) (availableTimes Timeslots, err error) {
+func (db Mockdb) GetTutorAvailableTimes(db_options DB_options) (availableTimes Timeslots, err error) {
 	// extract from
 	// query database from and to
 	// from := slot.From
@@ -100,23 +108,10 @@ func (db Mockdb) GetTutorAvailableTimes(slot tut_model.TimeFrame_query) (availab
 	return
 }
 
-func (db Mockdb) BookTutorTime(student_email string, slot tut_model.TimeFrame_query) (err error) {
+func (db Mockdb) BookTutorTime(db_options DB_options) (err error) {
 	return nil
 }
 
-func (db Mockdb) UnBookTutorTime(student_email string, slot tut_model.TimeFrame_query) (err error) {
+func (db Mockdb) UnBookTutorTime(db_options DB_options) (err error) {
 	return nil
-}
-
-func (db Mockdb) GetStudentBookedTimes(slot tut_model.TimeFrame_query) (bookedTimes Timeslots, err error) {
-	// should have course code for the booked time slots as well
-	slots := make(map[string][]time.Time)
-	slots["CZ1003"] = []time.Time{time.Now(), time.Now()}
-	slots["CZ1004"] = []time.Time{time.Now(), time.Now()}
-	bookedTimes = make(Timeslots)
-	bookedTimes["first_name"] = "Jeff"
-	bookedTimes["last_name"] = "Lee"
-	bookedTimes["email"] = "clee051@e.ntu.edu.sg"
-	bookedTimes["time_slots"] = slots
-	return
 }

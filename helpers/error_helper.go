@@ -171,3 +171,10 @@ func RaiseLoginExpired() *RequestError {
 		Err:        errors.New(constants.LOGIN_EXPIRED),
 	}
 }
+
+func RaiseCannotParseRequest() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusBadRequest,
+		Err:        errors.New(constants.CANNOT_PARSE_REQUEST),
+	}
+}

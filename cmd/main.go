@@ -25,7 +25,7 @@ func main() {
 	v1 := router.Group("/v1")
 
 	// does not require token
-	authorized := v1.Group("/")
+	authorized := v1.Group("/auth")
 	authorized.POST("/signup", authhandler.SignUp())
 	authorized.POST("/verify", authhandler.Verify())
 	authorized.POST("/login", authhandler.Login())
@@ -33,27 +33,25 @@ func main() {
 	authorized.POST("/logout", authhandler.Logout())
 
 	// require token
-	home := v1.Group("/home")
+	home := v1.Group("/")
 	home.Use(middleware.Authentication())
 
 	// ping to validate authorized status
 	home.GET("/", authhandler.GetMain())
 
 	// for general usage
-	home.GET("/getallcourses", tuthandler.GetAllCourses())
+	home.GET("/courses", tuthandler.GetAllCourses())
 
 	// for tutor usage
-	home.POST("/putavailabletimetutor", tuthandler.PutAvailableTimeTutor())
-	home.POST("/deleteavailabletimetutor", tuthandler.DeleteAvailableTimeTutor())
-	home.POST("/getallbookedtimetutor", tuthandler.GetAllBookedTimeTutor())
+	home.POST("/putavailabletime", tuthandler.PutAvailableTimeTutor())
+	home.POST("/deleteavailabletime", tuthandler.DeleteAvailableTimeTutor())
 
 	// for student usage
-	home.GET("/getalltutors", tuthandler.GetAllTutors())
-	home.GET("/getalltutorsforacourse", tuthandler.GetAllTutorsForACourse())
-	home.POST("/getavailabletimetutor", tuthandler.GetAvailableTimeTutor())
-	home.POST("/booktimetutor", tuthandler.BookTimeTutor())
-	home.POST("/unbooktimetutor", tuthandler.UnbookTimeTutor())
-	home.POST("/getallbookedtimestudent", tuthandler.GetAllBookedTimeStudent())
+	home.GET("/tutors/*course", tuthandler.GetAllTutors())
+	home.GET("/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
+	home.POST("/book", tuthandler.BookTimeTutor())
+	home.POST("/unbook", tuthandler.UnbookTimeTutor())
+	home.GET("/bookedtime/:user", tuthandler.GetAllBookedTime())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))
