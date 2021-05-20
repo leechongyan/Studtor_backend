@@ -26,8 +26,18 @@ Expected Returns:
 
 ```
 [
-    "CZ1001",
-    "CZ2001"
+    {
+        "code": "CZ1003",
+        "students": 10,
+        "title": "Computational Thinking",
+        "tutors": 15
+    },
+    {
+        "code": "CZ3003",
+        "students": 4,
+        "title": "Object Thinking",
+        "tutors": 20
+    }
 ]
 ```
 
@@ -79,18 +89,9 @@ Expected Returns:
 
 ```
 [
-    {
-        "code": "CZ1003",
-        "students": 10,
-        "title": "Computational Thinking",
-        "tutors": 15
-    },
-    {
-        "code": "CZ3003",
-        "students": 4,
-        "title": "Object Thinking",
-        "tutors": 20
-    }
+  "Jordan",
+  "Chin",
+  "Kangyu"
 ]
 ```
 
