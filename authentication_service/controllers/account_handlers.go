@@ -22,8 +22,7 @@ func CheckEmailDomain(email string, domain string) bool {
 	return strings.Contains(dom, domain)
 }
 
-func SignUp() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func signUp(c *gin.Context) {
 		var user models.User
 
 		err := helpers.ExtractPostRequestBody(c, &user)
@@ -70,10 +69,9 @@ func SignUp() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, "Success")
 	}
-}
 
-func Verify() gin.HandlerFunc {
-	return func(c *gin.Context) {
+
+func verify(c *gin.Context) {
 		var verification models.Verification
 
 		err := helpers.ExtractPostRequestBody(c, &verification)
@@ -107,11 +105,10 @@ func Verify() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, "Success")
-	}
+	
 }
 
-func Login() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func login(c *gin.Context) {
 		var user models.Login
 		var foundUser models.User
 
@@ -159,10 +156,9 @@ func Login() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, token)
 	}
-}
 
-func RefreshToken() gin.HandlerFunc {
-	return func(c *gin.Context) {
+
+func refreshToken(c *gin.Context) {
 		email_byte, e := ioutil.ReadAll(c.Request.Body)
 		email := string(email_byte)
 		if e != nil {
@@ -206,11 +202,9 @@ func RefreshToken() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, token)
-	}
 }
 
-func Logout() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func logout(c *gin.Context) {
 		email_byte, e := ioutil.ReadAll(c.Request.Body)
 		email := string(email_byte)
 		if e != nil {
@@ -240,16 +234,12 @@ func Logout() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, "Success")
 	}
-}
 
-func GetMain() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func getMain(c *gin.Context) {
 		c.JSON(http.StatusOK, "Success")
 	}
-}
 
-func GetUser() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func getUser(c *gin.Context) {
 		profile := make(map[string]interface{})
 		user := c.Param("user")
 		// get current user
@@ -273,29 +263,16 @@ func GetUser() gin.HandlerFunc {
 		profile["last_name"] = foundUser.Last_name
 		c.JSON(http.StatusOK, profile)
 	}
+
+func InitAuthRouter() []gin.HandlerFunc {
+	router := gin.New()
+	authorized := router.Group("/")
+
+
+	authorized.POST("/signup", signUp)
+	authorized.POST("/verify", verify)
+	authorized.POST("/login", login)
+	authorized.POST("/refresh", refreshToken)
+	authorized.POST("/logout", logout)
+	return authorized
 }
-
-//GetUser is the api used to get a single user
-// func GetUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		userId := c.Param("user_id")
-
-// 		if err := helper.MatchUserTypeToUid(c, userId); err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-
-// 		var user models.User
-
-// 		err := userCollection.FindOne(ctx, bson.M{"user_id": userId}).Decode(&user)
-// 		defer cancel()
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK, user)
-
-// 	}
-// }

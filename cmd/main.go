@@ -23,14 +23,14 @@ func main() {
 
 	// current version is v1
 	v1 := router.Group("/v1")
-
+	
 	// does not require token
-	authorized := v1.Group("/auth")
-	authorized.POST("/signup", authhandler.SignUp())
-	authorized.POST("/verify", authhandler.Verify())
-	authorized.POST("/login", authhandler.Login())
-	authorized.POST("/refresh", authhandler.RefreshToken())
-	authorized.POST("/logout", authhandler.Logout())
+	authorized := v1.Group("/auth", authhandler.InitAuthRouter()...)
+	// authorized.POST("/signup", authhandler.SignUp())
+	// authorized.POST("/verify", authhandler.Verify())
+	// authorized.POST("/login", authhandler.Login())
+	// authorized.POST("/refresh", authhandler.RefreshToken())
+	// authorized.POST("/logout", authhandler.Logout())
 
 	// require token
 	home := v1.Group("/")
