@@ -21,7 +21,7 @@ type Get_time_connector interface {
 	PutUserEmail(email string) *user_options
 	PutUser(user auth_model.User) *user_options
 	SetOperation(op database_operation.Operation) *user_options
-	Exec() (user *auth_model.User, err error)
+	Exec() (user auth_model.User, err error)
 }
 
 func Init() *user_options {
@@ -49,11 +49,11 @@ func (c *user_options) PutUser(user auth_model.User) *user_options {
 	return c
 }
 
-func (c *user_options) Exec() (user *auth_model.User, err error) {
+func (c *user_options) Exec() (user auth_model.User, err error) {
 	// switch statement to see which one to execute
 	// check for error first
 	if c.err != nil {
-		return nil, c.err
+		return auth_model.User{}, c.err
 	}
 
 	switch c.op {
@@ -61,37 +61,43 @@ func (c *user_options) Exec() (user *auth_model.User, err error) {
 		{
 			if c.user_id != nil {
 				user, err := database_service.CurrentDatabaseConnector.GetUserById(*c.user_id)
-				return &user, err
+				if err != nil {
+					return auth_model.User{}, err
+				}
+				return user, err
 			}
 			if c.email != nil {
 				user, err := database_service.CurrentDatabaseConnector.GetUserByEmail(*c.email)
-				return &user, err
+				if err != nil {
+					return auth_model.User{}, err
+				}
+				return user, err
 			}
-			return nil, errors.New("User id or User email has to be provided")
+			return auth_model.User{}, errors.New("User id or User email has to be provided")
 		}
 	case database_operation.Delete:
 		{
 			if c.user_id != nil {
 				err := database_service.CurrentDatabaseConnector.DeleteUserById(*c.user_id)
-				return nil, err
+				return user, err
 			}
 			if c.email != nil {
 				err := database_service.CurrentDatabaseConnector.DeleteUserByEmail(*c.email)
-				return nil, err
+				return user, err
 			}
-			return nil, errors.New("User id or User email has to be provided")
+			return user, errors.New("User id or User email has to be provided")
 		}
 	case database_operation.Add:
 		{
 			if c.user == nil {
-				return nil, errors.New("User object has to be provided")
+				return user, errors.New("User object has to be provided")
 			}
 			err := database_service.CurrentDatabaseConnector.SaveUser(*c.user)
-			return nil, err
+			return user, err
 		}
 	default:
 		{
-			return nil, errors.New("No operation specified")
+			return auth_model.User{}, errors.New("No operation specified")
 		}
 	}
 }

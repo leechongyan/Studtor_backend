@@ -86,8 +86,7 @@ func Verify() gin.HandlerFunc {
 		}
 
 		get_user_connector := user_connector.Init()
-		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*verification.Email).Exec()
-		user := *u
+		user, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*verification.Email).Exec()
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
@@ -125,8 +124,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 		get_user_connector := user_connector.Init()
-		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*user.Email).Exec()
-		foundUser = *u
+		foundUser, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*user.Email).Exec()
 		// check whether user exists
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
@@ -177,8 +175,7 @@ func RefreshToken() gin.HandlerFunc {
 		}
 
 		get_user_connector := user_connector.Init()
-		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
-		foundUser := *u
+		foundUser, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
 
 		// check whether user exists
 		if e != nil {
@@ -228,8 +225,7 @@ func Logout() gin.HandlerFunc {
 		}
 
 		get_user_connector := user_connector.Init()
-		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
-		foundUser := *u
+		foundUser, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
 		// check whether user exists
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
@@ -273,8 +269,8 @@ func GetUser() gin.HandlerFunc {
 		user_id, _ := strconv.Atoi(user)
 		// get other user
 		get_user_connector := user_connector.Init()
-		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserId(user_id).Exec()
-		foundUser := *u
+		foundUser, e := get_user_connector.SetOperation(database_operation.Get).PutUserId(user_id).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -286,28 +282,3 @@ func GetUser() gin.HandlerFunc {
 		c.JSON(http.StatusOK, profile)
 	}
 }
-
-//GetUser is the api used to get a single user
-// func GetUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		userId := c.Param("user_id")
-
-// 		if err := helper.MatchUserTypeToUid(c, userId); err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-
-// 		var user models.User
-
-// 		err := userCollection.FindOne(ctx, bson.M{"user_id": userId}).Decode(&user)
-// 		defer cancel()
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK, user)
-
-// 	}
-// }

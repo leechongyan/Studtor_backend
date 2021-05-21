@@ -95,8 +95,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.Requ
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
 	get_user_connector := user_connector.Init()
-	u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(userEmail).Exec()
-	oldUser := *u
+	oldUser, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(userEmail).Exec()
 	if e != nil {
 		err = helpers.RaiseUserNotInDatabase()
 		return err
