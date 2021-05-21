@@ -6,7 +6,8 @@ import (
 	"strings"
 	"time"
 
-	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
+	user_connector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	database_operation "github.com/leechongyan/Studtor_backend/database_service/constants"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 
@@ -93,8 +94,9 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.Requ
 }
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
-	oldUser, e := database_service.CurrentDatabaseConnector.GetUser(userEmail)
-
+	get_user_connector := user_connector.Init()
+	u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(userEmail).Exec()
+	oldUser := *u
 	if e != nil {
 		err = helpers.RaiseUserNotInDatabase()
 		return err
@@ -113,7 +115,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 	oldUser.Updated_at = Updated_at
 
 	// updating database
-	e = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
+	_, e = get_user_connector.SetOperation(database_operation.Add).PutUser(oldUser).Exec()
 	if e != nil {
 		err = helpers.RaiseCannotSaveUserInDatabase()
 		return err

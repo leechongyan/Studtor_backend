@@ -16,7 +16,10 @@ type Timeslots map[string]interface{}
 type DatabaseConnector interface {
 	// expose all the possible database api
 	SaveUser(user auth_model.User) (err error)
-	GetUser(email string) (user auth_model.User, err error)
+	GetUserById(user_id int) (user auth_model.User, err error)
+	GetUserByEmail(email string) (user auth_model.User, err error)
+	DeleteUserById(user_id int) (err error)
+	DeleteUserByEmail(email string) (err error)
 
 	// for courses
 	GetCourses() (courses []models.Course, err error)

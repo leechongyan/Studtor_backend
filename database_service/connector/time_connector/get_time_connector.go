@@ -4,15 +4,9 @@ import (
 	"errors"
 	"time"
 
+	database_operation "github.com/leechongyan/Studtor_backend/database_service/constants"
 	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
-)
-
-type Operation int
-
-const (
-	Get Operation = iota + 1
-	Add
-	Delete
+	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
 
 type time_options struct {
@@ -24,7 +18,7 @@ type time_options struct {
 	to_time    time.Time
 	isBook     bool
 	err        error
-	op         Operation
+	op         database_operation.Operation
 }
 
 type Get_time_connector interface {
@@ -35,8 +29,8 @@ type Get_time_connector interface {
 	PutFromTime(from_time time.Time) *time_options
 	PutToTime(to_time time.Time) *time_options
 	SetIsBook(isBook bool) *time_options
-	SetOperation(op Operation) *time_options
-	Exec() (res interface{}, err error)
+	SetOperation(op database_operation.Operation) *time_options
+	Exec() (times []models.TimeSlot, err error)
 }
 
 func Init() *time_options {
@@ -44,7 +38,7 @@ func Init() *time_options {
 	return &r
 }
 
-func (c *time_options) SetOperation(op Operation) *time_options {
+func (c *time_options) SetOperation(op database_operation.Operation) *time_options {
 	c.op = op
 	return c
 }
@@ -84,12 +78,12 @@ func (c *time_options) SetIsBook(isBook bool) *time_options {
 	return c
 }
 
-func (c *time_options) Exec() (res interface{}, err error) {
+func (c *time_options) Exec() (times []models.TimeSlot, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
 	switch c.op {
-	case Get:
+	case database_operation.Get:
 		{
 			if c.isBook {
 				// for book time
@@ -122,61 +116,49 @@ func (c *time_options) Exec() (res interface{}, err error) {
 			}
 			return database_service.CurrentDatabaseConnector.GetTimeAvailableId(*c.user_id)
 		}
-	case Add:
+	case database_operation.Add:
 		{
 			if c.from_time.IsZero() || c.to_time.IsZero() {
-				return false, errors.New("Two times have to be provided")
+				return nil, errors.New("Two times have to be provided")
 			}
 			if c.isBook {
 				if c.student_id == nil || c.tutor_id == nil {
-					return false, errors.New("Both student id and tutor id have to be provided")
+					return nil, errors.New("Both student id and tutor id have to be provided")
 				}
 
 				if c.course_id == nil {
-					return false, errors.New("Course Id must be provided")
+					return nil, errors.New("Course Id must be provided")
 				}
 				err := database_service.CurrentDatabaseConnector.BookTutorTime(*c.tutor_id, *c.student_id, c.from_time, c.to_time)
-				if err != nil {
-					return false, err
-				}
-				return true, nil
+				return nil, err
 			}
 			if c.user_id == nil {
-				return false, errors.New("User id has to be provided")
+				return nil, errors.New("User id has to be provided")
 			}
 			err := database_service.CurrentDatabaseConnector.SaveTutorAvailableTimes(*c.user_id, c.from_time, c.to_time)
-			if err != nil {
-				return false, err
-			}
-			return true, nil
+			return nil, err
 		}
-	case Delete:
+	case database_operation.Delete:
 		{
 			if c.from_time.IsZero() || c.to_time.IsZero() {
-				return false, errors.New("Two times have to be provided")
+				return nil, errors.New("Two times have to be provided")
 			}
 			if c.isBook {
 				if c.student_id == nil || c.tutor_id == nil {
-					return false, errors.New("Both student id and tutor id have to be provided")
+					return nil, errors.New("Both student id and tutor id have to be provided")
 				}
 
 				if c.course_id == nil {
-					return false, errors.New("Course Id must be provided")
+					return nil, errors.New("Course Id must be provided")
 				}
 				err := database_service.CurrentDatabaseConnector.UnbookTutorTime(*c.tutor_id, *c.student_id, c.from_time, c.to_time)
-				if err != nil {
-					return false, err
-				}
-				return true, nil
+				return nil, err
 			}
 			if c.user_id == nil {
-				return false, errors.New("User id has to be provided")
+				return nil, errors.New("User id has to be provided")
 			}
 			err := database_service.CurrentDatabaseConnector.DeleteTutorAvailableTimes(*c.user_id, c.from_time, c.to_time)
-			if err != nil {
-				return false, err
-			}
-			return true, nil
+			return nil, err
 		}
 	default:
 		{

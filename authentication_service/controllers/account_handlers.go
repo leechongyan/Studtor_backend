@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"strconv"
 	"strings"
 
 	"io/ioutil"
@@ -10,7 +11,8 @@ import (
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
-	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
+	user_connector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	database_operation "github.com/leechongyan/Studtor_backend/database_service/constants"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 )
@@ -40,7 +42,8 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// check whether this email exist
-		_, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		get_user_connector := user_connector.Init()
+		_, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*user.Email).Exec()
 		if e == nil {
 			err := helpers.RaiseExistentAccount()
 			c.JSON(err.StatusCode, err.Error())
@@ -54,7 +57,7 @@ func SignUp() gin.HandlerFunc {
 		user.V_key = &new_V_key
 
 		// save user in db
-		e = database_service.CurrentDatabaseConnector.SaveUser(user)
+		_, e = get_user_connector.SetOperation(database_operation.Add).PutUser(user).Exec()
 		if e != nil {
 			err := helpers.RaiseCannotSaveUserInDatabase()
 			c.JSON(err.StatusCode, err.Error())
@@ -82,8 +85,9 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		user, e := database_service.CurrentDatabaseConnector.GetUser(*verification.Email)
-
+		get_user_connector := user_connector.Init()
+		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*verification.Email).Exec()
+		user := *u
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
@@ -100,7 +104,7 @@ func Verify() gin.HandlerFunc {
 
 		// if verification all pass and correct then create access token
 		user.Verified = true
-		e = database_service.CurrentDatabaseConnector.SaveUser(user)
+		_, e = get_user_connector.SetOperation(database_operation.Add).PutUser(user).Exec()
 		if e != nil {
 			c.JSON(http.StatusInternalServerError, e.Error())
 			return
@@ -120,8 +124,9 @@ func Login() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-
-		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(*user.Email)
+		get_user_connector := user_connector.Init()
+		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(*user.Email).Exec()
+		foundUser = *u
 		// check whether user exists
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
@@ -171,7 +176,10 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
+		get_user_connector := user_connector.Init()
+		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
+		foundUser := *u
+
 		// check whether user exists
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
@@ -219,7 +227,9 @@ func Logout() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(email)
+		get_user_connector := user_connector.Init()
+		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserEmail(email).Exec()
+		foundUser := *u
 		// check whether user exists
 		if e != nil {
 			err := helpers.RaiseWrongLoginCredentials()
@@ -230,7 +240,7 @@ func Logout() gin.HandlerFunc {
 		// remove refresh token and force user to login again
 		foundUser.Refresh_token = nil
 
-		e = database_service.CurrentDatabaseConnector.SaveUser(foundUser)
+		_, e = get_user_connector.SetOperation(database_operation.Add).PutUser(foundUser).Exec()
 
 		if e != nil {
 			err := helpers.RaiseCannotSaveUserInDatabase()
@@ -260,9 +270,11 @@ func GetUser() gin.HandlerFunc {
 			c.JSON(http.StatusOK, profile)
 			return
 		}
-
+		user_id, _ := strconv.Atoi(user)
 		// get other user
-		foundUser, e := database_service.CurrentDatabaseConnector.GetUser(user)
+		get_user_connector := user_connector.Init()
+		u, e := get_user_connector.SetOperation(database_operation.Get).PutUserId(user_id).Exec()
+		foundUser := *u
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
