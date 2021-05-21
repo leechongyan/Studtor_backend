@@ -10,7 +10,7 @@ import (
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	"github.com/leechongyan/Studtor_backend/authentication_service/models"
-	"github.com/leechongyan/Studtor_backend/database_service"
+	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 )

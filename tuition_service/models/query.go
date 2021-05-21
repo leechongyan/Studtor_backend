@@ -8,8 +8,8 @@ import (
 // default start from start
 // default return all
 type ObjectPaginated_query struct {
-	From_id *string `form:"from_id"`
-	Size    *int    `form:"size"`
+	From_id *int `form:"from_id"`
+	Size    *int `form:"size"`
 }
 
 // default start from start
@@ -29,5 +29,5 @@ type BookSlot struct {
 	Course *string   `json:"course" validate:"required"`
 	From   time.Time `json:"from" validate:"required"`
 	To     time.Time `json:"to" validate:"required"`
-	Tutor  *string   `json:"tutor" validate:"required"`
+	Tutor  *int      `json:"tutor" validate:"required"`
 }

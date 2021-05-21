@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/leechongyan/Studtor_backend/database_service"
+	course_connector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
+	time_connector "github.com/leechongyan/Studtor_backend/database_service/connector/time_connector"
+	tutor_connector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
@@ -19,12 +22,15 @@ func GetAllCourses() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+		get_course_connector := course_connector.Init()
 
-		var db_options database_service.DB_options
-		db_options.From_id = query.From_id
-		db_options.Size = query.Size
-
-		courses, e := database_service.CurrentDatabaseConnector.GetAllCourses(db_options)
+		if query.Size != nil {
+			get_course_connector.PutSize(*query.Size)
+		}
+		if query.From_id != nil {
+			get_course_connector.PutFromID(*query.From_id)
+		}
+		courses, e := get_course_connector.Exec()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -45,24 +51,31 @@ func GetAllTutors() gin.HandlerFunc {
 			return
 		}
 
-		var db_options database_service.DB_options
-		db_options.From_id = query.From_id
-		db_options.Size = query.Size
+		get_tutor_connector := tutor_connector.Init()
+
+		if query.From_id != nil {
+			get_tutor_connector.PutFromID(*query.From_id)
+		}
+
+		if query.Size != nil {
+			get_tutor_connector.PutSize(*query.Size)
+		}
 
 		// whether you are getting the tutor for a certain course
 		course := c.Param("course")
 		if course != "" {
-			db_options.Course = &course
+			course_id, _ := strconv.Atoi(course)
+			get_tutor_connector.PutCourse(course_id)
 		}
 
-		courses, e := database_service.CurrentDatabaseConnector.GetAllTutors(db_options)
+		tutors, e := get_tutor_connector.Exec()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, courses)
+		c.JSON(http.StatusOK, tutors)
 	}
 }
 
@@ -76,13 +89,17 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 		tutor_id := c.GetString("id")
+		get_time_connector := time_connector.Init()
 
-		var db_options database_service.DB_options
-		db_options.Tutor_id = &tutor_id
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
+		get_time_connector.SetIsBook(false)
+		get_time_connector.SetOperation(time_connector.Add)
 
-		e := database_service.CurrentDatabaseConnector.SaveTutorAvailableTimes(db_options)
+		if tutor_id != "" {
+			tut_id, _ := strconv.Atoi(tutor_id)
+			get_time_connector.PutUserId(tut_id)
+		}
+		_, e := get_time_connector.PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -103,13 +120,17 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 		tutor_id := c.GetString("id")
+		get_time_connector := time_connector.Init()
 
-		var db_options database_service.DB_options
-		db_options.Tutor_id = &tutor_id
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
+		get_time_connector.SetIsBook(false)
+		get_time_connector.SetOperation(time_connector.Delete)
 
-		e := database_service.CurrentDatabaseConnector.DeleteTutorAvailableTimes(db_options)
+		if tutor_id != "" {
+			tut_id, _ := strconv.Atoi(tutor_id)
+			get_time_connector.PutUserId(tut_id)
+		}
+		_, e := get_time_connector.PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -133,19 +154,25 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 
 		tutor_id := c.Param("tutor")
 
-		var db_options database_service.DB_options
-		db_options.Tutor_id = &tutor_id
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
+		get_time_connector := time_connector.Init()
 
-		availability, e := database_service.CurrentDatabaseConnector.GetTutorAvailableTimes(db_options)
+		get_time_connector.SetIsBook(false)
+		get_time_connector.SetOperation(time_connector.Get)
+
+		if tutor_id != "" {
+			tut_id, _ := strconv.Atoi(tutor_id)
+			get_time_connector.PutUserId(tut_id)
+		}
+
+		times, e := get_time_connector.PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		c.JSON(http.StatusOK, availability)
+		c.JSON(http.StatusOK, times)
 	}
 }
 
@@ -158,16 +185,15 @@ func BookTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		student_id := c.GetString("email")
 
-		var db_options database_service.DB_options
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
-		db_options.Course = slot_query.Course
-		db_options.Student_id = &student_id
-		db_options.Tutor_id = slot_query.Tutor
+		get_time_connector := time_connector.Init()
 
-		e := database_service.CurrentDatabaseConnector.BookTutorTime(db_options)
+		get_time_connector.SetIsBook(true)
+		get_time_connector.SetOperation(time_connector.Add)
+		id, _ := strconv.Atoi(c.GetString("id"))
+
+		_, e := get_time_connector.PutStudentId(id).PutTutorId(*slot_query.Tutor).PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -187,16 +213,15 @@ func UnbookTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		student_id := c.GetString("email")
 
-		var db_options database_service.DB_options
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
-		db_options.Course = slot_query.Course
-		db_options.Student_id = &student_id
-		db_options.Tutor_id = slot_query.Tutor
+		get_time_connector := time_connector.Init()
 
-		e := database_service.CurrentDatabaseConnector.UnBookTutorTime(db_options)
+		get_time_connector.SetIsBook(true)
+		get_time_connector.SetOperation(time_connector.Delete)
+		id, _ := strconv.Atoi(c.GetString("id"))
+
+		_, e := get_time_connector.PutStudentId(id).PutTutorId(*slot_query.Tutor).PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -217,20 +242,26 @@ func GetAllBookedTime() gin.HandlerFunc {
 			return
 		}
 
-		user := c.Param("user")
+		user_id := c.Param("user")
 
-		var db_options database_service.DB_options
-		db_options.User_id = &user
-		db_options.From_time = slot_query.From
-		db_options.To_time = slot_query.To
+		get_time_connector := time_connector.Init()
 
-		booked, e := database_service.CurrentDatabaseConnector.GetBookedTimes(db_options)
+		get_time_connector.SetIsBook(true)
+		get_time_connector.SetOperation(time_connector.Get)
+
+		if user_id != "" {
+			uid, _ := strconv.Atoi(user_id)
+			get_time_connector.PutUserId(uid)
+		}
+
+		times, e := get_time_connector.PutFromTime(slot_query.From).PutToTime(slot_query.To).Exec()
+
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		c.JSON(http.StatusOK, booked)
+		c.JSON(http.StatusOK, times)
 	}
 }

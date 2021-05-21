@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	authhandler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
 	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
-	"github.com/leechongyan/Studtor_backend/database_service"
+	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
 	"github.com/spf13/viper"

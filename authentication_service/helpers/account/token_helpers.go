@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leechongyan/Studtor_backend/database_service"
+	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/spf13/viper"
 

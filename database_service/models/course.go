@@ -10,4 +10,5 @@ type Course struct {
 	Course_ID   string
 	Course_code string
 	Course_name string
+	Tutor_size  uint
 }

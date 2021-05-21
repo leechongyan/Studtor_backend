@@ -42,7 +42,7 @@ go run main.go
 
 ##### (GET) localhost:3000/v1
 
-##### (GET) localhost:3000/v1/:user
+##### (GET) localhost:3000/v1/user/:user
 
 #### Tuition Service (Refer to Readme in Tuition Service for more details)
 
