@@ -6,18 +6,21 @@ import (
 	"gorm.io/gorm"
 )
 
+// Follow conventions here: https://gorm.io/docs/models.html#Conventions
+
+// User is the model for user ORM
 type User struct {
 	gorm.Model
-	ID            uint
-	First_name    string
-	Last_name     string
+	ID            uint   `gorm:"primaryKey"`
+	Email         string `gorm:"primaryKey"`
+	FirstName     string
+	LastName      string
 	Password      string
-	Email         string
 	Token         sql.NullString
-	User_type     string
-	Refresh_token sql.NullString
-	V_key         sql.NullString
+	UserType      string
+	RefreshToken  sql.NullString
+	VKey          sql.NullString
 	Verified      int
-	Created_at    sql.NullTime
-	Updated_at    sql.NullTime
+	UserCreatedAt sql.NullTime
+	UserUpdatedAt sql.NullTime
 }
