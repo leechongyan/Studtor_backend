@@ -22,6 +22,15 @@ type DatabaseConnector interface {
 	DeleteUserByEmail(email string) (err error)
 
 	// for courses
+	// GetACourse()
+	// TODO: jordan reference
+	// database.course + size
+	// tuition.course(size)
+	// return
+	// GetACourse() (course, size, err)
+
+	// GetCourses() (courses []models.Course, sizes []int, size, err error)
+
 	GetCourses() (courses []models.Course, err error)
 	GetCoursesIdSize(id int, size int) (courses []models.Course, err error)
 	GetCoursesId(id int) (courses []models.Course, err error)
@@ -37,11 +46,13 @@ type DatabaseConnector interface {
 	GetTutorsId(tut_id int) (tutors []models.Tutor, err error)
 	GetTutorsSize(size int) (tutors []models.Tutor, err error)
 
+	// time u want a timeslot
 	GetTimeBookId(user_id int) (times []models.TimeSlot, err error)
 	GetTimeBookIdFrom(user_id int, from_time time.Time) (times []models.TimeSlot, err error)
 	GetTimeBookIdTo(user_id int, to_time time.Time) (times []models.TimeSlot, err error)
 	GetTimeBookIdFromTo(user_id int, from_time time.Time, to_time time.Time) (times []models.TimeSlot, err error)
 
+	// this is for tutor
 	GetTimeAvailableId(user_id int) (times []models.TimeSlot, err error)
 	GetTimeAvailableIdFrom(user_id int, from_time time.Time) (times []models.TimeSlot, err error)
 	GetTimeAvailableIdTo(user_id int, to_time time.Time) (times []models.TimeSlot, err error)

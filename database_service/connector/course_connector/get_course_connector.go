@@ -14,9 +14,11 @@ type course_options struct {
 }
 
 type Get_course_connector interface {
-	PutSize(size int) *course_options
-	PutFromID(from_id int) *course_options
-	Exec() (courses []models.Course, err error)
+	SetSize(size int) *course_options
+	SetFromID(from_id int) *course_options
+	Add() (err error)
+	Delete() (err error)
+	Get() (courses []models.Course, err error)
 }
 
 func Init() *course_options {
@@ -24,7 +26,7 @@ func Init() *course_options {
 	return &r
 }
 
-func (c *course_options) PutSize(size int) *course_options {
+func (c *course_options) SetSize(size int) *course_options {
 	// check for size
 	if size <= 0 {
 		c.err = errors.New("Size cannot be 0 or negative")
@@ -33,13 +35,28 @@ func (c *course_options) PutSize(size int) *course_options {
 	return c
 }
 
-func (c *course_options) PutFromID(from_id int) *course_options {
+func (c *course_options) SetFromID(from_id int) *course_options {
 	c.from_id = &from_id
 	return c
 }
 
-func (c *course_options) Exec() (courses []models.Course, err error) {
-	// switch statement to see which one to execute
+func (c *course_options) Add() (err error) {
+	if c.err != nil {
+		return c.err
+	}
+	// add course to database
+	return nil
+}
+
+func (c *course_options) Delete() (err error) {
+	if c.err != nil {
+		return c.err
+	}
+	// delete course to database
+	return nil
+}
+
+func (c *course_options) Get() (courses []models.Course, err error) {
 	// check for error first
 	if c.err != nil {
 		return nil, c.err

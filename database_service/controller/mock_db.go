@@ -70,7 +70,6 @@ func createCourse() (course data_model.Course) {
 	course1.Course_ID = "123"
 	course1.Course_code = "CZ1003"
 	course1.Course_name = "Computational Thinking"
-	course1.Tutor_size = 10
 
 	return course1
 }
