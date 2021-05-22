@@ -24,4 +24,6 @@ const (
 	DATABASE_ERROR               string = "Database error"
 	LOGIN_EXPIRED                string = "Please Login again"
 	CANNOT_PARSE_REQUEST         string = "Request is in wrong format"
+	CANNOT_PARSE_FILE            string = "Cannot parse file"
+	STORAGE_ERROR                string = "Storage error"
 )

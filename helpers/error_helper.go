@@ -178,3 +178,17 @@ func RaiseCannotParseRequest() *RequestError {
 		Err:        errors.New(constants.CANNOT_PARSE_REQUEST),
 	}
 }
+
+func RaiseCannotParseFile() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusBadRequest,
+		Err:        errors.New(constants.CANNOT_PARSE_FILE),
+	}
+}
+
+func RaiseStorageFailure() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.STORAGE_ERROR),
+	}
+}

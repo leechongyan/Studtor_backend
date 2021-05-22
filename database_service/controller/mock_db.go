@@ -13,14 +13,16 @@ import (
 // mock db
 // this mock db has to implement all the methods which will be used by DatabaseConnector
 
-type Mockdb struct {
+type mockdb struct {
 	UserCollection
 }
 
 type UserCollection map[string]auth_model.User
 
-func (db *Mockdb) Init() {
+func InitMock() (db mockdb) {
+	db = mockdb{}
 	db.UserCollection = make(map[string]auth_model.User)
+	return db
 }
 
 // func (db Mockdb) SaveUser(user auth_model.User) (err error) {
@@ -40,16 +42,16 @@ func (db *Mockdb) Init() {
 // 	return
 // }
 
-func (db Mockdb) SaveUser(user auth_model.User) (err error) {
+func (db mockdb) SaveUser(user auth_model.User) (err error) {
 	id := 10
 	user.Id = &id
 	db.UserCollection[*user.Email] = user
 	return
 }
-func (db Mockdb) GetUserById(user_id int) (user auth_model.User, err error) {
+func (db mockdb) GetUserById(user_id int) (user auth_model.User, err error) {
 	return auth_model.User{}, nil
 }
-func (db Mockdb) GetUserByEmail(email string) (user auth_model.User, err error) {
+func (db mockdb) GetUserByEmail(email string) (user auth_model.User, err error) {
 	user, ok := db.UserCollection[email]
 	if !ok {
 		err = errors.New(constants.USER_NOT_IN_DATABASE)
@@ -57,10 +59,10 @@ func (db Mockdb) GetUserByEmail(email string) (user auth_model.User, err error) 
 	}
 	return
 }
-func (db Mockdb) DeleteUserById(user_id int) (err error) {
+func (db mockdb) DeleteUserById(user_id int) (err error) {
 	return nil
 }
-func (db Mockdb) DeleteUserByEmail(email string) (err error) {
+func (db mockdb) DeleteUserByEmail(email string) (err error) {
 	return nil
 }
 
@@ -91,7 +93,7 @@ func createTime() (course data_model.TimeSlot) {
 }
 
 // for courses
-func (db Mockdb) GetCourses() (courses []data_model.Course, err error) {
+func (db mockdb) GetCourses() (courses []data_model.Course, err error) {
 	course1 := createCourse()
 	course2 := createCourse()
 	c := make([]data_model.Course, 2)
@@ -99,7 +101,7 @@ func (db Mockdb) GetCourses() (courses []data_model.Course, err error) {
 	c[1] = course2
 	return c, nil
 }
-func (db Mockdb) GetCoursesIdSize(id int, size int) (courses []data_model.Course, err error) {
+func (db mockdb) GetCoursesIdSize(id int, size int) (courses []data_model.Course, err error) {
 	course1 := createCourse()
 	course2 := createCourse()
 	c := make([]data_model.Course, 2)
@@ -107,7 +109,7 @@ func (db Mockdb) GetCoursesIdSize(id int, size int) (courses []data_model.Course
 	c[1] = course2
 	return c, nil
 }
-func (db Mockdb) GetCoursesId(id int) (courses []data_model.Course, err error) {
+func (db mockdb) GetCoursesId(id int) (courses []data_model.Course, err error) {
 	course1 := createCourse()
 	course2 := createCourse()
 	c := make([]data_model.Course, 2)
@@ -115,7 +117,7 @@ func (db Mockdb) GetCoursesId(id int) (courses []data_model.Course, err error) {
 	c[1] = course2
 	return c, nil
 }
-func (db Mockdb) GetCoursesSize(size int) (courses []data_model.Course, err error) {
+func (db mockdb) GetCoursesSize(size int) (courses []data_model.Course, err error) {
 	course1 := createCourse()
 	course2 := createCourse()
 	c := make([]data_model.Course, 2)
@@ -124,7 +126,7 @@ func (db Mockdb) GetCoursesSize(size int) (courses []data_model.Course, err erro
 	return c, nil
 }
 
-func (db Mockdb) GetTutorsCourse(course_id int) (tutors []data_model.Tutor, err error) {
+func (db mockdb) GetTutorsCourse(course_id int) (tutors []data_model.Tutor, err error) {
 	tut1 := createTutor()
 	tut2 := createTutor()
 	c := make([]data_model.Tutor, 2)
@@ -132,7 +134,7 @@ func (db Mockdb) GetTutorsCourse(course_id int) (tutors []data_model.Tutor, err 
 	c[1] = tut2
 	return c, nil
 }
-func (db Mockdb) GetTutorsCourseIdSize(course_id int, tut_id int, size int) (tutors []data_model.Tutor, err error) {
+func (db mockdb) GetTutorsCourseIdSize(course_id int, tut_id int, size int) (tutors []data_model.Tutor, err error) {
 	tut1 := createTutor()
 	tut2 := createTutor()
 	c := make([]data_model.Tutor, 2)
@@ -140,7 +142,7 @@ func (db Mockdb) GetTutorsCourseIdSize(course_id int, tut_id int, size int) (tut
 	c[1] = tut2
 	return c, nil
 }
-func (db Mockdb) GetTutorsCourseId(course_id int, tut_id int) (tutors []data_model.Tutor, err error) {
+func (db mockdb) GetTutorsCourseId(course_id int, tut_id int) (tutors []data_model.Tutor, err error) {
 	tut1 := createTutor()
 	tut2 := createTutor()
 	c := make([]data_model.Tutor, 2)
@@ -148,40 +150,7 @@ func (db Mockdb) GetTutorsCourseId(course_id int, tut_id int) (tutors []data_mod
 	c[1] = tut2
 	return c, nil
 }
-func (db Mockdb) GetTutorsCourseSize(course_id int, size int) (tutors []data_model.Tutor, err error) {
-	tut1 := createTutor()
-	tut2 := createTutor()
-	c := make([]data_model.Tutor, 2)
-	c[0] = tut1
-	c[1] = tut2
-	return c, nil
-}
-
-func (db Mockdb) GetTutors() (tutors []models.Tutor, err error) {
-	tut1 := createTutor()
-	tut2 := createTutor()
-	c := make([]data_model.Tutor, 2)
-	c[0] = tut1
-	c[1] = tut2
-	return c, nil
-}
-func (db Mockdb) GetTutorsIdSize(tut_id int, size int) (tutors []data_model.Tutor, err error) {
-	tut1 := createTutor()
-	tut2 := createTutor()
-	c := make([]data_model.Tutor, 2)
-	c[0] = tut1
-	c[1] = tut2
-	return c, nil
-}
-func (db Mockdb) GetTutorsId(tut_id int) (tutors []data_model.Tutor, err error) {
-	tut1 := createTutor()
-	tut2 := createTutor()
-	c := make([]data_model.Tutor, 2)
-	c[0] = tut1
-	c[1] = tut2
-	return c, nil
-}
-func (db Mockdb) GetTutorsSize(size int) (tutors []data_model.Tutor, err error) {
+func (db mockdb) GetTutorsCourseSize(course_id int, size int) (tutors []data_model.Tutor, err error) {
 	tut1 := createTutor()
 	tut2 := createTutor()
 	c := make([]data_model.Tutor, 2)
@@ -190,7 +159,40 @@ func (db Mockdb) GetTutorsSize(size int) (tutors []data_model.Tutor, err error) 
 	return c, nil
 }
 
-func (db Mockdb) GetTimeBookId(user_id int) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTutors() (tutors []models.Tutor, err error) {
+	tut1 := createTutor()
+	tut2 := createTutor()
+	c := make([]data_model.Tutor, 2)
+	c[0] = tut1
+	c[1] = tut2
+	return c, nil
+}
+func (db mockdb) GetTutorsIdSize(tut_id int, size int) (tutors []data_model.Tutor, err error) {
+	tut1 := createTutor()
+	tut2 := createTutor()
+	c := make([]data_model.Tutor, 2)
+	c[0] = tut1
+	c[1] = tut2
+	return c, nil
+}
+func (db mockdb) GetTutorsId(tut_id int) (tutors []data_model.Tutor, err error) {
+	tut1 := createTutor()
+	tut2 := createTutor()
+	c := make([]data_model.Tutor, 2)
+	c[0] = tut1
+	c[1] = tut2
+	return c, nil
+}
+func (db mockdb) GetTutorsSize(size int) (tutors []data_model.Tutor, err error) {
+	tut1 := createTutor()
+	tut2 := createTutor()
+	c := make([]data_model.Tutor, 2)
+	c[0] = tut1
+	c[1] = tut2
+	return c, nil
+}
+
+func (db mockdb) GetTimeBookId(user_id int) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -198,7 +200,7 @@ func (db Mockdb) GetTimeBookId(user_id int) (times []data_model.TimeSlot, err er
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeBookIdFrom(user_id int, from_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeBookIdFrom(user_id int, from_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -206,7 +208,7 @@ func (db Mockdb) GetTimeBookIdFrom(user_id int, from_time time.Time) (times []da
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeBookIdTo(user_id int, to_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeBookIdTo(user_id int, to_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -214,7 +216,7 @@ func (db Mockdb) GetTimeBookIdTo(user_id int, to_time time.Time) (times []data_m
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeBookIdFromTo(user_id int, from_time time.Time, to_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeBookIdFromTo(user_id int, from_time time.Time, to_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -223,7 +225,7 @@ func (db Mockdb) GetTimeBookIdFromTo(user_id int, from_time time.Time, to_time t
 	return c, nil
 }
 
-func (db Mockdb) GetTimeAvailableId(user_id int) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeAvailableId(user_id int) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -231,7 +233,7 @@ func (db Mockdb) GetTimeAvailableId(user_id int) (times []data_model.TimeSlot, e
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeAvailableIdFrom(user_id int, from_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeAvailableIdFrom(user_id int, from_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -239,7 +241,7 @@ func (db Mockdb) GetTimeAvailableIdFrom(user_id int, from_time time.Time) (times
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeAvailableIdTo(user_id int, to_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeAvailableIdTo(user_id int, to_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -247,7 +249,7 @@ func (db Mockdb) GetTimeAvailableIdTo(user_id int, to_time time.Time) (times []d
 	c[1] = t2
 	return c, nil
 }
-func (db Mockdb) GetTimeAvailableIdFromTo(user_id int, from_time time.Time, to_time time.Time) (times []data_model.TimeSlot, err error) {
+func (db mockdb) GetTimeAvailableIdFromTo(user_id int, from_time time.Time, to_time time.Time) (times []data_model.TimeSlot, err error) {
 	t1 := createTime()
 	t2 := createTime()
 	c := make([]data_model.TimeSlot, 2)
@@ -256,15 +258,15 @@ func (db Mockdb) GetTimeAvailableIdFromTo(user_id int, from_time time.Time, to_t
 	return c, nil
 }
 
-func (db Mockdb) SaveTutorAvailableTimes(user_id int, from_time time.Time, to_time time.Time) (err error) {
+func (db mockdb) SaveTutorAvailableTimes(user_id int, from_time time.Time, to_time time.Time) (err error) {
 	return nil
 }
-func (db Mockdb) DeleteTutorAvailableTimes(user_id int, from_time time.Time, to_time time.Time) (err error) {
+func (db mockdb) DeleteTutorAvailableTimes(user_id int, from_time time.Time, to_time time.Time) (err error) {
 	return nil
 }
-func (db Mockdb) BookTutorTime(tutor_id int, student_id int, from_time time.Time, to_time time.Time) (err error) {
+func (db mockdb) BookTutorTime(tutor_id int, student_id int, from_time time.Time, to_time time.Time) (err error) {
 	return nil
 }
-func (db Mockdb) UnbookTutorTime(tutor_id int, student_id int, from_time time.Time, to_time time.Time) (err error) {
+func (db mockdb) UnbookTutorTime(tutor_id int, student_id int, from_time time.Time, to_time time.Time) (err error) {
 	return nil
 }

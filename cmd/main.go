@@ -6,6 +6,7 @@ import (
 	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
 	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/helpers"
+	"github.com/leechongyan/Studtor_backend/storage_service"
 	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
 	"github.com/spf13/viper"
 )
@@ -15,7 +16,8 @@ func main() {
 	router.Use(gin.Logger())
 
 	err := helpers.InitializeViper()
-	database_service.InitDatabase()
+	err = database_service.InitDatabase()
+	err = storage_service.InitStorage()
 
 	if err != nil {
 		return

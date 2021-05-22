@@ -14,6 +14,7 @@ import (
 	user_connector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
+	"github.com/leechongyan/Studtor_backend/storage_service"
 )
 
 func CheckEmailDomain(email string, domain string) bool {
@@ -251,6 +252,25 @@ func Logout() gin.HandlerFunc {
 func GetMain() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, "Success")
+	}
+}
+
+func UploadUserProfilePicture() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		file, fileheader, e := c.Request.FormFile("file")
+		if e != nil {
+			err := helpers.RaiseCannotParseFile()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		defer file.Close()
+		url, e := storage_service.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file, *fileheader)
+		if e != nil {
+			err := helpers.RaiseStorageFailure()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, url)
 	}
 }
 

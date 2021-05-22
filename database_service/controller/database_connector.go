@@ -123,18 +123,22 @@ type DatabaseConnector interface {
 	DeleteTutorAvailabilityById(availability_id int) (err error)
 }
 
-func InitDatabase() {
+func InitDatabase() (err error) {
 	isMock, _ := strconv.ParseBool(viper.GetString("mock_database"))
 	if isMock {
 		// TODO: Chong Yan, please change the methods here for your mockdb if you'd still like to test with it
-		// mdb := &Mockdb{}
-		// mdb.Init()
-		// CurrentDatabaseConnector = mdb
+		// CurrentDatabaseConnector = InitMock()
 		return
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
-	sqlitedb := &SQLiteDB{}
-	sqlitedb.Init()
-	CurrentDatabaseConnector = sqlitedb
+
+	// please remove this in future
+	// sqlitedb := &SQLiteDB{}
+	// sqlitedb.Init()
+	// CurrentDatabaseConnector = sqlitedb
+
+	// do this instead
+	// CurrentDatabaseConnector = InitSQLite()
+	return
 }
