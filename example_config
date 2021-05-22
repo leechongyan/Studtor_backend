@@ -7,3 +7,4 @@ serverEmail: "server_email"
 serverEmailPW: "server_email_password"
 
 mock_database: "true"
+mock_storage: "true"

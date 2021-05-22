@@ -17,6 +17,7 @@ serverEmail: "studtorr@gmail.com"
 serverEmailPW: "password"
 
 mock_database: "true"
+mock_storage: "true"
 ```
 
 ## Usage
