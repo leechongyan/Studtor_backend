@@ -14,7 +14,7 @@ import (
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
-func GetAllCourses() gin.HandlerFunc {
+func GetCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query models.CoursePaginated_query
 
@@ -23,6 +23,7 @@ func GetAllCourses() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+
 		get_course_connector := course_connector.Init()
 
 		if query.Size != nil {
@@ -42,7 +43,34 @@ func GetAllCourses() gin.HandlerFunc {
 	}
 }
 
-func GetAllTutors() gin.HandlerFunc {
+func GetSingleCourse() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var query models.CoursePaginated_query
+
+		err := helpers.ExtractGetRequestBody(c, &query)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		get_course_connector := course_connector.Init()
+
+		course_id := c.Param("course")
+
+		// get single course
+		i, _ := strconv.Atoi(course_id)
+		course, e := get_course_connector.SetCourseId(i).GetSingle()
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, course)
+		return
+	}
+}
+
+func GetTutors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query models.TutorPaginated_query
 
@@ -54,6 +82,21 @@ func GetAllTutors() gin.HandlerFunc {
 
 		get_tutor_connector := tutor_connector.Init()
 
+		t_id := c.Param("tutor_id")
+
+		if t_id != "" {
+			// return a single tutor
+			tutor_id, _ := strconv.Atoi(t_id)
+			tutor, e := get_tutor_connector.SetTutorId(tutor_id).GetSingle()
+			if e != nil {
+				err := helpers.RaiseDatabaseError()
+				c.JSON(err.StatusCode, err.Error())
+				return
+			}
+			c.JSON(http.StatusOK, tutor)
+			return
+		}
+		// return a list of tutors
 		if query.From_id != nil {
 			get_tutor_connector.SetTutorId(*query.From_id)
 		}
@@ -62,11 +105,41 @@ func GetAllTutors() gin.HandlerFunc {
 			get_tutor_connector.SetSize(*query.Size)
 		}
 
+		tutors, e := get_tutor_connector.GetAll()
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, tutors)
+		return
+	}
+}
+
+func GetCoursesTutors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var query models.TutorPaginated_query
+
+		err := helpers.ExtractGetRequestBody(c, &query)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		get_tutor_connector := tutor_connector.Init()
+
 		// whether you are getting the tutor for a certain course
+		// getting a list of tutors
 		course := c.Param("course")
-		if course != "" {
-			course_id, _ := strconv.Atoi(course)
-			get_tutor_connector.SetCourse(course_id)
+		course_id, _ := strconv.Atoi(course)
+		get_tutor_connector.SetCourse(course_id)
+
+		if query.From_id != nil {
+			get_tutor_connector.SetTutorId(*query.From_id)
+		}
+
+		if query.Size != nil {
+			get_tutor_connector.SetSize(*query.Size)
 		}
 
 		tutors, e := get_tutor_connector.GetAll()
@@ -228,6 +301,7 @@ func GetAllBookedTime() gin.HandlerFunc {
 		user_id := c.Param("user")
 
 		get_time_connector := booking_connector.Init()
+
 		var id int
 		if user_id != "" {
 			id, _ = strconv.Atoi(user_id)
