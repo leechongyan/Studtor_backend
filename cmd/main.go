@@ -41,8 +41,12 @@ func main() {
 	// ping to validate authorized status
 	home.GET("/", authhandler.GetMain())
 
-	// for general usage
-	home.GET("/user/*user", authhandler.GetUser())
+	// get current user
+	home.GET("/user", authhandler.GetCurrentUser())
+	// get other user by their user id
+	home.GET("/user/:user", authhandler.GetUser())
+	// upload profile picture for the current user
+	home.POST("/user/uploadprofilepicture", authhandler.UploadUserProfilePicture())
 
 	// get a list of courses
 	home.GET("/courses", tuthandler.GetCourses())

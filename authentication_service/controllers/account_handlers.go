@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -309,10 +310,13 @@ func UploadUserProfilePicture() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		file, fileheader, e := c.Request.FormFile("file")
 		if e != nil {
+			fmt.Print("Why is there error here!")
+			fmt.Print(e)
 			err := helpers.RaiseCannotParseFile()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+		fmt.Print("next!")
 		defer file.Close()
 		url, e := storage_service.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file, *fileheader)
 		if e != nil {
@@ -328,14 +332,6 @@ func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		profile := userprofile{}
 		user := c.Param("user")
-		// get current user
-		if user == "" {
-			profile.id = c.GetString("id")
-			profile.first_name = c.GetString("first_name")
-			profile.last_name = c.GetString("last_name")
-			c.JSON(http.StatusOK, profile)
-			return
-		}
 		user_id, _ := strconv.Atoi(user)
 		// get other user
 		get_user_connector := user_connector.Init()
@@ -350,5 +346,17 @@ func GetUser() gin.HandlerFunc {
 		profile.first_name = foundUser.FirstName
 		profile.last_name = foundUser.LastName
 		c.JSON(http.StatusOK, profile)
+	}
+}
+
+func GetCurrentUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		profile := userprofile{}
+		profile.id = c.GetString("id")
+		profile.first_name = c.GetString("first_name")
+		profile.last_name = c.GetString("last_name")
+		c.JSON(http.StatusOK, profile)
+		return
+
 	}
 }
