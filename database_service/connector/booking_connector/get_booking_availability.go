@@ -1,4 +1,4 @@
-package time_connector
+package booking_connector
 
 import (
 	"errors"
@@ -9,13 +9,11 @@ import (
 )
 
 type time_options struct {
-	user_id    *int
 	course_id  *int
 	student_id *int
 	tutor_id   *int
 	from_time  time.Time
 	to_time    time.Time
-	isBook     bool
 	err        error
 }
 
