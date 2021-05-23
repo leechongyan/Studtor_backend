@@ -16,6 +16,10 @@ type Timeslots map[string]interface{}
 // DatabaseConnector provides the methods to interact with the models in the database
 // Refer to `diagrams/studtor.drawio`, entity relationship diagram, for definitions of models.
 type DatabaseConnector interface {
+	/*
+		Users model
+	*/
+
 	// GetUsers retrieves a list of all user model objects from the database.
 	GetUsers() (user []models.User, err error)
 	// GetUserById retrieves a user model object by the user's id from the database.
@@ -29,30 +33,22 @@ type DatabaseConnector interface {
 	// DeleteUserByEmail deletes an auth_model user object by the user's email from the database.
 	DeleteUserByEmail(email string) (err error)
 
-	// TODO: Chong Yan, please check if the methods commented below may be deleted.
-	// GetCoursesIdSize(id int, size int) (courses []models.Course, err error)
-	// GetCoursesId(id int) (courses []models.Course, err error)
-	// GetCoursesSize(size int) (courses []models.Course, err error)
-	// jordan reference
-	// for courses
-	// GetACourse()
-	// database.course + size
-	// tuition.course(size)
-	// return
-	// GetACourse() (course, size, err)
-	// GetCourses() (courses []models.Course, sizes []int, size, err error)
-
 	/*
 		TutorCourses model
 	*/
 
 	// GetCoursesForTutor retrieves a list of all courses that a tutor is teaching from the database.
-	// no need for pagination
 	GetCoursesForTutor(tutor_id int) (course []models.Course, err error)
 	// GetTutorsForCourse retrieves a list of all tutors for a particular course from the database.
 	GetTutorsForCourse(course_id int) (tutor []models.Tutor, err error)
+	// GetTutorsForCourseFromIdOfSize retrieves a list of tutors for a particular course from the database,
+	// starting from tut_id to tut_id + size
 	GetTutorsForCourseFromIdOfSize(course_id, tut_id int, size int) (tutor []models.Tutor, err error)
+	// GetTutorsForCourseFromId retrieves a list of tutors for a particular course from the database,
+	// starting from tut_id to the end
 	GetTutorsForCourseFromId(course_id, tut_id int) (tutor []models.Tutor, err error)
+	// GetTutorsForCourseFromId retrieves a list of tutors for a particular course from the database,
+	// starting from 0 to size
 	GetTutorsForCourseOfSize(course_id, size int) (tutor []models.Tutor, err error)
 	// SaveTutorCourse saves a tutor_course model object into the database.
 	// This function is called when a tutor registers interest to teach a course.
@@ -65,15 +61,18 @@ type DatabaseConnector interface {
 	// GetCourses retrieves a course along with the number of students enrolled in the course
 	// and the number of tutors for the course, from the database.
 	GetCourse(course_id int) (course models.Course, n_students int, n_tutors int, err error)
-
 	// GetCourses retrieves a list of all courses, along with the number of students
 	// enrolled in the course and the number of tutors for the course, from the database.
+	// Sorted by course code.
 	GetCourses() (courses []models.Course, n_students []int, n_tutors []int, err error)
-	// get the list of courses from this course code to the end
+	// GetCoursesFromId retrieves the list of courses from this course code to the end.
+	// Sorted by course code.
 	GetCoursesFromId(course_code string) (courses []models.Course, n_students []int, n_tutors []int, err error)
-	// get the list of courses from the start for x size
+	// GetCoursesOfSize retrieves the list of courses from the start for size size
+	// Sorted by course code.
 	GetCoursesOfSize(size int) (courses []models.Course, n_students []int, n_tutors []int, err error)
-	// get the list of courses from this course code up to x size
+	// GetCoursesFromIdOfSize retrieves the list of courses from this course code up to x size/
+	// Sorted by course code
 	GetCoursesFromIdOfSize(course_code string, size int) (courses []models.Course, n_students []int, n_tutors []int, err error)
 
 	/*
@@ -82,11 +81,12 @@ type DatabaseConnector interface {
 
 	// GetTutors retrieves a list of all tutor model objects from the database.
 	GetTutors() (tutors []models.Tutor, err error)
-	// Get a list of tutors from this tutor id to the end
+	// GetTutorsFromId retrieves a list of tutors from this tutor id to the end
 	GetTutorsFromId(tutor_id int) (tutors []models.Tutor, err error)
+	// GetTutorsFromIdOfSize retrieves a list of tutors from this tutor_id to tutor_id + size
 	GetTutorsFromIdOfSize(tutor_id int, size int) (tutors []models.Tutor, err error)
+	// GetTutorsOfSize retrieves a list of tutors from start to size
 	GetTutorsOfSize(size int) (tutors []models.Tutor, err error)
-
 	// GetTutorById retrieves a tutor model object by the tutor's id from the database.
 	GetTutorById(tutor_id int) (tutor models.Tutor, err error)
 	// GetTutorByEmail retrieves a tutor model object by the tutor's email from the database.
@@ -139,18 +139,11 @@ func InitDatabase() (err error) {
 	isMock, _ := strconv.ParseBool(viper.GetString("mock_database"))
 	if isMock {
 		// TODO: Chong Yan, please change the methods here for your mockdb if you'd still like to test with it
-		CurrentDatabaseConnector = InitMock()
+		// CurrentDatabaseConnector = InitMock()
 		return
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
-
-	// please remove this in future
-	// sqlitedb := &SQLiteDB{}
-	// sqlitedb.Init()
-	// CurrentDatabaseConnector = sqlitedb
-
-	// do this instead
-	// CurrentDatabaseConnector = InitSQLite()
+	CurrentDatabaseConnector = InitSQLite()
 	return
 }
