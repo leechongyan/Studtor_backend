@@ -14,3 +14,11 @@ type Course struct {
 	CourseCode string
 	CourseName string
 }
+
+type CourseWithSize struct {
+	ID          int
+	CourseCode  string
+	CourseName  string
+	TutorSize   int
+	StudentSize int
+}

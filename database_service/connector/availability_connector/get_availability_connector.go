@@ -9,14 +9,16 @@ import (
 )
 
 type time_options struct {
-	tutor_id  *int
-	from_time time.Time
-	to_time   time.Time
-	err       error
+	tutor_id        *int
+	availability_id *int
+	from_time       time.Time
+	to_time         time.Time
+	err             error
 }
 
 type Get_availability_connector interface {
 	SetTutorId(tutor_id int) *time_options
+	SetAvailabilityId(availability_id int) *time_options
 	SetFromTime(from_time time.Time) *time_options
 	SetToTime(to_time time.Time) *time_options
 	Add() (err error)
@@ -31,6 +33,11 @@ func Init() *time_options {
 
 func (c *time_options) SetTutorId(tutor_id int) *time_options {
 	c.tutor_id = &tutor_id
+	return c
+}
+
+func (c *time_options) SetAvailabilityId(availability_id int) *time_options {
+	c.availability_id = &availability_id
 	return c
 }
 
@@ -54,7 +61,7 @@ func (c *time_options) Add() (err error) {
 	if c.tutor_id == nil {
 		return errors.New("User id has to be provided")
 	}
-	return database_service.CurrentDatabaseConnector.SaveTutorAvailableTimes(*c.tutor_id, c.from_time, c.to_time)
+	return database_service.CurrentDatabaseConnector.SaveTutorAvailability(*c.tutor_id, c.from_time, c.to_time)
 }
 
 func (c *time_options) Delete() (err error) {
@@ -62,13 +69,10 @@ func (c *time_options) Delete() (err error) {
 		return c.err
 	}
 
-	if c.from_time.IsZero() || c.to_time.IsZero() {
-		return errors.New("Two times have to be provided")
+	if c.availability_id == nil {
+		return errors.New("Availability id has to be provided")
 	}
-	if c.tutor_id == nil {
-		return errors.New("User id has to be provided")
-	}
-	return database_service.CurrentDatabaseConnector.DeleteTutorAvailableTimes(*c.tutor_id, c.from_time, c.to_time)
+	return database_service.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availability_id)
 }
 
 func (c *time_options) Get() (times []models.Availability, err error) {
@@ -79,13 +83,13 @@ func (c *time_options) Get() (times []models.Availability, err error) {
 		if c.from_time.After(c.to_time) {
 			return nil, errors.New("From Time cannot be greater than or equal to To Time")
 		}
-		return database_service.CurrentDatabaseConnector.GetTimeAvailableIdFromTo(*c.tutor_id, c.from_time, c.to_time)
+		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdFromTo(*c.tutor_id, c.from_time, c.to_time)
 	}
 	if !c.from_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetTimeAvailableIdFrom(*c.tutor_id, c.from_time)
+		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdFrom(*c.tutor_id, c.from_time)
 	}
 	if !c.to_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetTimeAvailableIdTo(*c.tutor_id, c.to_time)
+		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdTo(*c.tutor_id, c.to_time)
 	}
-	return database_service.CurrentDatabaseConnector.GetTimeAvailableId(*c.tutor_id)
+	return database_service.CurrentDatabaseConnector.GetAvailabilityById(*c.tutor_id)
 }

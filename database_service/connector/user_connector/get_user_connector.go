@@ -3,7 +3,8 @@ package user_connector
 import (
 	"errors"
 
-	auth_model "github.com/leechongyan/Studtor_backend/authentication_service/models"
+	"github.com/leechongyan/Studtor_backend/database_service/models"
+	// auth_model "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
 )
 
@@ -11,16 +12,16 @@ type user_options struct {
 	user_id *int
 	email   *string
 	err     error
-	user    *auth_model.User
+	user    *models.User
 }
 
 type Get_user_connector interface {
 	SetUserId(user_id int) *user_options
 	SetUserEmail(email string) *user_options
-	SetUser(user auth_model.User) *user_options
+	SetUser(user models.User) *user_options
 	Add() (err error)
 	Delete() (err error)
-	Get() (user auth_model.User, err error)
+	Get() (user models.User, err error)
 }
 
 func Init() *user_options {
@@ -38,7 +39,7 @@ func (c *user_options) SetUserEmail(email string) *user_options {
 	return c
 }
 
-func (c *user_options) SetUser(user auth_model.User) *user_options {
+func (c *user_options) SetUser(user models.User) *user_options {
 	c.user = &user
 	return c
 }
@@ -66,23 +67,23 @@ func (c *user_options) Delete() (err error) {
 	return errors.New("User id or User email has to be provided")
 }
 
-func (c *user_options) Get() (user auth_model.User, err error) {
+func (c *user_options) Get() (user models.User, err error) {
 	if c.err != nil {
-		return auth_model.User{}, c.err
+		return models.User{}, c.err
 	}
 	if c.user_id != nil {
-		user, err := database_service.CurrentDatabaseConnector.GetUserById(*c.user_id)
+		user, err = database_service.CurrentDatabaseConnector.GetUserById(*c.user_id)
 		if err != nil {
-			return auth_model.User{}, err
+			return models.User{}, err
 		}
 		return user, err
 	}
 	if c.email != nil {
-		user, err := database_service.CurrentDatabaseConnector.GetUserByEmail(*c.email)
+		user, err = database_service.CurrentDatabaseConnector.GetUserByEmail(*c.email)
 		if err != nil {
-			return auth_model.User{}, err
+			return models.User{}, err
 		}
 		return user, err
 	}
-	return auth_model.User{}, errors.New("User id or User email has to be provided")
+	return models.User{}, errors.New("User id or User email has to be provided")
 }
