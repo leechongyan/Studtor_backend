@@ -92,7 +92,7 @@ type DatabaseConnector interface {
 	// GetTutorByEmail retrieves a tutor model object by the tutor's email from the database.
 	GetTutorByEmail(email string) (tutor models.Tutor, err error)
 	// SaveTutor saves a tutor model object into the database.
-	SaveTutor(tutor models.User) (err error)
+	SaveTutor(tutor models.Tutor) (err error)
 	// DeleteTutorById deletes a tutor model object by the tutor's id from the database.
 	DeleteTutorById(tutor_id int) (err error)
 	// DeleteUserByEmail deletes a tutor model object by the tutor's email from the database.

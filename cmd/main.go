@@ -54,7 +54,7 @@ func main() {
 	home.GET("/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
 	home.POST("/book", tuthandler.BookTimeTutor())
 	home.POST("/unbook", tuthandler.UnbookTimeTutor())
-	home.GET("/bookedtime/:user", tuthandler.GetAllBookedTime())
+	home.GET("/bookedtime/*user", tuthandler.GetAllBookedTime())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))

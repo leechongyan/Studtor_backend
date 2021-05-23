@@ -59,7 +59,7 @@ func (c *time_options) Add() (err error) {
 		return errors.New("Two times have to be provided")
 	}
 	if c.tutor_id == nil {
-		return errors.New("User id has to be provided")
+		return errors.New("Tutor id has to be provided")
 	}
 	return database_service.CurrentDatabaseConnector.SaveTutorAvailability(*c.tutor_id, c.from_time, c.to_time)
 }
@@ -78,6 +78,9 @@ func (c *time_options) Delete() (err error) {
 func (c *time_options) Get() (times []models.Availability, err error) {
 	if c.err != nil {
 		return nil, c.err
+	}
+	if c.tutor_id == nil {
+		return nil, errors.New("Tutor id has to be provided")
 	}
 	if !c.from_time.IsZero() && !c.to_time.IsZero() {
 		if c.from_time.After(c.to_time) {

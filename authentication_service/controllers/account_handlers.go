@@ -10,12 +10,19 @@ import (
 	"github.com/gin-gonic/gin"
 
 	helper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
-	"github.com/leechongyan/Studtor_backend/authentication_service/models"
+	auth_model "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	user_connector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	database_model "github.com/leechongyan/Studtor_backend/database_service/models"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/mail_service"
 	"github.com/leechongyan/Studtor_backend/storage_service"
 )
+
+type userprofile struct {
+	id         string
+	first_name string
+	last_name  string
+}
 
 func CheckEmailDomain(email string, domain string) bool {
 	components := strings.Split(email, "@")
@@ -24,9 +31,45 @@ func CheckEmailDomain(email string, domain string) bool {
 	return strings.Contains(dom, domain)
 }
 
+// this is only used for initial sign up for loading the user credential into database user object
+func convertUserType(authuser auth_model.User) (databaseuser database_model.User) {
+	databaseuser = database_model.User{}
+	databaseuser.UserCreatedAt = authuser.Created_at
+	databaseuser.UserUpdatedAt = authuser.Updated_at
+	if authuser.Id != nil {
+		databaseuser.ID = uint(*authuser.Id)
+	} else {
+		databaseuser.ID = 0
+	}
+	databaseuser.FirstName = *authuser.First_name
+	databaseuser.LastName = *authuser.Last_name
+	databaseuser.Password = *authuser.Password
+	databaseuser.Email = *authuser.Email
+	if authuser.Token != nil {
+		databaseuser.Token.String = *authuser.Token
+		databaseuser.Token.Valid = true
+	} else {
+		databaseuser.Token.Valid = false
+	}
+	databaseuser.UserType = *authuser.User_type
+	if authuser.Refresh_token != nil {
+		databaseuser.RefreshToken.String = *authuser.Refresh_token
+		databaseuser.RefreshToken.Valid = true
+	} else {
+		databaseuser.RefreshToken.Valid = false
+	}
+	if authuser.V_key != nil {
+		databaseuser.VKey.String = *authuser.V_key
+		databaseuser.VKey.Valid = true
+	} else {
+		databaseuser.VKey.Valid = false
+	}
+	return databaseuser
+}
+
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
+		var user auth_model.User
 
 		err := helpers.ExtractPostRequestBody(c, &user)
 		if err != nil {
@@ -56,8 +99,11 @@ func SignUp() gin.HandlerFunc {
 		new_V_key := helper.EncodeToString(6)
 		user.V_key = &new_V_key
 
+		// need to convert auth user to database user
+		database_user := convertUserType(user)
+
 		// save user in db
-		e = get_user_connector.SetUser(user).Add()
+		e = get_user_connector.SetUser(database_user).Add()
 		if e != nil {
 			err := helpers.RaiseCannotSaveUserInDatabase()
 			c.JSON(err.StatusCode, err.Error())
@@ -77,7 +123,7 @@ func SignUp() gin.HandlerFunc {
 
 func Verify() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var verification models.Verification
+		var verification auth_model.Verification
 
 		err := helpers.ExtractPostRequestBody(c, &verification)
 		if err != nil {
@@ -93,9 +139,13 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		v_k := *user.V_key
+		if !user.VKey.Valid {
+			err := helpers.RaiseWrongLoginCredentials()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
 		// check whether verification code is correct
-		if v_k != *verification.V_key {
+		if user.VKey.String != *verification.V_key {
 			err := helpers.RaiseWrongValidation()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -115,8 +165,8 @@ func Verify() gin.HandlerFunc {
 
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.Login
-		var foundUser models.User
+		var user auth_model.Login
+		var foundUser database_model.User
 
 		err := helpers.ExtractPostRequestBody(c, &user)
 		if err != nil {
@@ -133,7 +183,7 @@ func Login() gin.HandlerFunc {
 		}
 
 		// check whether password exists
-		passwordIsValid := helper.VerifyPassword(*user.Password, *foundUser.Password)
+		passwordIsValid := helper.VerifyPassword(*user.Password, foundUser.Password)
 		if passwordIsValid != true {
 			err := helpers.RaiseWrongLoginCredentials()
 			c.JSON(err.StatusCode, err.Error())
@@ -148,13 +198,13 @@ func Login() gin.HandlerFunc {
 		}
 
 		// refresh token
-		token, refreshToken, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		token, refreshToken, err := helper.GenerateAllTokens(int(foundUser.ID), foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.UserType)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		err = helper.UpdateAllTokens(token, refreshToken, *foundUser.Email)
+		err = helper.UpdateAllTokens(token, refreshToken, foundUser.Email)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -184,27 +234,26 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		refreshToken := foundUser.Refresh_token
-		if refreshToken == nil {
+		if !foundUser.RefreshToken.Valid {
 			err := helpers.RaiseLoginExpired()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		_, err := helper.ValidateToken(*refreshToken)
+		_, err := helper.ValidateToken(foundUser.RefreshToken.String)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		// if refresh is still valid then generate new token
-		token, _, err := helper.GenerateAllTokens(*foundUser.Id, *foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type)
+		token, _, err := helper.GenerateAllTokens(int(foundUser.ID), foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.UserType)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		err = helper.UpdateAllTokens(token, *refreshToken, email)
+		err = helper.UpdateAllTokens(token, foundUser.RefreshToken.String, email)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -235,7 +284,8 @@ func Logout() gin.HandlerFunc {
 		}
 
 		// remove refresh token and force user to login again
-		foundUser.Refresh_token = nil
+		foundUser.Token.Valid = false
+		foundUser.RefreshToken.Valid = false
 
 		e = get_user_connector.SetUser(foundUser).Add()
 
@@ -276,13 +326,13 @@ func UploadUserProfilePicture() gin.HandlerFunc {
 
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		profile := make(map[string]interface{})
+		profile := userprofile{}
 		user := c.Param("user")
 		// get current user
 		if user == "" {
-			profile["id"] = c.GetString("id")
-			profile["first_name"] = c.GetString("first_name")
-			profile["last_name"] = c.GetString("last_name")
+			profile.id = c.GetString("id")
+			profile.first_name = c.GetString("first_name")
+			profile.last_name = c.GetString("last_name")
 			c.JSON(http.StatusOK, profile)
 			return
 		}
@@ -296,9 +346,9 @@ func GetUser() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		profile["id"] = foundUser.Id
-		profile["first_name"] = foundUser.First_name
-		profile["last_name"] = foundUser.Last_name
+		profile.id = strconv.Itoa(int(foundUser.ID))
+		profile.first_name = foundUser.FirstName
+		profile.last_name = foundUser.LastName
 		c.JSON(http.StatusOK, profile)
 	}
 }

@@ -7,7 +7,12 @@ import (
 // when querying, from_id and size are optional field
 // default start from start
 // default return all
-type ObjectPaginated_query struct {
+type CoursePaginated_query struct {
+	From_id *string `form:"from_id"`
+	Size    *int    `form:"size"`
+}
+
+type TutorPaginated_query struct {
 	From_id *int `form:"from_id"`
 	Size    *int `form:"size"`
 }
@@ -26,8 +31,10 @@ type TimeSlot struct {
 
 // for booking a slot, all fields are required
 type BookSlot struct {
-	Course *string   `json:"course" validate:"required"`
-	From   time.Time `json:"from" validate:"required"`
-	To     time.Time `json:"to" validate:"required"`
-	Tutor  *int      `json:"tutor" validate:"required"`
+	Course          *int `json:"course" validate:"required"`
+	Availability_id *int `json:"availability_id" validate:"required"`
+}
+
+type Availability struct {
+	Availability_id *int `json:"availability_id" validate:"required"`
 }

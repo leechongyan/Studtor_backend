@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ type User struct {
 	UserType      string
 	RefreshToken  sql.NullString
 	VKey          sql.NullString
-	Verified      int
-	UserCreatedAt sql.NullTime
-	UserUpdatedAt sql.NullTime
+	Verified      bool
+	UserCreatedAt time.Time
+	UserUpdatedAt time.Time
 }
