@@ -7,7 +7,7 @@ import (
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
 
-type course_options struct {
+type courseOptions struct {
 	offset         *int
 	size           *int
 	courseCode     *string
@@ -19,26 +19,26 @@ type course_options struct {
 	err            error
 }
 
-type Get_course_connector interface {
-	SetSize(size int) *course_options
-	SetCourseCode(courseCode string) *course_options
-	SetSchoolCode(schoolCode string) *course_options
-	SetCourseId(courseId int) *course_options
-	SetTutorId(tutorId int) *course_options
-	SetCourse(course models.Course) *course_options
-	SetCourseWithSize(course models.CourseWithSize) *course_options
+type CourseConnector interface {
+	SetSize(size int) *courseOptions
+	SetCourseCode(courseCode string) *courseOptions
+	SetSchoolCode(schoolCode string) *courseOptions
+	SetCourseId(courseId int) *courseOptions
+	SetTutorId(tutorId int) *courseOptions
+	SetCourse(course models.Course) *courseOptions
+	SetCourseWithSize(course models.CourseWithSize) *courseOptions
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (courses []models.CourseWithSize, err error)
 	GetSingle() (course models.CourseWithSize, err error)
 }
 
-func Init() *course_options {
-	r := course_options{}
+func Init() *courseOptions {
+	r := courseOptions{}
 	return &r
 }
 
-func (c *course_options) SetSize(size int) *course_options {
+func (c *courseOptions) SetSize(size int) *courseOptions {
 	// check for size
 	if size <= 0 {
 		c.err = errors.New("Size cannot be 0 or negative")
@@ -47,7 +47,7 @@ func (c *course_options) SetSize(size int) *course_options {
 	return c
 }
 
-func (c *course_options) SetOffset(offset int) *course_options {
+func (c *courseOptions) SetOffset(offset int) *courseOptions {
 	// check for offset
 	if offset <= 0 {
 		c.err = errors.New("Size cannot be 0 or negative")
@@ -56,27 +56,27 @@ func (c *course_options) SetOffset(offset int) *course_options {
 	return c
 }
 
-func (c *course_options) SetSchoolCode(schoolCode string) *course_options {
+func (c *courseOptions) SetSchoolCode(schoolCode string) *courseOptions {
 	c.schoolCode = &schoolCode
 	return c
 }
 
-func (c *course_options) SetCourseCode(courseCode string) *course_options {
+func (c *courseOptions) SetCourseCode(courseCode string) *courseOptions {
 	c.courseCode = &courseCode
 	return c
 }
 
-func (c *course_options) SetCourseId(courseId int) *course_options {
+func (c *courseOptions) SetCourseId(courseId int) *courseOptions {
 	c.courseId = &courseId
 	return c
 }
 
-func (c *course_options) SetTutorId(tutorId int) *course_options {
+func (c *courseOptions) SetTutorId(tutorId int) *courseOptions {
 	c.tutorId = &tutorId
 	return c
 }
 
-func (c *course_options) SetCourse(course models.Course) *course_options {
+func (c *courseOptions) SetCourse(course models.Course) *courseOptions {
 	if c.courseWithSize != nil {
 		c.err = errors.New("Course With Size has already been set")
 		return c
@@ -85,7 +85,7 @@ func (c *course_options) SetCourse(course models.Course) *course_options {
 	return c
 }
 
-func (c *course_options) SetCourseWithSize(course models.CourseWithSize) *course_options {
+func (c *courseOptions) SetCourseWithSize(course models.CourseWithSize) *courseOptions {
 	if c.course != nil {
 		c.err = errors.New("Course has already been set")
 		return c
@@ -94,7 +94,7 @@ func (c *course_options) SetCourseWithSize(course models.CourseWithSize) *course
 	return c
 }
 
-func (c *course_options) Add() (err error) {
+func (c *courseOptions) Add() (err error) {
 	if c.err != nil {
 		return c.err
 	}
@@ -102,7 +102,7 @@ func (c *course_options) Add() (err error) {
 	return errors.New("Not implemented")
 }
 
-func (c *course_options) Delete() (err error) {
+func (c *courseOptions) Delete() (err error) {
 	if c.err != nil {
 		return c.err
 	}
@@ -110,7 +110,7 @@ func (c *course_options) Delete() (err error) {
 	return errors.New("Not implemented")
 }
 
-func (c *course_options) GetSingle() (course models.CourseWithSize, err error) {
+func (c *courseOptions) GetSingle() (course models.CourseWithSize, err error) {
 	if c.err != nil {
 		return models.CourseWithSize{}, c.err
 	}
@@ -131,7 +131,7 @@ func (c *course_options) GetSingle() (course models.CourseWithSize, err error) {
 	return course, nil
 }
 
-func (c *course_options) GetAll() (courses []models.CourseWithSize, err error) {
+func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	// check for error first
 	if c.err != nil {
 		return nil, c.err
