@@ -93,7 +93,7 @@ type DatabaseConnector interface {
 	// GetTutorByEmail retrieves a tutor model object by the tutor's email from the database.
 	GetTutorByEmail(email string) (tutor db_model.Tutor, err error)
 	// SaveTutor saves a tutor model object into the database.
-	SaveTutor(tutor db_model.User) (err error)
+	SaveTutor(tutor db_model.Tutor) (err error)
 	// DeleteTutorById deletes a tutor model object by the tutor's id from the database.
 	DeleteTutorById(tutor_id int) (err error)
 	// DeleteUserByEmail deletes a tutor model object by the tutor's email from the database.
@@ -145,6 +145,8 @@ func InitDatabase() (err error) {
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
-	CurrentDatabaseConnector = InitSQLite()
+	sqlitedb := &SQLiteDB{}
+	sqlitedb.Init()
+	CurrentDatabaseConnector = sqlitedb
 	return
 }
