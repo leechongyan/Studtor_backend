@@ -541,7 +541,7 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 	}
 
 	// Get all courses
-	result := conn.Find(&courses)
+	result := conn.Order("course_code ASC").Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -571,15 +571,190 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 	// format booking map and tutor courses map for results
 	for i := 0; i < len(courses); i++ {
 		n_students = append(n_students, booking_map[int(courses[i].ID)])
-		n_tutors = append(n_tutors, booking_map[int(courses[i].ID)])
+		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
 	}
 
 	return
 }
 
-func (db SQLiteDB) GetCoursesFromId(course_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-func (db SQLiteDB) GetCoursesOfSize(size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-func (db SQLiteDB) GetCoursesFromIdOfSize(course_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+func (db SQLiteDB) GetCoursesForSchool(school_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+	if err != nil {
+		// err opening database
+		log.Println(err)
+		return
+	}
+
+	// Get all courses for school
+	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Find(&courses)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
+		return
+	}
+
+	// Raw SQL for count group by query
+	booking_map := make(map[int]int)
+	var course_id int
+	var count int
+	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		booking_map[course_id] = count
+	}
+
+	// Raw SQL for count group by query
+	tutor_map := make(map[int]int)
+	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		tutor_map[course_id] = count
+	}
+
+	// format booking map and tutor courses map for results
+	for i := 0; i < len(courses); i++ {
+		n_students = append(n_students, booking_map[int(courses[i].ID)])
+		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+	}
+
+	return
+}
+
+func (db SQLiteDB) GetCoursesForSchoolWithOffset(school_code string, offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+	if err != nil {
+		// err opening database
+		log.Println(err)
+		return
+	}
+
+	// Get all courses for school with offset
+	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Find(&courses)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
+		return
+	}
+
+	// Raw SQL for count group by query
+	booking_map := make(map[int]int)
+	var course_id int
+	var count int
+	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		booking_map[course_id] = count
+	}
+
+	// Raw SQL for count group by query
+	tutor_map := make(map[int]int)
+	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		tutor_map[course_id] = count
+	}
+
+	// format booking map and tutor courses map for results
+	for i := 0; i < len(courses); i++ {
+		n_students = append(n_students, booking_map[int(courses[i].ID)])
+		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+	}
+
+	return
+}
+
+func (db SQLiteDB) GetCoursesForSchoolOfSize(school_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+	if err != nil {
+		// err opening database
+		log.Println(err)
+		return
+	}
+
+	// Get all courses for school with limit
+	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Limit(size).Find(&courses)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
+		return
+	}
+
+	// Raw SQL for count group by query
+	booking_map := make(map[int]int)
+	var course_id int
+	var count int
+	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		booking_map[course_id] = count
+	}
+
+	// Raw SQL for count group by query
+	tutor_map := make(map[int]int)
+	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		tutor_map[course_id] = count
+	}
+
+	// format booking map and tutor courses map for results
+	for i := 0; i < len(courses); i++ {
+		n_students = append(n_students, booking_map[int(courses[i].ID)])
+		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+	}
+
+	return
+}
+func (db SQLiteDB) GetCoursesForSchoolOfSizeWithOffset(school_code string, offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+	if err != nil {
+		// err opening database
+		log.Println(err)
+		return
+	}
+
+	// Get all courses for school with offset and limit
+	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Limit(size).Find(&courses)
+	if result.Error != nil {
+		// row not found
+		err = result.Error
+		return
+	}
+
+	// Raw SQL for count group by query
+	booking_map := make(map[int]int)
+	var course_id int
+	var count int
+	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		booking_map[course_id] = count
+	}
+
+	// Raw SQL for count group by query
+	tutor_map := make(map[int]int)
+	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&course_id, &count)
+		tutor_map[course_id] = count
+	}
+
+	// format booking map and tutor courses map for results
+	for i := 0; i < len(courses); i++ {
+		n_students = append(n_students, booking_map[int(courses[i].ID)])
+		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+	}
+
+	return
+}
 
 // func (db SQLiteDB) GetAllCourses(db_options DB_options) (courses []interface{}, err error) {
 // 	// create return object: courses

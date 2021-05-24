@@ -67,15 +67,14 @@ type DatabaseConnector interface {
 	// enrolled in the course and the number of tutors for the course, from the database.
 	// Sorted by course code.
 	GetCourses() (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesFromId retrieves the list of courses from this course code to the end.
-	// Sorted by course code.
-	GetCoursesFromId(course_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesOfSize retrieves the list of courses from the start for size size
-	// Sorted by course code.
-	GetCoursesOfSize(size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesFromIdOfSize retrieves the list of courses from this course code up to x size/
-	// Sorted by course code
-	GetCoursesFromIdOfSize(course_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+	// GetCoursesForSchool retrieves the entire list of courses for a school_code.
+	GetCoursesForSchool(school_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+	// GetCoursesForSchoolWithOffset retrieves the list of courses for a school_code from offset to end
+	GetCoursesForSchoolWithOffset(school_code string, offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+	// GetCoursesForSchoolOfSize retrieves the list of courses for a school_code from start up to x size
+	GetCoursesForSchoolOfSize(school_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+	// GetCoursesForSchoolOfSize retrieves the list of courses for a school_code from offset up to x size
+	GetCoursesForSchoolOfSizeWithOffset(school_code string, offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
 
 	/*
 		Tutors model

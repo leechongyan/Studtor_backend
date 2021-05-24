@@ -13,6 +13,8 @@ import (
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
+// TODO: @Chong Yan, please note changes in database_connector interface for commit dated 24 May
+
 func GetAllCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var query models.ObjectPaginated_query

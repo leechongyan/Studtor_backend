@@ -8,8 +8,10 @@ import (
 )
 
 type course_options struct {
+	offset           *int
 	size             *int
 	course_code      *string
+	school_code      *string
 	course_id        *int
 	tutor_id         *int
 	course           *models.Course
@@ -20,6 +22,7 @@ type course_options struct {
 type Get_course_connector interface {
 	SetSize(size int) *course_options
 	SetCourseCode(course_code string) *course_options
+	SetSchoolCode(school_code string) *course_options
 	SetCourseId(course_id int) *course_options
 	SetTutorId(tutor_id int) *course_options
 	SetCourse(course models.Course) *course_options
@@ -41,6 +44,20 @@ func (c *course_options) SetSize(size int) *course_options {
 		c.err = errors.New("Size cannot be 0 or negative")
 	}
 	c.size = &size
+	return c
+}
+
+func (c *course_options) SetOffset(offset int) *course_options {
+	// check for offset
+	if offset <= 0 {
+		c.err = errors.New("Size cannot be 0 or negative")
+	}
+	c.offset = &offset
+	return c
+}
+
+func (c *course_options) SetSchoolCode(school_code string) *course_options {
+	c.school_code = &school_code
 	return c
 }
 
@@ -123,14 +140,17 @@ func (c *course_options) GetAll() (courses []models.CourseWithSize, err error) {
 	var tutor_sizes []int
 	var student_sizes []int
 
-	if c.size != nil && c.course_code != nil {
-		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesFromIdOfSize(*c.course_code, *c.size)
-	} else if c.size != nil {
-		// get from the start
-		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesOfSize(*c.size)
-	} else if c.course_code != nil {
-		// get from from_id to the end
-		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesFromId(*c.course_code)
+	if c.size != nil && c.school_code != nil && c.offset != nil {
+		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesForSchoolOfSizeWithOffset(*c.school_code, *c.offset, *c.size)
+	} else if c.size != nil && c.school_code != nil {
+		// get for school from start to size x
+		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesForSchoolOfSize(*c.school_code, *c.size)
+	} else if c.offset != nil && c.school_code != nil {
+		// get for school from offset to the end
+		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesForSchoolWithOffset(*c.school_code, *c.offset)
+	} else if c.school_code != nil {
+		// get for school
+		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCoursesForSchool(*c.school_code)
 	} else {
 		courses_without_size, tutor_sizes, student_sizes, err = database_service.CurrentDatabaseConnector.GetCourses()
 	}
