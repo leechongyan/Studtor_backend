@@ -6,36 +6,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	availability_connector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
-	booking_connector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
-	course_connector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
-	tutor_connector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
-	"github.com/leechongyan/Studtor_backend/helpers"
+	availabilityConnector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
+	bookingConnector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
+	courseConnector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
+	tutorConnector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
+	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
+	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
 func GetCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var query models.CoursePaginated_query
+		var query models.CoursePaginatedQuery
 
-		err := helpers.ExtractGetRequestBody(c, &query)
+		err := httpHelper.ExtractGetRequestBody(c, &query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_course_connector := course_connector.Init()
+		courseConnector := courseConnector.Init()
 
 		if query.Size != nil {
-			get_course_connector.SetSize(*query.Size)
+			courseConnector.SetSize(*query.Size)
 		}
-		if query.From_id != nil {
-			get_course_connector.SetCourseCode(*query.From_id)
+		if query.FromId != nil {
+			courseConnector.SetCourseCode(*query.FromId)
 		}
-		courses, e := get_course_connector.GetAll()
+		courses, e := courseConnector.GetAll()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -45,23 +46,23 @@ func GetCourses() gin.HandlerFunc {
 
 func GetSingleCourse() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var query models.CoursePaginated_query
+		var query models.CoursePaginatedQuery
 
-		err := helpers.ExtractGetRequestBody(c, &query)
+		err := httpHelper.ExtractGetRequestBody(c, &query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_course_connector := course_connector.Init()
+		courseConnector := courseConnector.Init()
 
-		course_id := c.Param("course")
+		courseId := c.Param("course")
 
 		// get single course
-		i, _ := strconv.Atoi(course_id)
-		course, e := get_course_connector.SetCourseId(i).GetSingle()
+		i, _ := strconv.Atoi(courseId)
+		course, e := courseConnector.SetCourseId(i).GetSingle()
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -72,24 +73,24 @@ func GetSingleCourse() gin.HandlerFunc {
 
 func GetTutors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var query models.TutorPaginated_query
+		var query models.TutorPaginatedQuery
 
-		err := helpers.ExtractGetRequestBody(c, &query)
+		err := httpHelper.ExtractGetRequestBody(c, &query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_tutor_connector := tutor_connector.Init()
+		tutorConnector := tutorConnector.Init()
 
-		t_id := c.Param("tutor_id")
+		tutId := c.Param("tutor_id")
 
-		if t_id != "" {
+		if tutId != "" {
 			// return a single tutor
-			tutor_id, _ := strconv.Atoi(t_id)
-			tutor, e := get_tutor_connector.SetTutorId(tutor_id).GetSingle()
+			tutorId, _ := strconv.Atoi(tutId)
+			tutor, e := tutorConnector.SetTutorId(tutorId).GetSingle()
 			if e != nil {
-				err := helpers.RaiseDatabaseError()
+				err := errorHelper.RaiseDatabaseError()
 				c.JSON(err.StatusCode, err.Error())
 				return
 			}
@@ -97,17 +98,17 @@ func GetTutors() gin.HandlerFunc {
 			return
 		}
 		// return a list of tutors
-		if query.From_id != nil {
-			get_tutor_connector.SetTutorId(*query.From_id)
+		if query.FromId != nil {
+			tutorConnector.SetTutorId(*query.FromId)
 		}
 
 		if query.Size != nil {
-			get_tutor_connector.SetSize(*query.Size)
+			tutorConnector.SetSize(*query.Size)
 		}
 
-		tutors, e := get_tutor_connector.GetAll()
+		tutors, e := tutorConnector.GetAll()
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -118,34 +119,34 @@ func GetTutors() gin.HandlerFunc {
 
 func GetCoursesTutors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var query models.TutorPaginated_query
+		var query models.TutorPaginatedQuery
 
-		err := helpers.ExtractGetRequestBody(c, &query)
+		err := httpHelper.ExtractGetRequestBody(c, &query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_tutor_connector := tutor_connector.Init()
+		tutorConnector := tutorConnector.Init()
 
 		// whether you are getting the tutor for a certain course
 		// getting a list of tutors
 		course := c.Param("course")
-		course_id, _ := strconv.Atoi(course)
-		get_tutor_connector.SetCourse(course_id)
+		courseId, _ := strconv.Atoi(course)
+		tutorConnector.SetCourse(courseId)
 
-		if query.From_id != nil {
-			get_tutor_connector.SetTutorId(*query.From_id)
+		if query.FromId != nil {
+			tutorConnector.SetTutorId(*query.FromId)
 		}
 
 		if query.Size != nil {
-			get_tutor_connector.SetSize(*query.Size)
+			tutorConnector.SetSize(*query.Size)
 		}
 
-		tutors, e := get_tutor_connector.GetAll()
+		tutors, e := tutorConnector.GetAll()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -155,24 +156,24 @@ func GetCoursesTutors() gin.HandlerFunc {
 
 func PutAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimeSlot
+		var slotQuery models.TimeSlot
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		tutor_id := c.GetString("id")
-		get_time_connector := availability_connector.Init()
+		tutorId := c.GetString("id")
+		availabilityConnector := availabilityConnector.Init()
 
-		if tutor_id != "" {
-			tut_id, _ := strconv.Atoi(tutor_id)
-			get_time_connector.SetTutorId(tut_id)
+		if tutorId != "" {
+			tutId, _ := strconv.Atoi(tutorId)
+			availabilityConnector.SetTutorId(tutId)
 		}
-		e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Add()
+		e := availabilityConnector.SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -183,19 +184,19 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.Availability
+		var slotQuery models.Availability
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		get_time_connector := availability_connector.Init()
+		availabilityConnector := availabilityConnector.Init()
 
-		e := get_time_connector.SetAvailabilityId(*slot_query.Availability_id).Delete()
+		e := availabilityConnector.SetAvailabilityId(*slotQuery.AvailabilityId).Delete()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -207,27 +208,27 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 // TODO:
 func GetAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimePaginated_query
+		var slotQuery models.TimePaginatedQuery
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		tutor_id := c.Param("tutor")
+		tutorId := c.Param("tutor")
 
-		get_time_connector := availability_connector.Init()
+		availabilityConnector := availabilityConnector.Init()
 
-		if tutor_id != "" {
-			tut_id, _ := strconv.Atoi(tutor_id)
-			get_time_connector.SetTutorId(tut_id)
+		if tutorId != "" {
+			tutId, _ := strconv.Atoi(tutorId)
+			availabilityConnector.SetTutorId(tutId)
 		}
 
-		times, e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Get()
+		times, e := availabilityConnector.SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -238,22 +239,22 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 
 func BookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.BookSlot
+		var slotQuery models.BookSlot
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_time_connector := booking_connector.Init()
+		bookingConnector := bookingConnector.Init()
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e := get_time_connector.SetCourseId(*slot_query.Course).SetStudentId(id).SetAvailabilityId(*slot_query.Availability_id).Add()
+		e := bookingConnector.SetCourseId(*slotQuery.Course).SetStudentId(id).SetAvailabilityId(*slotQuery.AvailabilityId).Add()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -264,22 +265,22 @@ func BookTimeTutor() gin.HandlerFunc {
 
 func UnbookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.BookSlot
+		var slotQuery models.BookSlot
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		get_time_connector := booking_connector.Init()
+		bookingConnector := bookingConnector.Init()
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e := get_time_connector.SetCourseId(*slot_query.Course).SetStudentId(id).SetAvailabilityId(*slot_query.Availability_id).Delete()
+		e := bookingConnector.SetCourseId(*slotQuery.Course).SetStudentId(id).SetAvailabilityId(*slotQuery.AvailabilityId).Delete()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -290,29 +291,29 @@ func UnbookTimeTutor() gin.HandlerFunc {
 
 func GetAllBookedTime() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimePaginated_query
+		var slotQuery models.TimePaginatedQuery
 
-		err := helpers.ExtractPostRequestBody(c, &slot_query)
+		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		user_id := c.Param("user")
+		userId := c.Param("user")
 
-		get_time_connector := booking_connector.Init()
+		bookingConnector := bookingConnector.Init()
 
 		var id int
-		if user_id != "" {
-			id, _ = strconv.Atoi(user_id)
+		if userId != "" {
+			id, _ = strconv.Atoi(userId)
 		} else {
 			id, _ = strconv.Atoi(c.GetString("id"))
 		}
 
-		times, e := get_time_connector.SetUserId(id).SetFromTime(slot_query.From).SetToTime(slot_query.To).Get()
+		times, e := bookingConnector.SetUserId(id).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
 
 		if e != nil {
-			err := helpers.RaiseDatabaseError()
+			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}

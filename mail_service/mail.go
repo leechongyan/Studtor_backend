@@ -7,12 +7,12 @@ import (
 
 	"text/template"
 
-	"github.com/leechongyan/Studtor_backend/authentication_service/models"
-	"github.com/leechongyan/Studtor_backend/helpers"
+	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
+	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 	"github.com/spf13/viper"
 )
 
-func SendVerificationCode(user models.User, code string) (err *helpers.RequestError) {
+func SendVerificationCode(user authModel.User, code string) (err *errorHelper.RequestError) {
 	serverEmail := viper.GetString("serverEmail")
 	serverEmailPW := viper.GetString("serverEmailPW")
 
@@ -39,14 +39,14 @@ func SendVerificationCode(user models.User, code string) (err *helpers.RequestEr
 		Name    string
 		Message string
 	}{
-		Name:    *user.First_name + " " + *user.Last_name,
+		Name:    *user.FirstName + " " + *user.LastName,
 		Message: code,
 	})
 
 	// Sending email.
 	e := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
 	if e != nil {
-		err = helpers.RaiseFailureEmailSend()
+		err = errorHelper.RaiseFailureEmailSend()
 		return
 	}
 

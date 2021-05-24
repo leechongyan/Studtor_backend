@@ -3,10 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	authhandler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
-	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
-	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/helpers"
-	"github.com/leechongyan/Studtor_backend/storage_service"
+	authMiddleWare "github.com/leechongyan/Studtor_backend/authentication_service/middleware"
+	initialization_helper "github.com/leechongyan/Studtor_backend/helpers/initialization_helpers"
 	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
 	"github.com/spf13/viper"
 )
@@ -15,10 +13,7 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	err := helpers.InitializeViper()
-	err = database_service.InitDatabase()
-	err = storage_service.InitStorage()
-
+	err := initialization_helper.Initialize()
 	if err != nil {
 		return
 	}
@@ -36,7 +31,7 @@ func main() {
 
 	// require token
 	home := v1.Group("/")
-	home.Use(middleware.Authentication())
+	home.Use(authMiddleWare.Authentication())
 
 	// ping to validate authorized status
 	home.GET("/", authhandler.GetMain())
@@ -45,8 +40,6 @@ func main() {
 	home.GET("/user", authhandler.GetCurrentUser())
 	// get other user by their user id
 	home.GET("/user/:user", authhandler.GetUser())
-	// upload profile picture for the current user
-	home.POST("/user/uploadprofilepicture", authhandler.UploadUserProfilePicture())
 
 	// get a list of courses
 	home.GET("/courses", tuthandler.GetCourses())

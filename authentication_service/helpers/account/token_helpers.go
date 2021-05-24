@@ -6,42 +6,42 @@ import (
 	"strings"
 	"time"
 
-	user_connector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
-	"github.com/leechongyan/Studtor_backend/helpers"
+	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 	"github.com/spf13/viper"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
 type SignedDetails struct {
-	Email      string
-	ID         int
-	First_name string
-	Last_name  string
-	User_type  string
+	Email     string
+	ID        int
+	FirstName string
+	LastName  string
+	UserType  string
 	jwt.StandardClaims
 }
 
 var SECRET_KEY string = viper.GetString("jwtKey")
 
-func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
-	access_hr, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
-	refresh_hr, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
+func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *errorHelper.RequestError) {
+	accessDuration, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
+	refreshDuration, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
 
 	claims := &SignedDetails{
-		Email:      email,
-		ID:         id,
-		First_name: firstName,
-		Last_name:  lastName,
-		User_type:  userType,
+		Email:     email,
+		ID:        id,
+		FirstName: firstName,
+		LastName:  lastName,
+		UserType:  userType,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(access_hr)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(accessDuration)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refresh_hr)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refreshDuration)).Unix(),
 		},
 	}
 
@@ -49,7 +49,7 @@ func GenerateAllTokens(id int, email string, firstName string, lastName string, 
 
 	if e != nil {
 		log.Panic(err)
-		err = helpers.RaiseFailureGenerateClaim()
+		err = errorHelper.RaiseFailureGenerateClaim()
 		return
 	}
 
@@ -57,14 +57,14 @@ func GenerateAllTokens(id int, email string, firstName string, lastName string, 
 
 	if e != nil {
 		log.Panic(err)
-		err = helpers.RaiseFailureGenerateClaim()
+		err = errorHelper.RaiseFailureGenerateClaim()
 		return
 	}
 
 	return token, refreshToken, err
 }
 
-func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.RequestError) {
+func ValidateToken(signedToken string) (claims *SignedDetails, err *errorHelper.RequestError) {
 	token, e := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},
@@ -74,29 +74,29 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.Requ
 	)
 
 	if e != nil {
-		err = helpers.RaiseCannotParseClaims()
+		err = errorHelper.RaiseCannotParseClaims()
 		return nil, err
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
-		err = helpers.RaiseInvalidToken()
+		err = errorHelper.RaiseInvalidToken()
 		return nil, err
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = helpers.RaiseExpiredToken()
+		err = errorHelper.RaiseExpiredToken()
 		return nil, err
 	}
 
 	return claims, nil
 }
 
-func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
-	get_user_connector := user_connector.Init()
-	oldUser, e := get_user_connector.SetUserEmail(userEmail).Get()
+func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *errorHelper.RequestError) {
+	userConnector := userConnector.Init()
+	oldUser, e := userConnector.SetUserEmail(userEmail).Get()
 	if e != nil {
-		err = helpers.RaiseUserNotInDatabase()
+		err = errorHelper.RaiseUserNotInDatabase()
 		return err
 	}
 
@@ -107,32 +107,32 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 
 	// if is a new creation
 	if oldUser.UserCreatedAt.IsZero() {
-		Created_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		oldUser.UserCreatedAt = Created_at
+		createdAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		oldUser.UserCreatedAt = createdAt
 	}
 
-	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	oldUser.UpdatedAt = Updated_at
+	updatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	oldUser.UpdatedAt = updatedAt
 
 	// updating database
-	e = get_user_connector.SetUser(oldUser).Add()
+	e = userConnector.SetUser(oldUser).Add()
 	if e != nil {
-		err = helpers.RaiseCannotSaveUserInDatabase()
+		err = errorHelper.RaiseCannotSaveUserInDatabase()
 		return err
 	}
 	return
 }
 
-func ExtractTokenFromHeader(header string) (token string, err *helpers.RequestError) {
+func ExtractTokenFromHeader(header string) (token string, err *errorHelper.RequestError) {
 	splitToken := strings.Split(header, " ")
 
 	if len(splitToken) != 2 {
-		err = helpers.RaiseInvalidTokenFormat()
+		err = errorHelper.RaiseInvalidTokenFormat()
 		return "", err
 	}
 
 	if splitToken[0] != "Bearer" {
-		err = helpers.RaiseInvalidAuthorizationMethod()
+		err = errorHelper.RaiseInvalidAuthorizationMethod()
 		return "", err
 	}
 
