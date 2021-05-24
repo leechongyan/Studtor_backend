@@ -6,33 +6,39 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	availability_connector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
+	booking_connector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
 	course_connector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
-	time_connector "github.com/leechongyan/Studtor_backend/database_service/connector/time_connector"
 	tutor_connector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
 	"github.com/leechongyan/Studtor_backend/helpers"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
+<<<<<<< HEAD
 // TODO: @Chong Yan, please note changes in database_connector interface for commit dated 24 May
 
 func GetAllCourses() gin.HandlerFunc {
+=======
+func GetCourses() gin.HandlerFunc {
+>>>>>>> 56920c9abb9d7f3dca56b2b04ea399d4cfacfa11
 	return func(c *gin.Context) {
-		var query models.ObjectPaginated_query
+		var query models.CoursePaginated_query
 
 		err := helpers.ExtractGetRequestBody(c, &query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+
 		get_course_connector := course_connector.Init()
 
 		if query.Size != nil {
 			get_course_connector.SetSize(*query.Size)
 		}
 		if query.From_id != nil {
-			get_course_connector.SetFromID(*query.From_id)
+			get_course_connector.SetCourseCode(*query.From_id)
 		}
-		courses, e := get_course_connector.Get()
+		courses, e := get_course_connector.GetAll()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -43,9 +49,36 @@ func GetAllCourses() gin.HandlerFunc {
 	}
 }
 
-func GetAllTutors() gin.HandlerFunc {
+func GetSingleCourse() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var query models.ObjectPaginated_query
+		var query models.CoursePaginated_query
+
+		err := helpers.ExtractGetRequestBody(c, &query)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		get_course_connector := course_connector.Init()
+
+		course_id := c.Param("course")
+
+		// get single course
+		i, _ := strconv.Atoi(course_id)
+		course, e := get_course_connector.SetCourseId(i).GetSingle()
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, course)
+		return
+	}
+}
+
+func GetTutors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var query models.TutorPaginated_query
 
 		err := helpers.ExtractGetRequestBody(c, &query)
 		if err != nil {
@@ -55,22 +88,67 @@ func GetAllTutors() gin.HandlerFunc {
 
 		get_tutor_connector := tutor_connector.Init()
 
+		t_id := c.Param("tutor_id")
+
+		if t_id != "" {
+			// return a single tutor
+			tutor_id, _ := strconv.Atoi(t_id)
+			tutor, e := get_tutor_connector.SetTutorId(tutor_id).GetSingle()
+			if e != nil {
+				err := helpers.RaiseDatabaseError()
+				c.JSON(err.StatusCode, err.Error())
+				return
+			}
+			c.JSON(http.StatusOK, tutor)
+			return
+		}
+		// return a list of tutors
 		if query.From_id != nil {
-			get_tutor_connector.SetFromID(*query.From_id)
+			get_tutor_connector.SetTutorId(*query.From_id)
 		}
 
 		if query.Size != nil {
 			get_tutor_connector.SetSize(*query.Size)
 		}
 
-		// whether you are getting the tutor for a certain course
-		course := c.Param("course")
-		if course != "" {
-			course_id, _ := strconv.Atoi(course)
-			get_tutor_connector.SetCourse(course_id)
+		tutors, e := get_tutor_connector.GetAll()
+		if e != nil {
+			err := helpers.RaiseDatabaseError()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, tutors)
+		return
+	}
+}
+
+func GetCoursesTutors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var query models.TutorPaginated_query
+
+		err := helpers.ExtractGetRequestBody(c, &query)
+		if err != nil {
+			c.JSON(err.StatusCode, err.Error())
+			return
 		}
 
-		tutors, e := get_tutor_connector.Get()
+		get_tutor_connector := tutor_connector.Init()
+
+		// whether you are getting the tutor for a certain course
+		// getting a list of tutors
+		course := c.Param("course")
+		course_id, _ := strconv.Atoi(course)
+		get_tutor_connector.SetCourse(course_id)
+
+		if query.From_id != nil {
+			get_tutor_connector.SetTutorId(*query.From_id)
+		}
+
+		if query.Size != nil {
+			get_tutor_connector.SetSize(*query.Size)
+		}
+
+		tutors, e := get_tutor_connector.GetAll()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -91,13 +169,11 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 		tutor_id := c.GetString("id")
-		get_time_connector := time_connector.Init()
-
-		get_time_connector.SetIsBook(false)
+		get_time_connector := availability_connector.Init()
 
 		if tutor_id != "" {
 			tut_id, _ := strconv.Atoi(tutor_id)
-			get_time_connector.SetUserId(tut_id)
+			get_time_connector.SetTutorId(tut_id)
 		}
 		e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Add()
 
@@ -113,23 +189,16 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slot_query models.TimeSlot
+		var slot_query models.Availability
 
 		err := helpers.ExtractPostRequestBody(c, &slot_query)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		tutor_id := c.GetString("id")
-		get_time_connector := time_connector.Init()
+		get_time_connector := availability_connector.Init()
 
-		get_time_connector.SetIsBook(false)
-
-		if tutor_id != "" {
-			tut_id, _ := strconv.Atoi(tutor_id)
-			get_time_connector.SetUserId(tut_id)
-		}
-		e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Delete()
+		e := get_time_connector.SetAvailabilityId(*slot_query.Availability_id).Delete()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -154,13 +223,11 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 
 		tutor_id := c.Param("tutor")
 
-		get_time_connector := time_connector.Init()
-
-		get_time_connector.SetIsBook(false)
+		get_time_connector := availability_connector.Init()
 
 		if tutor_id != "" {
 			tut_id, _ := strconv.Atoi(tutor_id)
-			get_time_connector.SetUserId(tut_id)
+			get_time_connector.SetTutorId(tut_id)
 		}
 
 		times, e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Get()
@@ -185,12 +252,11 @@ func BookTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		get_time_connector := time_connector.Init()
+		get_time_connector := booking_connector.Init()
 
-		get_time_connector.SetIsBook(true)
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e := get_time_connector.SetStudentId(id).SetTutorId(*slot_query.Tutor).SetFromTime(slot_query.From).SetToTime(slot_query.To).Add()
+		e := get_time_connector.SetCourseId(*slot_query.Course).SetStudentId(id).SetAvailabilityId(*slot_query.Availability_id).Add()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -212,12 +278,11 @@ func UnbookTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		get_time_connector := time_connector.Init()
+		get_time_connector := booking_connector.Init()
 
-		get_time_connector.SetIsBook(true)
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e := get_time_connector.SetStudentId(id).SetTutorId(*slot_query.Tutor).SetFromTime(slot_query.From).SetToTime(slot_query.To).Delete()
+		e := get_time_connector.SetCourseId(*slot_query.Course).SetStudentId(id).SetAvailabilityId(*slot_query.Availability_id).Delete()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()
@@ -241,16 +306,16 @@ func GetAllBookedTime() gin.HandlerFunc {
 
 		user_id := c.Param("user")
 
-		get_time_connector := time_connector.Init()
+		get_time_connector := booking_connector.Init()
 
-		get_time_connector.SetIsBook(true)
-
+		var id int
 		if user_id != "" {
-			uid, _ := strconv.Atoi(user_id)
-			get_time_connector.SetUserId(uid)
+			id, _ = strconv.Atoi(user_id)
+		} else {
+			id, _ = strconv.Atoi(c.GetString("id"))
 		}
 
-		times, e := get_time_connector.SetFromTime(slot_query.From).SetToTime(slot_query.To).Get()
+		times, e := get_time_connector.SetUserId(id).SetFromTime(slot_query.From).SetToTime(slot_query.To).Get()
 
 		if e != nil {
 			err := helpers.RaiseDatabaseError()

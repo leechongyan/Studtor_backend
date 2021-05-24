@@ -196,19 +196,13 @@ func (db SQLiteDB) SaveUser(user db_model.User) (err error) {
 		db_user.VKey.Valid = true
 	}
 
-	if user.Verified == 0 {
-		db_user.Verified = 0
-	} else {
-		db_user.Verified = 1
-	}
+	db_user.Verified = user.Verified
 
-	if user.UserCreatedAt.Valid {
-		db_user.UserCreatedAt.Time = user.UserCreatedAt.Time
-		db_user.UserCreatedAt.Valid = true
+	if !user.UserCreatedAt.IsZero() {
+		db_user.UserCreatedAt = user.UserCreatedAt
 	}
-	if user.UserUpdatedAt.Valid {
-		db_user.UserUpdatedAt.Time = user.UserUpdatedAt.Time
-		db_user.UserUpdatedAt.Valid = true
+	if !user.UserUpdatedAt.IsZero() {
+		db_user.UserUpdatedAt = user.UserUpdatedAt
 	}
 
 	if found {

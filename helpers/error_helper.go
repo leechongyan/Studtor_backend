@@ -192,3 +192,10 @@ func RaiseStorageFailure() *RequestError {
 		Err:        errors.New(constants.STORAGE_ERROR),
 	}
 }
+
+func RaiseNoRefreshToken() *RequestError {
+	return &RequestError{
+		StatusCode: http.StatusInternalServerError,
+		Err:        errors.New(constants.NO_REFRESH_TOKEN),
+	}
+}

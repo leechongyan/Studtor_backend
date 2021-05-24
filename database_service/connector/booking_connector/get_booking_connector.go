@@ -11,7 +11,7 @@ import (
 type booking_options struct {
 	course_id       *int
 	student_id      *int
-	tutor_id        *int
+	user_id         *int
 	availability_id *int
 	booking_id      *int
 	from_time       time.Time
@@ -22,7 +22,7 @@ type booking_options struct {
 type Get_booking_connector interface {
 	SetCourseId(course_id int) *booking_options
 	SetStudentId(student_id int) *booking_options
-	SetTutorId(tutor_id int) *booking_options
+	SetUserId(user_id int) *booking_options
 	SetAvailabilityId(availability_id int) *booking_options
 	SetBookingId(booking_id int) *booking_options
 	SetFromTime(from_time time.Time) *booking_options
@@ -47,8 +47,8 @@ func (c *booking_options) SetStudentId(student_id int) *booking_options {
 	return c
 }
 
-func (c *booking_options) SetTutorId(tutor_id int) *booking_options {
-	c.tutor_id = &tutor_id
+func (c *booking_options) SetUserId(user_id int) *booking_options {
+	c.user_id = &user_id
 	return c
 }
 
@@ -106,17 +106,20 @@ func (c *booking_options) Get() (times []models.BookingDetails, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
+	if c.user_id == nil {
+		return nil, errors.New("User id must be provided")
+	}
 	if !c.from_time.IsZero() && !c.to_time.IsZero() {
 		if c.from_time.After(c.to_time) {
 			return nil, errors.New("From Time cannot be greater than or equal to To Time")
 		}
-		return database_service.CurrentDatabaseConnector.GetBookingsByIdFromTo(*c.student_id, c.from_time, c.to_time)
+		return database_service.CurrentDatabaseConnector.GetBookingsByIdFromTo(*c.user_id, c.from_time, c.to_time)
 	}
 	if !c.from_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetBookingsByIdFrom(*c.tutor_id, c.from_time)
+		return database_service.CurrentDatabaseConnector.GetBookingsByIdFrom(*c.user_id, c.from_time)
 	}
 	if !c.to_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetBookingsByIdTo(*c.tutor_id, c.to_time)
+		return database_service.CurrentDatabaseConnector.GetBookingsByIdTo(*c.user_id, c.to_time)
 	}
-	return database_service.CurrentDatabaseConnector.GetBookingsById(*c.tutor_id)
+	return database_service.CurrentDatabaseConnector.GetBookingsById(*c.user_id)
 }

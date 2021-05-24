@@ -100,17 +100,19 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 		return err
 	}
 
-	oldUser.Token = &signedToken
-	oldUser.Refresh_token = &signedRefreshToken
+	oldUser.Token.Valid = true
+	oldUser.Token.String = signedToken
+	oldUser.RefreshToken.Valid = true
+	oldUser.RefreshToken.String = signedRefreshToken
 
 	// if is a new creation
-	if oldUser.Created_at.IsZero() {
+	if oldUser.UserCreatedAt.IsZero() {
 		Created_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		oldUser.Created_at = Created_at
+		oldUser.UserCreatedAt = Created_at
 	}
 
 	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	oldUser.Updated_at = Updated_at
+	oldUser.UpdatedAt = Updated_at
 
 	// updating database
 	e = get_user_connector.SetUser(oldUser).Add()
@@ -118,7 +120,6 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 		err = helpers.RaiseCannotSaveUserInDatabase()
 		return err
 	}
-	// TODO: Connector to the database not mock object
 	return
 }
 

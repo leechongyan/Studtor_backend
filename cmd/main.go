@@ -41,20 +41,34 @@ func main() {
 	// ping to validate authorized status
 	home.GET("/", authhandler.GetMain())
 
-	// for general usage
-	home.GET("/user/*user", authhandler.GetUser())
-	home.GET("/courses", tuthandler.GetAllCourses())
+	// get current user
+	home.GET("/user", authhandler.GetCurrentUser())
+	// get other user by their user id
+	home.GET("/user/:user", authhandler.GetUser())
+	// upload profile picture for the current user
+	home.POST("/user/uploadprofilepicture", authhandler.UploadUserProfilePicture())
+
+	// get a list of courses
+	home.GET("/courses", tuthandler.GetCourses())
+
+	// get a course
+	home.GET("/courses/:course", tuthandler.GetSingleCourse())
+
+	// get the tutors for a course
+	home.GET("/courses/:course/tutors/", tuthandler.GetCoursesTutors())
+
+	// get all the tutors or get a single tutor
+	home.GET("/tutors/*tutor_id", tuthandler.GetTutors())
 
 	// for tutor usage
-	home.POST("/putavailabletime", tuthandler.PutAvailableTimeTutor())
-	home.POST("/deleteavailabletime", tuthandler.DeleteAvailableTimeTutor())
+	home.POST("/tutors/putavailabletime", tuthandler.PutAvailableTimeTutor())
+	home.POST("/tutors/deleteavailabletime", tuthandler.DeleteAvailableTimeTutor())
 
 	// for student usage
-	home.GET("/tutors/*course", tuthandler.GetAllTutors())
-	home.GET("/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
-	home.POST("/book", tuthandler.BookTimeTutor())
-	home.POST("/unbook", tuthandler.UnbookTimeTutor())
-	home.GET("/bookedtime/:user", tuthandler.GetAllBookedTime())
+	home.GET("/students/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
+	home.POST("/students/book", tuthandler.BookTimeTutor())
+	home.POST("/students/unbook", tuthandler.UnbookTimeTutor())
+	home.GET("/users/bookedtime/*user", tuthandler.GetAllBookedTime())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))

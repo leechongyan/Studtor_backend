@@ -29,6 +29,6 @@ func InitStorage() (err error) {
 		return
 	}
 	// future add cred file
-	// CurrentStorageConnector, err = InitGoogleStorage()
+	CurrentStorageConnector, err = InitGoogleStorage()
 	return
 }
