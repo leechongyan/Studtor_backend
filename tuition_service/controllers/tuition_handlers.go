@@ -15,13 +15,7 @@ import (
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
-<<<<<<< HEAD
-// TODO: @Chong Yan, please note changes in database_connector interface for commit dated 24 May
-
-func GetAllCourses() gin.HandlerFunc {
-=======
 func GetCourses() gin.HandlerFunc {
->>>>>>> 56920c9abb9d7f3dca56b2b04ea399d4cfacfa11
 	return func(c *gin.Context) {
 		var query models.CoursePaginatedQuery
 
@@ -36,8 +30,8 @@ func GetCourses() gin.HandlerFunc {
 		if query.Size != nil {
 			courseConnector.SetSize(*query.Size)
 		}
-		if query.FromId != nil {
-			courseConnector.SetCourseCode(*query.FromId)
+		if query.Offset != nil {
+			courseConnector.SetOffset(*query.Offset)
 		}
 		courses, e := courseConnector.GetAll()
 
@@ -73,7 +67,6 @@ func GetSingleCourse() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, course)
-		return
 	}
 }
 

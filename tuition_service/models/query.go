@@ -8,8 +8,8 @@ import (
 // default start from start
 // default return all
 type CoursePaginatedQuery struct {
-	FromId *string `form:"from_id"`
-	Size   *int    `form:"size"`
+	Offset *int `form:"offset"`
+	Size   *int `form:"size"`
 }
 
 type TutorPaginatedQuery struct {

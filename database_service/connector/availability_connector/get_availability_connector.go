@@ -4,95 +4,95 @@ import (
 	"errors"
 	"time"
 
-	database_service "github.com/leechongyan/Studtor_backend/database_service/controller"
+	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
 
-type time_options struct {
-	tutor_id        *int
-	availability_id *int
-	from_time       time.Time
-	to_time         time.Time
-	err             error
+type availabilityOptions struct {
+	tutorId        *int
+	availabilityId *int
+	fromTime       time.Time
+	toTime         time.Time
+	err            error
 }
 
-type Get_availability_connector interface {
-	SetTutorId(tutor_id int) *time_options
-	SetAvailabilityId(availability_id int) *time_options
-	SetFromTime(from_time time.Time) *time_options
-	SetToTime(to_time time.Time) *time_options
+type AvailabilityConnector interface {
+	SetTutorId(tutorId int) *availabilityOptions
+	SetAvailabilityId(availabilityId int) *availabilityOptions
+	SetFromTime(fromTime time.Time) *availabilityOptions
+	SetToTime(toTime time.Time) *availabilityOptions
 	Add() (err error)
 	Delete() (err error)
 	Get() (times []models.Availability, err error)
 }
 
-func Init() *time_options {
-	r := time_options{}
+func Init() *availabilityOptions {
+	r := availabilityOptions{}
 	return &r
 }
 
-func (c *time_options) SetTutorId(tutor_id int) *time_options {
-	c.tutor_id = &tutor_id
+func (c *availabilityOptions) SetTutorId(tutorId int) *availabilityOptions {
+	c.tutorId = &tutorId
 	return c
 }
 
-func (c *time_options) SetAvailabilityId(availability_id int) *time_options {
-	c.availability_id = &availability_id
+func (c *availabilityOptions) SetAvailabilityId(availabilityId int) *availabilityOptions {
+	c.availabilityId = &availabilityId
 	return c
 }
 
-func (c *time_options) SetFromTime(from_time time.Time) *time_options {
-	c.from_time = from_time
+func (c *availabilityOptions) SetFromTime(fromTime time.Time) *availabilityOptions {
+	c.fromTime = fromTime
 	return c
 }
 
-func (c *time_options) SetToTime(to_time time.Time) *time_options {
-	c.to_time = to_time
+func (c *availabilityOptions) SetToTime(toTime time.Time) *availabilityOptions {
+	c.toTime = toTime
 	return c
 }
 
-func (c *time_options) Add() (err error) {
+func (c *availabilityOptions) Add() (err error) {
 	if c.err != nil {
 		return c.err
 	}
-	if c.from_time.IsZero() || c.to_time.IsZero() {
+	if c.fromTime.IsZero() || c.toTime.IsZero() {
 		return errors.New("Two times have to be provided")
 	}
-	if c.tutor_id == nil {
+	if c.tutorId == nil {
 		return errors.New("Tutor id has to be provided")
 	}
-	return database_service.CurrentDatabaseConnector.SaveTutorAvailability(*c.tutor_id, c.from_time, c.to_time)
+	return databaseService.CurrentDatabaseConnector.SaveTutorAvailability(*c.tutorId, c.fromTime, c.toTime)
 }
 
-func (c *time_options) Delete() (err error) {
+func (c *availabilityOptions) Delete() (err error) {
 	if c.err != nil {
 		return c.err
 	}
 
-	if c.availability_id == nil {
+	if c.availabilityId == nil {
 		return errors.New("Availability id has to be provided")
 	}
-	return database_service.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availability_id)
+	return databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availabilityId)
 }
 
-func (c *time_options) Get() (times []models.Availability, err error) {
+func (c *availabilityOptions) Get() (times []models.Availability, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.tutor_id == nil {
+	if c.tutorId == nil {
 		return nil, errors.New("Tutor id has to be provided")
 	}
-	if !c.from_time.IsZero() && !c.to_time.IsZero() {
-		if c.from_time.After(c.to_time) {
+	if !c.fromTime.IsZero() && !c.toTime.IsZero() {
+		if c.fromTime.After(c.toTime) {
 			return nil, errors.New("From Time cannot be greater than or equal to To Time")
 		}
-		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdFromTo(*c.tutor_id, c.from_time, c.to_time)
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdFromTo(*c.tutorId, c.fromTime, c.toTime)
 	}
-	if !c.from_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdFrom(*c.tutor_id, c.from_time)
+	if !c.fromTime.IsZero() {
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdFrom(*c.tutorId, c.fromTime)
 	}
-	if !c.to_time.IsZero() {
-		return database_service.CurrentDatabaseConnector.GetAvailabilityByIdTo(*c.tutor_id, c.to_time)
+	if !c.toTime.IsZero() {
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdTo(*c.tutorId, c.toTime)
 	}
-	return database_service.CurrentDatabaseConnector.GetAvailabilityById(*c.tutor_id)
+	return databaseService.CurrentDatabaseConnector.GetAvailabilityById(*c.tutorId)
 }
