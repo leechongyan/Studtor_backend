@@ -139,20 +139,29 @@ func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	var coursesWithoutSize []models.Course
 	var tutorSizes []int
 	var studentSizes []int
-
-	if c.size != nil && c.schoolCode != nil && c.offset != nil {
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSizeWithOffset(*c.schoolCode, *c.offset, *c.size)
-	} else if c.size != nil && c.schoolCode != nil {
-		// get for school from start to size x
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSize(*c.schoolCode, *c.size)
-	} else if c.offset != nil && c.schoolCode != nil {
-		// get for school from offset to the end
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolWithOffset(*c.schoolCode, *c.offset)
-	} else if c.schoolCode != nil {
-		// get for school
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchool(*c.schoolCode)
+	if c.schoolCode != nil {
+		if c.size != nil && c.offset != nil {
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSizeWithOffset(*c.schoolCode, *c.offset, *c.size)
+		} else if c.size != nil {
+			// get for school from start to size x
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSize(*c.schoolCode, *c.size)
+		} else if c.offset != nil {
+			// get for school from offset to the end
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolWithOffset(*c.schoolCode, *c.offset)
+		} else {
+			// get for school
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchool(*c.schoolCode)
+		}
 	} else {
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
+		if c.size != nil && c.offset != nil {
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesOfSizeWithOffset(*c.offset, *c.size)
+		} else if c.size != nil {
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesOfSize(*c.size)
+		} else if c.offset != nil {
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesWithOffset(*c.offset)
+		} else {
+			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
+		}
 	}
 	if err != nil {
 		return nil, err

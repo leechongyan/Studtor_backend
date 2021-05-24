@@ -67,15 +67,22 @@ func (c *tutorOptions) Add() (err error) {
 		return c.err
 	}
 	// add the tutor here connect to database
+	if c.tutorId != nil && c.courseId != nil {
+		return databaseService.CurrentDatabaseConnector.SaveTutorCourse(*c.tutorId, *c.courseId)
+	}
+
 	if c.tutor != nil {
 		return databaseService.CurrentDatabaseConnector.SaveTutor(*c.tutor)
 	}
-	return errors.New("Tutor object must be provided")
+	return errors.New("Tutor object or (tutor id and course id) must be provided")
 }
 
 func (c *tutorOptions) Delete() (err error) {
 	if c.err != nil {
 		return c.err
+	}
+	if c.tutorId != nil && c.courseId != nil {
+		return databaseService.CurrentDatabaseConnector.DeleteTutorCourse(*c.tutorId, *c.courseId)
 	}
 	if c.tutorEmail != nil {
 		return databaseService.CurrentDatabaseConnector.DeleteTutorByEmail(*c.tutorEmail)
@@ -83,7 +90,7 @@ func (c *tutorOptions) Delete() (err error) {
 	if c.tutorId != nil {
 		return databaseService.CurrentDatabaseConnector.DeleteTutorById(*c.tutorId)
 	}
-	return errors.New("Tutor email or id must be provided")
+	return errors.New("Tutor email or id or (tutor id and course id) must be provided")
 }
 
 func (c *tutorOptions) GetSingle() (tutor models.Tutor, err error) {

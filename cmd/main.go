@@ -50,6 +50,15 @@ func main() {
 	// get the tutors for a course
 	home.GET("/courses/:course/tutors/", tuthandler.GetCoursesTutors())
 
+	// get a list of courses from school
+	home.GET("/schools/:school/courses/*course", tuthandler.GetCoursesForSchool())
+
+	// get a school information
+	home.GET("/schools/:school", tuthandler.GetSingleSchool())
+
+	// get all schools
+	home.GET("/schools", tuthandler.GetSchools())
+
 	// get all the tutors or get a single tutor
 	home.GET("/tutors/*tutor_id", tuthandler.GetTutors())
 
