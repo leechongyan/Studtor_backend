@@ -3,9 +3,8 @@ package user_connector
 import (
 	"errors"
 
-	"github.com/leechongyan/Studtor_backend/database_service/models"
-	// auth_model "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
+	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
 
 type userOptions struct {
@@ -51,7 +50,12 @@ func (c *userOptions) Add() (err error) {
 	if c.user == nil {
 		return errors.New("User object has to be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.SaveUser(*c.user)
+	// check whether should update or add new to database
+	// if index is 0 means the user is new
+	if c.user.ID == 0 {
+		return databaseService.CurrentDatabaseConnector.CreateUser(*c.user)
+	}
+	return databaseService.CurrentDatabaseConnector.UpdateUser(*c.user)
 }
 
 func (c *userOptions) Delete() (err error) {

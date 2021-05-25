@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -72,6 +71,7 @@ func SignUp() gin.HandlerFunc {
 
 		// save user in db
 		e = userConnector.SetUser(database_user).Add()
+
 		if e != nil {
 			err := errorHelper.RaiseCannotSaveUserInDatabase()
 			c.JSON(err.StatusCode, err.Error())
@@ -184,16 +184,16 @@ func Login() gin.HandlerFunc {
 
 func RefreshToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		emailInByte, e := ioutil.ReadAll(c.Request.Body)
-		email := string(emailInByte)
-		if e != nil {
-			err := errorHelper.RaiseCannotParseJson()
+		var refresh authModel.Refresh
+
+		err := httpHelper.ExtractPostRequestBody(c, &refresh)
+		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserEmail(email).Get()
+		foundUser, e := userConnector.SetUserEmail(*refresh.Email).Get()
 
 		// check whether user exists
 		if e != nil {
@@ -221,7 +221,7 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		err = authHelper.UpdateAllTokens(token, foundUser.RefreshToken.String, email)
+		err = authHelper.UpdateAllTokens(token, foundUser.RefreshToken.String, foundUser.Email)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -233,16 +233,16 @@ func RefreshToken() gin.HandlerFunc {
 
 func Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		emailInByte, e := ioutil.ReadAll(c.Request.Body)
-		email := string(emailInByte)
+		uid := c.GetString("id")
+		userId, e := strconv.Atoi(uid)
 		if e != nil {
-			err := errorHelper.RaiseCannotParseJson()
+			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserEmail(email).Get()
+		foundUser, e := userConnector.SetUserId(userId).Get()
 
 		// check whether user exists
 		if e != nil {
@@ -267,12 +267,6 @@ func Logout() gin.HandlerFunc {
 	}
 }
 
-func GetMain() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, "Success")
-	}
-}
-
 func uploadUserProfilePicture(c *gin.Context) (url string, err *errorHelper.RequestError) {
 	file, fileHeader, e := c.Request.FormFile("file")
 	if e != nil {
@@ -293,7 +287,13 @@ func uploadUserProfilePicture(c *gin.Context) (url string, err *errorHelper.Requ
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := c.Param("user")
-		userId, _ := strconv.Atoi(user)
+		userId, e := strconv.Atoi(user)
+		if e != nil {
+			err := errorHelper.RaiseCannotParseRequest()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
 		userConnector := userConnector.Init()
 		foundUser, e := userConnector.SetUserId(userId).Get()
 

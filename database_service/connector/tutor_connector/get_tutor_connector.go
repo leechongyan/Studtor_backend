@@ -17,7 +17,7 @@ type tutorOptions struct {
 }
 
 type TutorConnector interface {
-	SetCourse(courseId int) *tutorOptions
+	SetCourseId(courseId int) *tutorOptions
 	SetSize(size int) *tutorOptions
 	SetTutorId(tutorId int) *tutorOptions
 	SetTutorEmail(tutorEmail string) *tutorOptions
@@ -33,7 +33,7 @@ func Init() *tutorOptions {
 	return &r
 }
 
-func (c *tutorOptions) SetCourse(courseId int) *tutorOptions {
+func (c *tutorOptions) SetCourseId(courseId int) *tutorOptions {
 	c.courseId = &courseId
 	return c
 }
@@ -66,15 +66,17 @@ func (c *tutorOptions) Add() (err error) {
 	if c.err != nil {
 		return c.err
 	}
-	// add the tutor here connect to database
 	if c.tutorId != nil && c.courseId != nil {
 		return databaseService.CurrentDatabaseConnector.SaveTutorCourse(*c.tutorId, *c.courseId)
 	}
 
-	if c.tutor != nil {
-		return databaseService.CurrentDatabaseConnector.SaveTutor(*c.tutor)
+	if c.tutor == nil {
+		return errors.New("Tutor object or (tutor id and course id) must be provided")
 	}
-	return errors.New("Tutor object or (tutor id and course id) must be provided")
+	if c.tutor.ID == 0 {
+		return databaseService.CurrentDatabaseConnector.CreateTutor(*c.tutor)
+	}
+	return databaseService.CurrentDatabaseConnector.UpdateTutor(*c.tutor)
 }
 
 func (c *tutorOptions) Delete() (err error) {

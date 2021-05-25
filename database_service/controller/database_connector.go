@@ -26,8 +26,10 @@ type DatabaseConnector interface {
 	GetUserById(user_id int) (user db_model.User, err error)
 	// GetUserByEmail retrieves a user model object by the user's email from the database.
 	GetUserByEmail(email string) (user db_model.User, err error)
-	// SaveUser saves an user object into the database.
-	SaveUser(user db_model.User) (err error)
+	// CreateUser saves an user object into the database.
+	CreateUser(user db_model.User) (err error)
+	// UpdateUser updates an user object into the database.
+	UpdateUser(user db_model.User) (err error)
 	// DeleteUserById deletes an user object by the user's id from the database.
 	DeleteUserById(user_id int) (err error)
 	// DeleteUserByEmail deletes an user object by the user's email from the database.
@@ -90,8 +92,10 @@ type DatabaseConnector interface {
 	GetTutorById(tutor_id int) (tutor db_model.Tutor, err error)
 	// GetTutorByEmail retrieves a tutor model object by the tutor's email from the database.
 	GetTutorByEmail(email string) (tutor db_model.Tutor, err error)
-	// SaveTutor saves a tutor model object into the database.
-	SaveTutor(tutor db_model.Tutor) (err error)
+	// CreateTutor creates a tutor model object into the database.
+	CreateTutor(tutor db_model.Tutor) (err error)
+	// UpdateTutor updates a tutor model object into the database.
+	UpdateTutor(tutor db_model.Tutor) (err error)
 	// DeleteTutorById deletes a tutor model object by the tutor's id from the database.
 	DeleteTutorById(tutor_id int) (err error)
 	// DeleteUserByEmail deletes a tutor model object by the tutor's email from the database.

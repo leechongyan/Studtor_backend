@@ -39,16 +39,18 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slotQuery models.Availability
-
-		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
-		if err != nil {
+		aId := c.Param("availability_id")
+		availabilityId, e := strconv.Atoi(aId)
+		if e != nil {
+			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+		// TODO Check whether the availability id belongs to the current user
+
 		availabilityConnector := availabilityConnector.Init()
 
-		e := availabilityConnector.SetAvailabilityId(*slotQuery.AvailabilityId).Delete()
+		e := availabilityConnector.SetAvailabilityId(availabilityId).Delete()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -60,7 +62,6 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	}
 }
 
-// TODO:
 func GetAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var slotQuery models.TimePaginatedQuery
@@ -96,10 +97,18 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 
 func BookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slotQuery models.BookSlot
+		aId := c.Param("availability_id")
+		availabilityId, e := strconv.Atoi(aId)
+		if e != nil {
+			err := errorHelper.RaiseCannotParseRequest()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
 
-		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
-		if err != nil {
+		cId := c.Param("course_id")
+		courseId, e := strconv.Atoi(cId)
+		if e != nil {
+			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
@@ -108,7 +117,7 @@ func BookTimeTutor() gin.HandlerFunc {
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e := bookingConnector.SetCourseId(*slotQuery.Course).SetStudentId(id).SetAvailabilityId(*slotQuery.AvailabilityId).Add()
+		e = bookingConnector.SetCourseId(courseId).SetStudentId(id).SetAvailabilityId(availabilityId).Add()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -122,19 +131,18 @@ func BookTimeTutor() gin.HandlerFunc {
 
 func UnbookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slotQuery models.BookSlot
-
-		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
-		if err != nil {
+		bId := c.Param("booking_id")
+		bookingId, e := strconv.Atoi(bId)
+		if e != nil {
+			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+		// TODO Check whether the booking id belongs to the tutor or the student
 
 		bookingConnector := bookingConnector.Init()
 
-		id, _ := strconv.Atoi(c.GetString("id"))
-
-		e := bookingConnector.SetCourseId(*slotQuery.Course).SetStudentId(id).SetAvailabilityId(*slotQuery.AvailabilityId).Delete()
+		e = bookingConnector.SetBookingId(bookingId).Delete()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -150,23 +158,26 @@ func GetAllBookedTime() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var slotQuery models.TimePaginatedQuery
 
-		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
+		err := httpHelper.ExtractGetRequestBody(c, &slotQuery)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
-			return
-		}
-
-		userId := c.Param("user_id")
-		id, e := strconv.Atoi(userId)
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
 		bookingConnector := bookingConnector.Init()
 
-		times, e := bookingConnector.SetUserId(id).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
+		if slotQuery.IsStudent == nil || *slotQuery.IsStudent {
+			// if is a student, use current student id
+			// default is get user
+			studentId, _ := strconv.Atoi(c.GetString("id"))
+			bookingConnector.SetUserId(studentId)
+		} else {
+			// get the tutor
+			tutorId, _ := strconv.Atoi(c.Param("tutor_id"))
+			bookingConnector.SetUserId(tutorId)
+		}
+
+		times, e := bookingConnector.SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
