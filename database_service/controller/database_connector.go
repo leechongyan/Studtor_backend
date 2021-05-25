@@ -67,20 +67,12 @@ type DatabaseConnector interface {
 	// enrolled in the course and the number of tutors for the course, from the database.
 	// Sorted by course code.
 	GetCourses() (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesWithOffset retrieves the list of courses for a school_code from offset to end
-	GetCoursesWithOffset(offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesOfSize retrieves the list of courses from start up to x size
-	GetCoursesOfSize(size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesOfSizeWithOffset retrieves the list of courses from offset up to x size
-	GetCoursesOfSizeWithOffset(offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesForSchool retrieves the entire list of courses for a school_code.
-	GetCoursesForSchool(school_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesForSchoolWithOffset retrieves the list of courses for a school_code from offset to end
-	GetCoursesForSchoolWithOffset(school_code string, offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesForSchoolOfSize retrieves the list of courses for a school_code from start up to x size
-	GetCoursesForSchoolOfSize(school_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
-	// GetCoursesForSchoolOfSize retrieves the list of courses for a school_code from offset up to x size
-	GetCoursesForSchoolOfSizeWithOffset(school_code string, offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
+
+	// I will return a map, mapping school to courses to chin
+	// TODO (Jordan getting schools get a list of school for chin filtering column)
+	GetSchools() (schools []db_model.School, err error)
+	// TODO (Jordan GetCoursesIdForSchool gets a list of course code attached the the school)
+	GetCoursesCodeForSchool(schoolCode string) (courseCode []string, err error)
 
 	/*
 		Tutors model
