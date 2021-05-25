@@ -7,10 +7,6 @@ import (
 // when querying, from_id and size are optional field
 // default start from start
 // default return all
-type CoursePaginatedQuery struct {
-	Offset *int `form:"offset"`
-	Size   *int `form:"size"`
-}
 
 type TutorPaginatedQuery struct {
 	FromId *int `form:"from_id"`

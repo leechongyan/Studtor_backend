@@ -14,9 +14,9 @@ type School struct {
 	SchoolCode string
 }
 
-type SchoolWithSubject struct {
+type SchoolWithCourses struct {
 	gorm.Model
 	ID          int
 	SchoolCode  string
-	CourseCodes []int
+	CourseCodes []string
 }

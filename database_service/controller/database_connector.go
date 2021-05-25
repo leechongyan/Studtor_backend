@@ -38,7 +38,7 @@ type DatabaseConnector interface {
 	*/
 
 	// GetCoursesForTutor retrieves a list of all courses that a tutor is teaching from the database.
-	GetCoursesForTutor(tutor_id int) (courses []db_model.Course, err error)
+	GetCoursesForTutor(tutor_id int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
 	// GetTutorsForCourse retrieves a list of all tutors for a particular course from the database.
 	GetTutorsForCourse(course_id int) (tutors []db_model.Tutor, err error)
 	// GetTutorsForCourseFromIdOfSize retrieves a list of tutors for a particular course from the database,

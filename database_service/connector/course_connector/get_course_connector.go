@@ -8,25 +8,16 @@ import (
 )
 
 type courseOptions struct {
-	offset         *int
-	size           *int
-	courseCode     *string
-	schoolCode     *string
-	courseId       *int
-	tutorId        *int
-	course         *models.Course
-	courseWithSize *models.CourseWithSize
-	err            error
+	courseId *int
+	tutorId  *int
+	course   *models.Course
+	err      error
 }
 
 type CourseConnector interface {
-	SetSize(size int) *courseOptions
-	SetCourseCode(courseCode string) *courseOptions
-	SetSchoolCode(schoolCode string) *courseOptions
 	SetCourseId(courseId int) *courseOptions
 	SetTutorId(tutorId int) *courseOptions
 	SetCourse(course models.Course) *courseOptions
-	SetCourseWithSize(course models.CourseWithSize) *courseOptions
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (courses []models.CourseWithSize, err error)
@@ -36,34 +27,6 @@ type CourseConnector interface {
 func Init() *courseOptions {
 	r := courseOptions{}
 	return &r
-}
-
-func (c *courseOptions) SetSize(size int) *courseOptions {
-	// check for size
-	if size <= 0 {
-		c.err = errors.New("Size cannot be 0 or negative")
-	}
-	c.size = &size
-	return c
-}
-
-func (c *courseOptions) SetOffset(offset int) *courseOptions {
-	// check for offset
-	if offset <= 0 {
-		c.err = errors.New("Size cannot be 0 or negative")
-	}
-	c.offset = &offset
-	return c
-}
-
-func (c *courseOptions) SetSchoolCode(schoolCode string) *courseOptions {
-	c.schoolCode = &schoolCode
-	return c
-}
-
-func (c *courseOptions) SetCourseCode(courseCode string) *courseOptions {
-	c.courseCode = &courseCode
-	return c
 }
 
 func (c *courseOptions) SetCourseId(courseId int) *courseOptions {
@@ -77,20 +40,7 @@ func (c *courseOptions) SetTutorId(tutorId int) *courseOptions {
 }
 
 func (c *courseOptions) SetCourse(course models.Course) *courseOptions {
-	if c.courseWithSize != nil {
-		c.err = errors.New("Course With Size has already been set")
-		return c
-	}
 	c.course = &course
-	return c
-}
-
-func (c *courseOptions) SetCourseWithSize(course models.CourseWithSize) *courseOptions {
-	if c.course != nil {
-		c.err = errors.New("Course has already been set")
-		return c
-	}
-	c.courseWithSize = &course
 	return c
 }
 
@@ -122,13 +72,8 @@ func (c *courseOptions) GetSingle() (course models.CourseWithSize, err error) {
 		return models.CourseWithSize{}, err
 	}
 	// convert to course with size
-	course = models.CourseWithSize{}
-	course.ID = int(courseWithoutSize.ID)
-	course.CourseCode = courseWithoutSize.CourseCode
-	course.CourseName = courseWithoutSize.CourseName
-	course.StudentSize = studentSize
-	course.TutorSize = tutorSize
-	return course, nil
+	course = convertFromCourseToCourseWithSize(courseWithoutSize, studentSize, tutorSize)
+	return
 }
 
 func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
@@ -139,29 +84,11 @@ func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	var coursesWithoutSize []models.Course
 	var tutorSizes []int
 	var studentSizes []int
-	if c.schoolCode != nil {
-		if c.size != nil && c.offset != nil {
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSizeWithOffset(*c.schoolCode, *c.offset, *c.size)
-		} else if c.size != nil {
-			// get for school from start to size x
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolOfSize(*c.schoolCode, *c.size)
-		} else if c.offset != nil {
-			// get for school from offset to the end
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchoolWithOffset(*c.schoolCode, *c.offset)
-		} else {
-			// get for school
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForSchool(*c.schoolCode)
-		}
+
+	if c.tutorId != nil {
+		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForTutor(*c.tutorId)
 	} else {
-		if c.size != nil && c.offset != nil {
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesOfSizeWithOffset(*c.offset, *c.size)
-		} else if c.size != nil {
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesOfSize(*c.size)
-		} else if c.offset != nil {
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesWithOffset(*c.offset)
-		} else {
-			coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
-		}
+		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
 	}
 	if err != nil {
 		return nil, err
@@ -169,12 +96,17 @@ func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	courses = make([]models.CourseWithSize, len(coursesWithoutSize))
 	for i, courseWithoutSize := range coursesWithoutSize {
 		// convert to course with size
-		courses[i] = models.CourseWithSize{}
-		courses[i].CourseCode = courseWithoutSize.CourseCode
-		courses[i].CourseName = courseWithoutSize.CourseName
-		courses[i].ID = int(courseWithoutSize.ID)
-		courses[i].StudentSize = studentSizes[i]
-		courses[i].TutorSize = tutorSizes[i]
+		courses[i] = convertFromCourseToCourseWithSize(courseWithoutSize, studentSizes[i], tutorSizes[i])
 	}
-	return courses, nil
+	return
+}
+
+func convertFromCourseToCourseWithSize(courseWithoutSize models.Course, studentSize int, tutorSize int) (courseWithSize models.CourseWithSize) {
+	courseWithSize = models.CourseWithSize{}
+	courseWithSize.CourseCode = courseWithoutSize.CourseCode
+	courseWithSize.CourseName = courseWithoutSize.CourseName
+	courseWithSize.ID = int(courseWithoutSize.ID)
+	courseWithSize.StudentSize = studentSize
+	courseWithSize.TutorSize = tutorSize
+	return
 }

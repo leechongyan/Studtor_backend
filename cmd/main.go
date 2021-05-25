@@ -39,7 +39,7 @@ func main() {
 	// get current user
 	home.GET("/user", authhandler.GetCurrentUser())
 	// get other user by their user id
-	home.GET("/user/:user", authhandler.GetUser())
+	home.GET("/users/:user", authhandler.GetUser())
 
 	// get a list of courses
 	home.GET("/courses", tuthandler.GetCourses())
@@ -48,29 +48,29 @@ func main() {
 	home.GET("/courses/:course", tuthandler.GetSingleCourse())
 
 	// get the tutors for a course
-	home.GET("/courses/:course/tutors/", tuthandler.GetCoursesTutors())
+	home.GET("/courses/:course/tutors/", tuthandler.GetTutorsForCourse())
 
-	// get a list of courses from school
-	home.GET("/schools/:school/courses/*course", tuthandler.GetCoursesForSchool())
-
-	// get a school information
-	home.GET("/schools/:school", tuthandler.GetSingleSchool())
-
-	// get all schools
+	// get all schools (this is for filtering in modal)
 	home.GET("/schools", tuthandler.GetSchools())
 
-	// get all the tutors or get a single tutor
-	home.GET("/tutors/*tutor_id", tuthandler.GetTutors())
+	// get a single tutor
+	home.GET("/tutors/:tutor_id", tuthandler.GetSingleTutor())
+
+	// get all the tutors
+	home.GET("/tutors", tuthandler.GetAllTutors())
+
+	// get a list of courses taught by a tutor
+	home.GET("/tutors/:tutor_id/courses", tuthandler.GetCoursesOfTutor())
 
 	// for tutor usage
 	home.POST("/tutors/putavailabletime", tuthandler.PutAvailableTimeTutor())
 	home.POST("/tutors/deleteavailabletime", tuthandler.DeleteAvailableTimeTutor())
 
 	// for student usage
-	home.GET("/students/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
+	home.GET("/tutors/:tutor_id/availability", tuthandler.GetAvailableTimeTutor())
 	home.POST("/students/book", tuthandler.BookTimeTutor())
 	home.POST("/students/unbook", tuthandler.UnbookTimeTutor())
-	home.GET("/users/bookedtime/*user", tuthandler.GetAllBookedTime())
+	home.GET("/users/:user_id/booking", tuthandler.GetAllBookedTime())
 	// end of version v1
 
 	router.Run(viper.GetString("port"))
