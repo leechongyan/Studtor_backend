@@ -42,16 +42,16 @@ type DatabaseConnector interface {
 	// GetCoursesForTutor retrieves a list of all courses that a tutor is teaching from the database.
 	GetCoursesForTutor(tutor_id int) (courses []db_model.Course, n_students []int, n_tutors []int, err error)
 	// GetTutorsForCourse retrieves a list of all tutors for a particular course from the database.
-	GetTutorsForCourse(course_id int) (tutors []db_model.Tutor, err error)
+	GetTutorsForCourse(course_id int) (tutors []db_model.User, err error)
 	// GetTutorsForCourseFromIdOfSize retrieves a list of tutors for a particular course from the database,
 	// starting from tut_id to tut_id + size
-	GetTutorsForCourseFromIdOfSize(course_id int, tut_id int, size int) (tutors []db_model.Tutor, err error)
+	GetTutorsForCourseFromIdOfSize(course_id int, tut_id int, size int) (tutors []db_model.User, err error)
 	// GetTutorsForCourseFromId retrieves a list of tutors for a particular course from the database,
 	// starting from tut_id to the end
-	GetTutorsForCourseFromId(course_id int, tut_id int) (tutors []db_model.Tutor, err error)
+	GetTutorsForCourseFromId(course_id int, tut_id int) (tutors []db_model.User, err error)
 	// GetTutorsForCourseFromId retrieves a list of tutors for a particular course from the database,
 	// starting from 0 to size
-	GetTutorsForCourseOfSize(course_id int, size int) (tutors []db_model.Tutor, err error)
+	GetTutorsForCourseOfSize(course_id int, size int) (tutors []db_model.User, err error)
 	// SaveTutorCourse saves a tutor_course model object into the database.
 	// This function is called when a tutor registers interest to teach a course.
 	SaveTutorCourse(tutor_id int, course_id int) (err error)
@@ -74,7 +74,7 @@ type DatabaseConnector interface {
 	// TODO (Jordan getting schools get a list of school for chin filtering column)
 	GetSchools() (schools []db_model.School, err error)
 	// TODO (Jordan GetCoursesIdForSchool gets a list of course code attached the the school)
-	GetCoursesCodeForSchool(schoolCode string) (courseCode []string, err error)
+	GetCoursesForSchool(school_id int) (courses db_model.CoursesForSchool, err error)
 
 	/*
 		Booking model

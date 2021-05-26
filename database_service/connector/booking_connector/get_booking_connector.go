@@ -10,7 +10,6 @@ import (
 
 type bookingOptions struct {
 	courseId       *int
-	studentId      *int
 	userId         *int
 	availabilityId *int
 	bookingId      *int
@@ -21,7 +20,6 @@ type bookingOptions struct {
 
 type BookingConnector interface {
 	SetCourseId(courseId int) *bookingOptions
-	SetStudentId(studentId int) *bookingOptions
 	SetUserId(userId int) *bookingOptions
 	SetAvailabilityId(availabilityId int) *bookingOptions
 	SetBookingId(bookingId int) *bookingOptions
@@ -39,11 +37,6 @@ func Init() *bookingOptions {
 
 func (c *bookingOptions) SetCourseId(courseId int) *bookingOptions {
 	c.courseId = &courseId
-	return c
-}
-
-func (c *bookingOptions) SetStudentId(studentId int) *bookingOptions {
-	c.studentId = &studentId
 	return c
 }
 
@@ -77,7 +70,7 @@ func (c *bookingOptions) Add() (err error) {
 		return c.err
 	}
 
-	if c.studentId == nil {
+	if c.userId == nil {
 		return errors.New("Student id must be provided")
 	}
 
@@ -88,7 +81,7 @@ func (c *bookingOptions) Add() (err error) {
 	if c.availabilityId == nil {
 		return errors.New("Availability Id must be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.SaveBooking(*c.availabilityId, *c.studentId, *c.courseId)
+	return databaseService.CurrentDatabaseConnector.SaveBooking(*c.availabilityId, *c.userId, *c.courseId)
 }
 
 func (c *bookingOptions) Delete() (err error) {
@@ -100,28 +93,15 @@ func (c *bookingOptions) Delete() (err error) {
 		return errors.New("Booking Id must be provided")
 	}
 
-	if c.studentId == nil && c.userId == nil {
-		return errors.New("Student Id or Tutor Id must be provided")
+	if c.userId == nil {
+		return errors.New("User Id must be provided")
 	}
 
-	if c.studentId != nil {
-		studentBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.studentId)
-		if err == nil {
-			for _, studentBooking := range studentBookings {
-				if studentBooking.ID == *c.bookingId {
-					return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
-				}
-			}
-		}
-	}
-
-	if c.userId != nil {
-		tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.userId)
-		if err == nil {
-			for _, tutorBooking := range tutorBookings {
-				if tutorBooking.ID == *c.bookingId {
-					return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
-				}
+	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.userId)
+	if err == nil {
+		for _, tutorBooking := range tutorBookings {
+			if tutorBooking.ID == *c.bookingId {
+				return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
 			}
 		}
 	}

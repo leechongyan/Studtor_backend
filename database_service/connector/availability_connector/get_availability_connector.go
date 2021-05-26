@@ -83,7 +83,7 @@ func (c *availabilityOptions) Delete() (err error) {
 			return
 		}
 	}
-	return
+	return errors.New("Not authorised")
 }
 
 func (c *availabilityOptions) Get() (times []models.Availability, err error) {

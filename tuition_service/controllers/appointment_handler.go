@@ -116,7 +116,7 @@ func BookTimeTutor() gin.HandlerFunc {
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e = bookingConnector.SetCourseId(courseId).SetStudentId(id).SetAvailabilityId(availabilityId).Add()
+		e = bookingConnector.SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -142,8 +142,12 @@ func UnbookTimeTutor() gin.HandlerFunc {
 		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
 		studentId, _ := strconv.Atoi(c.GetString("id"))
 
-		e = bookingConnector.SetUserId(tutorId).SetStudentId(studentId).SetBookingId(bookingId).Delete()
-
+		e = bookingConnector.SetUserId(studentId).SetBookingId(bookingId).Delete()
+		if e == nil {
+			c.JSON(http.StatusOK, "Success")
+			return
+		}
+		e = bookingConnector.SetUserId(tutorId).SetBookingId(bookingId).Delete()
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())

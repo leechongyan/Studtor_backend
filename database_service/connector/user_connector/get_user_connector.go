@@ -3,6 +3,7 @@ package user_connector
 import (
 	"errors"
 
+	"github.com/leechongyan/Studtor_backend/constants"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -51,10 +52,17 @@ func (c *userOptions) Add() (err error) {
 		return errors.New("User object has to be provided")
 	}
 	// check whether should update or add new to database
-	// if index is 0 means the user is new
-	if c.user.ID == 0 {
+	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(c.user.Email)
+	// differentiate between no user and error in database
+	// if is network error
+	if err.Error() == constants.DATABASE_ERROR {
+		return
+	}
+	// if error is account does not exist then create user
+	if err.Error() == constants.NONEXISTENT_ACCOUNT {
 		return databaseService.CurrentDatabaseConnector.CreateUser(*c.user)
 	}
+	// user exists
 	return databaseService.CurrentDatabaseConnector.UpdateUser(*c.user)
 }
 

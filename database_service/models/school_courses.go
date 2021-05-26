@@ -8,9 +8,9 @@ import (
 
 type SchoolCourses struct {
 	gorm.Model
-	ID       int
-	SchoolID string
-	CourseID string
+	ID       uint
+	SchoolID uint
+	CourseID uint
 }
 
 type CoursesForSchool struct {

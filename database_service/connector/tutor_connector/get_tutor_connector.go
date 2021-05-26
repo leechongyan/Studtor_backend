@@ -8,24 +8,19 @@ import (
 )
 
 type tutorOptions struct {
-	courseId   *int
-	size       *int
-	tutorId    *int
-	tutorEmail *string
-	tutor      *models.Tutor
-	err        error
+	courseId *int
+	size     *int
+	tutorId  *int
+	err      error
 }
 
 type TutorConnector interface {
 	SetCourseId(courseId int) *tutorOptions
 	SetSize(size int) *tutorOptions
 	SetTutorId(tutorId int) *tutorOptions
-	SetTutorEmail(tutorEmail string) *tutorOptions
-	SetTutor(tutor models.Tutor) *tutorOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (tutors []models.Tutor, err error)
-	GetSingle() (tutor models.Tutor, err error)
+	GetAll() (tutors []models.User, err error)
 }
 
 func Init() *tutorOptions {
@@ -52,87 +47,34 @@ func (c *tutorOptions) SetTutorId(tutorId int) *tutorOptions {
 	return c
 }
 
-func (c *tutorOptions) SetTutorEmail(tutorEmail string) *tutorOptions {
-	c.tutorEmail = &tutorEmail
-	return c
-}
-
-func (c *tutorOptions) SetTutor(tutor models.Tutor) *tutorOptions {
-	c.tutor = &tutor
-	return c
-}
-
 func (c *tutorOptions) Add() (err error) {
 	if c.err != nil {
 		return c.err
 	}
-	if c.tutorId != nil && c.courseId != nil {
-		return databaseService.CurrentDatabaseConnector.SaveTutorCourse(*c.tutorId, *c.courseId)
+	if c.tutorId == nil || c.courseId == nil {
+		return errors.New("Tutor ID and Course ID must be provided")
 	}
-
-	if c.tutor == nil {
-		return errors.New("Tutor object or (tutor id and course id) must be provided")
-	}
-	if c.tutor.ID == 0 {
-		return databaseService.CurrentDatabaseConnector.CreateTutor(*c.tutor)
-	}
-	return databaseService.CurrentDatabaseConnector.UpdateTutor(*c.tutor)
+	return databaseService.CurrentDatabaseConnector.SaveTutorCourse(*c.tutorId, *c.courseId)
 }
 
 func (c *tutorOptions) Delete() (err error) {
 	if c.err != nil {
 		return c.err
 	}
-	if c.tutorId != nil && c.courseId != nil {
-		return databaseService.CurrentDatabaseConnector.DeleteTutorCourse(*c.tutorId, *c.courseId)
+	if c.tutorId == nil || c.courseId == nil {
+		return errors.New("Tutor ID and Course ID must be provided")
 	}
-	if c.tutorEmail != nil {
-		return databaseService.CurrentDatabaseConnector.DeleteTutorByEmail(*c.tutorEmail)
-	}
-	if c.tutorId != nil {
-		return databaseService.CurrentDatabaseConnector.DeleteTutorById(*c.tutorId)
-	}
-	return errors.New("Tutor email or id or (tutor id and course id) must be provided")
+	return databaseService.CurrentDatabaseConnector.DeleteTutorCourse(*c.tutorId, *c.courseId)
 }
 
-func (c *tutorOptions) GetSingle() (tutor models.Tutor, err error) {
-	if c.err != nil {
-		return models.Tutor{}, c.err
-	}
-	if c.tutorEmail != nil {
-		return databaseService.CurrentDatabaseConnector.GetTutorByEmail(*c.tutorEmail)
-	}
-	if c.tutorId != nil {
-		return databaseService.CurrentDatabaseConnector.GetTutorById(*c.tutorId)
-	}
-	return models.Tutor{}, errors.New("Tutor email or id must be provided")
-}
-
-func (c *tutorOptions) GetAll() (tutors []models.Tutor, err error) {
+func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.err != nil {
-		return nil, c.err
-	}
+
 	if c.courseId == nil {
-		// get all tutors regardless of the course they teach
-		if c.size != nil && c.tutorId != nil {
-			return databaseService.CurrentDatabaseConnector.GetTutorsFromIdOfSize(*c.tutorId, *c.size)
-		}
-		if c.size != nil {
-			// get from the start
-			return databaseService.CurrentDatabaseConnector.GetTutorsOfSize(*c.size)
-		}
-
-		if c.tutorId != nil {
-			// get from from_id to the end
-			return databaseService.CurrentDatabaseConnector.GetTutorsFromId(*c.tutorId)
-		}
-		// get all courses
-		return databaseService.CurrentDatabaseConnector.GetTutors()
+		return nil, errors.New("Course ID must be provided")
 	}
-	// get all tutors for a course
 	if c.size != nil && c.tutorId != nil {
 		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIdOfSize(*c.courseId, *c.tutorId, *c.size)
 	}
