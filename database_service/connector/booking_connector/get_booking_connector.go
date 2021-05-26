@@ -99,7 +99,34 @@ func (c *bookingOptions) Delete() (err error) {
 	if c.bookingId == nil {
 		return errors.New("Booking Id must be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
+
+	if c.studentId == nil && c.userId == nil {
+		return errors.New("Student Id or Tutor Id must be provided")
+	}
+
+	if c.studentId != nil {
+		studentBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.studentId)
+		if err == nil {
+			for _, studentBooking := range studentBookings {
+				if studentBooking.ID == *c.bookingId {
+					return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
+				}
+			}
+		}
+	}
+
+	if c.userId != nil {
+		tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.userId)
+		if err == nil {
+			for _, tutorBooking := range tutorBookings {
+				if tutorBooking.ID == *c.bookingId {
+					return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
+				}
+			}
+		}
+	}
+
+	return errors.New("Not authorised")
 }
 
 func (c *bookingOptions) Get() (times []models.BookingDetails, err error) {

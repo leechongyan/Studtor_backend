@@ -69,10 +69,21 @@ func (c *availabilityOptions) Delete() (err error) {
 		return c.err
 	}
 
-	if c.availabilityId == nil {
-		return errors.New("Availability id has to be provided")
+	if c.availabilityId == nil || c.tutorId == nil {
+		return errors.New("Availability id and tutor id have to be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availabilityId)
+
+	availabilities, err := databaseService.CurrentDatabaseConnector.GetAvailabilityById(*c.tutorId)
+	if err != nil {
+		return
+	}
+	for _, availability := range availabilities {
+		if int(availability.TutorID) == *c.tutorId {
+			err = databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availabilityId)
+			return
+		}
+	}
+	return
 }
 
 func (c *availabilityOptions) Get() (times []models.Availability, err error) {

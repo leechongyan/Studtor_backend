@@ -22,7 +22,7 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		tutorId, _ := strconv.Atoi(c.GetString("id"))
+		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
 
 		availabilityConnector := availabilityConnector.Init()
 		e := availabilityConnector.SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
@@ -46,11 +46,10 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		// TODO Check whether the availability id belongs to the current user
-
+		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
 		availabilityConnector := availabilityConnector.Init()
 
-		e := availabilityConnector.SetAvailabilityId(availabilityId).Delete()
+		e = availabilityConnector.SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -138,11 +137,12 @@ func UnbookTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		// TODO Check whether the booking id belongs to the tutor or the student
-
 		bookingConnector := bookingConnector.Init()
 
-		e = bookingConnector.SetBookingId(bookingId).Delete()
+		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
+		studentId, _ := strconv.Atoi(c.GetString("id"))
+
+		e = bookingConnector.SetUserId(tutorId).SetStudentId(studentId).SetBookingId(bookingId).Delete()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()

@@ -19,13 +19,15 @@ import (
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
 )
 
-func CheckEmailDomain(email string, domain string) bool {
+// checking that the email belongs to a given domain
+func checkEduDomain(email string, domain string) bool {
 	components := strings.Split(email, "@")
 	_, dom := components[0], components[1]
 
 	return strings.Contains(dom, domain)
 }
 
+// handle sign up request
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user authModel.User
@@ -37,7 +39,7 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// validate whether the email is valid with edu
-		if !CheckEmailDomain(*user.Email, "edu") {
+		if !checkEduDomain(*user.Email, "edu") {
 			err := errorHelper.RaiseInvalidEmail()
 			c.JSON(err.StatusCode, err.Error())
 			return
@@ -63,7 +65,7 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// create a new verification code for user
-		newVKey := authHelper.EncodeToString(6)
+		newVKey := authHelper.GenerateVerificationCode(6)
 		user.VKey = &newVKey
 
 		// need to convert auth user to database user

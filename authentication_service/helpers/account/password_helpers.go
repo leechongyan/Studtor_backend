@@ -12,7 +12,7 @@ import (
 var INTEGER_TABLE = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
 //EncodeToString is used to create a 6 digit verification code
-func EncodeToString(max int) string {
+func GenerateVerificationCode(max int) string {
 	b := make([]byte, max)
 	n, err := io.ReadAtLeast(rand.Reader, b, max)
 	if n != max {
