@@ -6,11 +6,18 @@ import (
 
 // Follow conventions here: https://gorm.io/docs/models.html#Conventions
 
-// School is the model for schools ORM
-type School struct {
+type SchoolCourses struct {
 	gorm.Model
-	ID          uint `gorm:"primaryKey"`
+	ID       int
+	SchoolID string
+	CourseID string
+}
+
+type CoursesForSchool struct {
+	ID          int
 	Institution string
 	SchoolCode  string
 	SchoolName  string
+	CourseCodes []string
+	CourseNames []string
 }

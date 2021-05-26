@@ -77,31 +77,6 @@ type DatabaseConnector interface {
 	GetCoursesCodeForSchool(schoolCode string) (courseCode []string, err error)
 
 	/*
-		Tutors model
-	*/
-
-	// GetTutors retrieves a list of all tutor model objects from the database.
-	GetTutors() (tutors []db_model.Tutor, err error)
-	// GetTutorsFromId retrieves a list of tutors from this tutor id to the end
-	GetTutorsFromId(tutor_id int) (tutors []db_model.Tutor, err error)
-	// GetTutorsFromIdOfSize retrieves a list of tutors from this tutor_id to tutor_id + size
-	GetTutorsFromIdOfSize(tutor_id int, size int) (tutors []db_model.Tutor, err error)
-	// GetTutorsOfSize retrieves a list of tutors from start to size
-	GetTutorsOfSize(size int) (tutors []db_model.Tutor, err error)
-	// GetTutorById retrieves a tutor model object by the tutor's id from the database.
-	GetTutorById(tutor_id int) (tutor db_model.Tutor, err error)
-	// GetTutorByEmail retrieves a tutor model object by the tutor's email from the database.
-	GetTutorByEmail(email string) (tutor db_model.Tutor, err error)
-	// CreateTutor creates a tutor model object into the database.
-	CreateTutor(tutor db_model.Tutor) (err error)
-	// UpdateTutor updates a tutor model object into the database.
-	UpdateTutor(tutor db_model.Tutor) (err error)
-	// DeleteTutorById deletes a tutor model object by the tutor's id from the database.
-	DeleteTutorById(tutor_id int) (err error)
-	// DeleteUserByEmail deletes a tutor model object by the tutor's email from the database.
-	DeleteTutorByEmail(email string) (err error)
-
-	/*
 		Booking model
 	*/
 
