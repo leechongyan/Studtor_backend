@@ -452,7 +452,7 @@ func (db SQLiteDB) GetTutorsForCourseOfSize(courseID, size int) (tutors []db_mod
 	return
 }
 
-func (db SQLiteDB) SaveTutorCourse(tutorID int, courseID int) (err error) {
+func (db SQLiteDB) CreateTutorCourse(tutorID int, courseID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
