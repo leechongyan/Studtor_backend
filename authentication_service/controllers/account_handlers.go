@@ -210,7 +210,7 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		_, err := authHelper.ValidateToken(foundUser.RefreshToken.String)
+		_, err = authHelper.ValidateToken(foundUser.RefreshToken.String)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return

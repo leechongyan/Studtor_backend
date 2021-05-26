@@ -10,7 +10,7 @@ type schoolOptions struct {
 }
 
 type SchoolConnector interface {
-	GetAll() (schools []models.CoursesForSchool, err error)
+	GetAll() (schools []models.SchoolCoursesDetails, err error)
 }
 
 func Init() *schoolOptions {
@@ -18,7 +18,7 @@ func Init() *schoolOptions {
 	return &r
 }
 
-func (c *schoolOptions) GetAll() (schools []models.CoursesForSchool, err error) {
+func (c *schoolOptions) GetAll() (schools []models.SchoolCoursesDetails, err error) {
 	// check for error first
 	if c.err != nil {
 		return nil, c.err
@@ -28,7 +28,7 @@ func (c *schoolOptions) GetAll() (schools []models.CoursesForSchool, err error) 
 	if err != nil {
 		return
 	}
-	schools = make([]models.CoursesForSchool, len(schs))
+	schools = make([]models.SchoolCoursesDetails, len(schs))
 	for i, sch := range schs {
 		schools[i], err = databaseService.CurrentDatabaseConnector.GetCoursesForSchool(int(sch.ID))
 		if err != nil {

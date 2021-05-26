@@ -12,46 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO:Commented snippet below describes how to change a db_model user model to an auth_model user model. To be used as reference, as we migrate to db_model.
-// user = models.User{}
-
-// // Convert variables to their golang datatypes
-// user.First_name = &db_user.FirstName
-// user.Last_name = &db_user.LastName
-// user.Password = &db_user.Password
-// email_ref := email
-// user.Email = &email_ref
-// user.User_type = &db_user.UserType
-
-// if db_user.Token.Valid {
-// 	// token is not null
-// 	user.Token = &db_user.Token.String
-// }
-
-// if db_user.RefreshToken.Valid {
-// 	// refresh_token is not null
-// 	user.Refresh_token = &db_user.RefreshToken.String
-// }
-// if db_user.VKey.Valid {
-// 	// v_key is not null
-// 	user.V_key = &db_user.VKey.String
-// }
-// if db_user.Verified == 0 {
-// 	user.Verified = false
-// } else {
-// 	user.Verified = true
-
-// }
-
-// if db_user.UserCreatedAt.Valid {
-// 	// Created_at is not null
-// 	user.Created_at = db_user.UserCreatedAt.Time
-// }
-// if db_user.UserUpdatedAt.Valid {
-// 	// Created_at is not null
-// 	user.Updated_at = db_user.UserUpdatedAt.Time
-// }
-
 type SQLiteDB struct {
 	DatabaseFilename string
 }
@@ -92,7 +52,8 @@ func (db *SQLiteDB) migrateSchema() (err error) {
 	// Migrate the schema
 	conn.AutoMigrate(&db_model.User{})
 	conn.AutoMigrate(&db_model.Course{})
-	conn.AutoMigrate(&db_model.Tutor{})
+	conn.AutoMigrate(&db_model.School{})
+	conn.AutoMigrate(&db_model.SchoolCourses{})
 	conn.AutoMigrate(&db_model.Availability{})
 	conn.AutoMigrate(&db_model.Booking{})
 	conn.AutoMigrate(&db_model.TutorCourses{})
@@ -118,7 +79,7 @@ func (db *SQLiteDB) GetUsers() (users []db_model.User, err error) {
 	return
 }
 
-func (db SQLiteDB) GetUserById(user_id int) (user db_model.User, err error) {
+func (db SQLiteDB) GetUserByID(userID int) (user db_model.User, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -127,7 +88,7 @@ func (db SQLiteDB) GetUserById(user_id int) (user db_model.User, err error) {
 	}
 
 	// Get user if exists
-	result := conn.First(&user, "id = ?", user_id)
+	result := conn.First(&user, "id = ?", userID)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -156,11 +117,73 @@ func (db SQLiteDB) GetUserByEmail(email string) (user db_model.User, err error) 
 	return
 }
 
-func (db SQLiteDB) SaveUser(user db_model.User) (err error) {
+func (db SQLiteDB) CreateUser(user db_model.User) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
 		log.Println(err)
+		return
+	}
+
+	// user model input should not have an id set!
+	if user.ID != 0 {
+		err = errors.New("ID of user model for CreateUser must either be unset or zero.")
+		return
+	}
+
+	var db_user db_model.User
+
+	// Update user fields
+	db_user.FirstName = user.FirstName
+	db_user.LastName = user.LastName
+	db_user.Password = user.Password
+	db_user.Email = user.Email
+	db_user.UserType = user.UserType
+
+	// Update optional fields
+	if user.Token.Valid {
+		db_user.Token.String = user.Token.String
+		db_user.Token.Valid = true
+	}
+	if user.RefreshToken.Valid {
+		db_user.RefreshToken.String = user.RefreshToken.String
+		db_user.RefreshToken.Valid = true
+	}
+	if user.VKey.Valid {
+		db_user.VKey.String = user.VKey.String
+		db_user.VKey.Valid = true
+	}
+
+	db_user.Verified = user.Verified
+
+	if !user.UserCreatedAt.IsZero() {
+		db_user.UserCreatedAt = user.UserCreatedAt
+	}
+	if !user.UserUpdatedAt.IsZero() {
+		db_user.UserUpdatedAt = user.UserUpdatedAt
+	}
+
+	// create user record
+	result := conn.Create(&db_user)
+	if result.Error != nil {
+		err = result.Error
+		return
+	}
+
+	return
+}
+
+func (db SQLiteDB) UpdateUser(user db_model.User) (err error) {
+	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+	if err != nil {
+		// err opening database
+		log.Println(err)
+		return
+	}
+
+	// user model input must have an id set!
+	if user.ID == 0 {
+		err = errors.New("ID of user model for CreateUser cannot be unset or zero.")
 		return
 	}
 
@@ -169,10 +192,16 @@ func (db SQLiteDB) SaveUser(user db_model.User) (err error) {
 	found = true
 
 	// Get user if exists
-	result := conn.First(&db_user, "email = ?", user.Email)
+	result := conn.First(&db_user, "id = ?", user.ID)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		// row not found
 		found = false
+	}
+
+	// if not found, throw error!
+	if !found {
+		err = errors.New("user model for input ID does not exist. Unable to update object.")
+		return
 	}
 
 	// Update user fields
@@ -205,26 +234,17 @@ func (db SQLiteDB) SaveUser(user db_model.User) (err error) {
 		db_user.UserUpdatedAt = user.UserUpdatedAt
 	}
 
-	if found {
-		// update existing record
-		result = conn.Save(&db_user)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-	} else {
-		// create new record
-		result = conn.Create(&db_user)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
+	// update existing record
+	result = conn.Save(&db_user)
+	if result.Error != nil {
+		err = result.Error
+		return
 	}
 
 	return
 }
 
-func (db SQLiteDB) DeleteUserById(user_id int) (err error) {
+func (db SQLiteDB) DeleteUserByID(userID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -233,7 +253,7 @@ func (db SQLiteDB) DeleteUserById(user_id int) (err error) {
 	}
 
 	// Get user if exists
-	result := conn.Delete(&db_model.User{}, user_id)
+	result := conn.Delete(&db_model.User{}, userID)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -262,7 +282,7 @@ func (db SQLiteDB) DeleteUserByEmail(email string) (err error) {
 	return
 }
 
-func (db SQLiteDB) GetCoursesForTutor(tutor_id int) (courses []db_model.Course, err error) {
+func (db SQLiteDB) GetCoursesForTutor(tutorID int) (courses []db_model.Course, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -272,21 +292,21 @@ func (db SQLiteDB) GetCoursesForTutor(tutor_id int) (courses []db_model.Course, 
 	var tutorCourses []db_model.TutorCourses
 
 	// Get all tutor courses
-	result := conn.Where("tutor_id = ?", tutor_id).Find(&tutorCourses)
+	result := conn.Where("tutor_id = ?", tutorID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of course ids
-	course_ids := make([]int, 0)
+	// create list of course IDs
+	courseIDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		course_ids = append(course_ids, int(tutorCourses[i].CourseID))
+		courseIDs = append(courseIDs, int(tutorCourses[i].CourseID))
 	}
 
-	// Using tutor_id, get all courses
-	result = conn.Where("id IN ?", course_ids).Find(&courses)
+	// Using tutorID, get all courses
+	result = conn.Where("id IN ?", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -296,7 +316,7 @@ func (db SQLiteDB) GetCoursesForTutor(tutor_id int) (courses []db_model.Course, 
 	return
 }
 
-func (db SQLiteDB) GetTutorsForCourse(course_id int) (tutors []db_model.Tutor, err error) {
+func (db SQLiteDB) GetTutorsForCourse(courseID int) (tutors []db_model.User, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -306,21 +326,21 @@ func (db SQLiteDB) GetTutorsForCourse(course_id int) (tutors []db_model.Tutor, e
 	var tutorCourses []db_model.TutorCourses
 
 	// Get all tutor courses
-	result := conn.Where("course_id = ?", course_id).Find(&tutorCourses)
+	result := conn.Where("courseID = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of course ids
-	tutor_ids := make([]int, 0)
+	// create list of course IDs
+	tutorIDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		tutor_ids = append(tutor_ids, int(tutorCourses[i].TutorID))
+		tutorIDs = append(tutorIDs, int(tutorCourses[i].TutorID))
 	}
 
-	// Using tutor_id, get all courses
-	result = conn.Where("id IN ?", tutor_ids).Find(&tutors)
+	// Using tutorID, get all courses
+	result = conn.Where("ID IN ?", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -330,7 +350,7 @@ func (db SQLiteDB) GetTutorsForCourse(course_id int) (tutors []db_model.Tutor, e
 	return
 }
 
-func (db SQLiteDB) GetTutorsForCourseFromIdOfSize(course_id int, tut_id int, size int) (tutors []db_model.Tutor, err error) {
+func (db SQLiteDB) GetTutorsForCourseFromIDOfSize(courseID int, tutorID int, size int) (tutors []db_model.User, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -340,21 +360,21 @@ func (db SQLiteDB) GetTutorsForCourseFromIdOfSize(course_id int, tut_id int, siz
 	var tutorCourses []db_model.TutorCourses
 
 	// Get all tutor courses
-	result := conn.Where("course_id = ?", course_id).Find(&tutorCourses)
+	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of course ids
-	tutor_ids := make([]int, 0)
+	// create list of course IDs
+	tutorIDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		tutor_ids = append(tutor_ids, int(tutorCourses[i].TutorID))
+		tutorIDs = append(tutorIDs, int(tutorCourses[i].TutorID))
 	}
 
-	// Using tutor_id, get all courses
-	result = conn.Where("id IN ? AND id >= ?", tutor_ids, tut_id).Limit(size).Find(&tutors)
+	// Using tutorID, get all courses
+	result = conn.Where("id IN ? AND id >= ?", tutorIDs, tutorID).Limit(size).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -364,7 +384,7 @@ func (db SQLiteDB) GetTutorsForCourseFromIdOfSize(course_id int, tut_id int, siz
 	return
 }
 
-func (db SQLiteDB) GetTutorsForCourseFromId(course_id, tut_id int) (tutors []db_model.Tutor, err error) {
+func (db SQLiteDB) GetTutorsForCourseFromID(courseID, tutorID int) (tutors []db_model.User, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -374,21 +394,21 @@ func (db SQLiteDB) GetTutorsForCourseFromId(course_id, tut_id int) (tutors []db_
 	var tutorCourses []db_model.TutorCourses
 
 	// Get all tutor courses
-	result := conn.Where("course_id = ?", course_id).Find(&tutorCourses)
+	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of course ids
-	tutor_ids := make([]int, 0)
+	// create list of course IDs
+	tutorIDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		tutor_ids = append(tutor_ids, int(tutorCourses[i].TutorID))
+		tutorIDs = append(tutorIDs, int(tutorCourses[i].TutorID))
 	}
 
-	// Using tutor_id, get all courses
-	result = conn.Where("id IN ? AND id >= ?", tutor_ids, tut_id).Find(&tutors)
+	// Using tutorID, get all courses
+	result = conn.Where("id IN ? AND id >= ?", tutorIDs, tutorID).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -398,7 +418,7 @@ func (db SQLiteDB) GetTutorsForCourseFromId(course_id, tut_id int) (tutors []db_
 	return
 }
 
-func (db SQLiteDB) GetTutorsForCourseOfSize(course_id, size int) (tutors []db_model.Tutor, err error) {
+func (db SQLiteDB) GetTutorsForCourseOfSize(courseID, size int) (tutors []db_model.User, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -408,21 +428,21 @@ func (db SQLiteDB) GetTutorsForCourseOfSize(course_id, size int) (tutors []db_mo
 	var tutorCourses []db_model.TutorCourses
 
 	// Get all tutor courses
-	result := conn.Where("course_id = ?", course_id).Find(&tutorCourses)
+	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of course ids
-	tutor_ids := make([]int, 0)
+	// create list of course IDs
+	tutorIDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		tutor_ids = append(tutor_ids, int(tutorCourses[i].TutorID))
+		tutorIDs = append(tutorIDs, int(tutorCourses[i].TutorID))
 	}
 
-	// Using tutor_id, get all courses
-	result = conn.Where("id IN ?", tutor_ids).Limit(size).Find(&tutors)
+	// Using tutorID, get all courses
+	result = conn.Where("id IN ?", tutorIDs).Limit(size).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -432,7 +452,7 @@ func (db SQLiteDB) GetTutorsForCourseOfSize(course_id, size int) (tutors []db_mo
 	return
 }
 
-func (db SQLiteDB) SaveTutorCourse(tutor_id int, course_id int) (err error) {
+func (db SQLiteDB) CreateTutorCourse(tutorID int, courseID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -445,19 +465,15 @@ func (db SQLiteDB) SaveTutorCourse(tutor_id int, course_id int) (err error) {
 	found = true
 
 	// Get user if exists
-	result := conn.Where("tutor_id = ? AND course_id = ?", tutor_id, course_id).First(&db_tutor_course)
+	result := conn.Where("tutor_id = ? AND course_id = ?", tutorID, courseID).First(&db_tutor_course)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		// row not found
 		found = false
 	}
 
 	if found {
-		// update existing record
-		result = conn.Save(&db_tutor_course)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
+		// do nothing
+		return
 	} else {
 		// create new record
 		result = conn.Create(&db_tutor_course)
@@ -470,7 +486,7 @@ func (db SQLiteDB) SaveTutorCourse(tutor_id int, course_id int) (err error) {
 	return
 }
 
-func (db SQLiteDB) DeleteTutorCourse(tutor_id int, course_id int) (err error) {
+func (db SQLiteDB) DeleteTutorCourse(tutorID int, courseID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -479,7 +495,7 @@ func (db SQLiteDB) DeleteTutorCourse(tutor_id int, course_id int) (err error) {
 	}
 
 	// Get user if exists
-	result := conn.Where("tutor_id = ? AND course_id = ?", tutor_id, course_id).Delete(db_model.TutorCourses{})
+	result := conn.Where("tutorID = ? AND courseID = ?", tutorID, courseID).Delete(db_model.TutorCourses{})
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -489,7 +505,7 @@ func (db SQLiteDB) DeleteTutorCourse(tutor_id int, course_id int) (err error) {
 	return
 }
 
-func (db SQLiteDB) GetCourse(course_id int) (course db_model.Course, n_students int, n_tutors int, err error) {
+func (db SQLiteDB) GetCourse(courseID int) (course db_model.Course, n_students int, n_tutors int, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -498,7 +514,7 @@ func (db SQLiteDB) GetCourse(course_id int) (course db_model.Course, n_students 
 	}
 
 	// Get course if exists
-	result := conn.First(&course, "id = ?", course_id)
+	result := conn.First(&course, "id = ?", courseID)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -507,7 +523,7 @@ func (db SQLiteDB) GetCourse(course_id int) (course db_model.Course, n_students 
 
 	// Get n_students for course
 	var count int64
-	result = conn.Model(&db_model.Booking{}).Where("course_id = ?", course_id).Count(&count)
+	result = conn.Model(&db_model.Booking{}).Where("course_id = ?", courseID).Count(&count)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -516,7 +532,7 @@ func (db SQLiteDB) GetCourse(course_id int) (course db_model.Course, n_students 
 	n_students = int(count)
 
 	// Get n_tutors for course
-	result = conn.Model(&db_model.TutorCourses{}).Where("course_id = ?", course_id).Count(&count)
+	result = conn.Model(&db_model.TutorCourses{}).Where("course_id = ?", courseID).Count(&count)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -545,13 +561,13 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 
 	// Raw SQL for count group by query
 	booking_map := make(map[int]int)
-	var course_id int
+	var courseID int
 	var count int
 	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
 	defer rows.Close()
 	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		booking_map[course_id] = count
+		rows.Scan(&courseID, &count)
+		booking_map[courseID] = count
 	}
 
 	// Raw SQL for count group by query
@@ -559,8 +575,8 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
 	defer rows.Close()
 	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		tutor_map[course_id] = count
+		rows.Scan(&courseID, &count)
+		tutor_map[courseID] = count
 	}
 
 	// format booking map and tutor courses map for results
@@ -572,7 +588,7 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 	return
 }
 
-func (db SQLiteDB) GetCoursesForSchool(school_code string) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+func (db SQLiteDB) GetSchools() (schools []db_model.School, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -580,187 +596,8 @@ func (db SQLiteDB) GetCoursesForSchool(school_code string) (courses []db_model.C
 		return
 	}
 
-	// Get all courses for school
-	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Find(&courses)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
-
-	// Raw SQL for count group by query
-	booking_map := make(map[int]int)
-	var course_id int
-	var count int
-	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		booking_map[course_id] = count
-	}
-
-	// Raw SQL for count group by query
-	tutor_map := make(map[int]int)
-	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		tutor_map[course_id] = count
-	}
-
-	// format booking map and tutor courses map for results
-	for i := 0; i < len(courses); i++ {
-		n_students = append(n_students, booking_map[int(courses[i].ID)])
-		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
-	}
-
-	return
-}
-
-func (db SQLiteDB) GetCoursesForSchoolWithOffset(school_code string, offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
-
-	// Get all courses for school with offset
-	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Find(&courses)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
-
-	// Raw SQL for count group by query
-	booking_map := make(map[int]int)
-	var course_id int
-	var count int
-	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		booking_map[course_id] = count
-	}
-
-	// Raw SQL for count group by query
-	tutor_map := make(map[int]int)
-	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		tutor_map[course_id] = count
-	}
-
-	// format booking map and tutor courses map for results
-	for i := 0; i < len(courses); i++ {
-		n_students = append(n_students, booking_map[int(courses[i].ID)])
-		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
-	}
-
-	return
-}
-
-func (db SQLiteDB) GetCoursesForSchoolOfSize(school_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
-
-	// Get all courses for school with limit
-	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Limit(size).Find(&courses)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
-
-	// Raw SQL for count group by query
-	booking_map := make(map[int]int)
-	var course_id int
-	var count int
-	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		booking_map[course_id] = count
-	}
-
-	// Raw SQL for count group by query
-	tutor_map := make(map[int]int)
-	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		tutor_map[course_id] = count
-	}
-
-	// format booking map and tutor courses map for results
-	for i := 0; i < len(courses); i++ {
-		n_students = append(n_students, booking_map[int(courses[i].ID)])
-		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
-	}
-
-	return
-}
-func (db SQLiteDB) GetCoursesForSchoolOfSizeWithOffset(school_code string, offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
-
-	// Get all courses for school with offset and limit
-	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Limit(size).Find(&courses)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
-
-	// Raw SQL for count group by query
-	booking_map := make(map[int]int)
-	var course_id int
-	var count int
-	rows, err := conn.Raw("SELECT course_id, COUNT(*) FROM bookings GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		booking_map[course_id] = count
-	}
-
-	// Raw SQL for count group by query
-	tutor_map := make(map[int]int)
-	rows, err = conn.Raw("SELECT course_id, COUNT(*) FROM tutor_courses GROUP BY course_id").Rows()
-	defer rows.Close()
-	for rows.Next() {
-		rows.Scan(&course_id, &count)
-		tutor_map[course_id] = count
-	}
-
-	// format booking map and tutor courses map for results
-	for i := 0; i < len(courses); i++ {
-		n_students = append(n_students, booking_map[int(courses[i].ID)])
-		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
-	}
-
-	return
-}
-
-func (db SQLiteDB) GetTutors() (tutors []db_model.Tutor, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
-
-	// Get all tutors
-	result := conn.Find(&tutors)
+	// Get all schools
+	result := conn.Order("school_code ASC").Find(&schools)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -770,7 +607,7 @@ func (db SQLiteDB) GetTutors() (tutors []db_model.Tutor, err error) {
 	return
 }
 
-func (db SQLiteDB) GetTutorsFromId(tutor_id int) (tutors []db_model.Tutor, err error) {
+func (db SQLiteDB) GetSchoolByInstitutionAndSchoolCode(institution string, schoolCode string) (school db_model.School, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -778,8 +615,8 @@ func (db SQLiteDB) GetTutorsFromId(tutor_id int) (tutors []db_model.Tutor, err e
 		return
 	}
 
-	// Get all tutors from id
-	result := conn.Where("id >= ?", tutor_id).Find(&tutors)
+	// Get school if exists
+	result := conn.First(&school, "institution = ? AND school_code = ?", institution, schoolCode)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -789,157 +626,142 @@ func (db SQLiteDB) GetTutorsFromId(tutor_id int) (tutors []db_model.Tutor, err e
 	return
 }
 
-func (db SQLiteDB) GetTutorsFromIdOfSize(tutor_id int, size int) (tutors []db_model.Tutor, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// TODO: Chong Yan, please check if this is still required
+// func (db SQLiteDB) GetCoursesForSchoolWithOffset(school_code string, offset int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+// 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+// 	if err != nil {
+// 		// err opening database
+// 		log.Println(err)
+// 		return
+// 	}
 
-	// Get all tutors from id with size
-	result := conn.Where("id >= ?", tutor_id).Limit(size).Find(&tutors)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	// Get all courses for school with offset
+// 	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Find(&courses)
+// 	if result.Error != nil {
+// 		// row not found
+// 		err = result.Error
+// 		return
+// 	}
 
-	return
-}
-func (db SQLiteDB) GetTutorsOfSize(size int) (tutors []db_model.Tutor, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// 	// Raw SQL for count group by query
+// 	booking_map := make(map[int]int)
+// 	var courseID int
+// 	var count int
+// 	rows, err := conn.Raw("SELECT courseID, COUNT(*) FROM bookings GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		booking_map[courseID] = count
+// 	}
 
-	// Get all tutors from start with size
-	result := conn.Limit(size).Find(&tutors)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	// Raw SQL for count group by query
+// 	tutor_map := make(map[int]int)
+// 	rows, err = conn.Raw("SELECT courseID, COUNT(*) FROM tutor_courses GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		tutor_map[courseID] = count
+// 	}
 
-	return
-}
-func (db SQLiteDB) GetTutorById(tutor_id int) (tutor db_model.Tutor, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// 	// format booking map and tutor courses map for results
+// 	for i := 0; i < len(courses); i++ {
+// 		n_students = append(n_students, booking_map[int(courses[i].ID)])
+// 		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+// 	}
 
-	// Get tutor if exists
-	result := conn.First(&tutor, "id = ?", tutor_id)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	return
+// }
 
-	return
-}
-func (db SQLiteDB) GetTutorByEmail(email string) (tutor db_model.Tutor, err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// func (db SQLiteDB) GetCoursesForSchoolOfSize(school_code string, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+// 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+// 	if err != nil {
+// 		// err opening database
+// 		log.Println(err)
+// 		return
+// 	}
 
-	// Get tutor if exists
-	result := conn.First(&tutor, "email = ?", email)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	// Get all courses for school with limit
+// 	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Limit(size).Find(&courses)
+// 	if result.Error != nil {
+// 		// row not found
+// 		err = result.Error
+// 		return
+// 	}
 
-	return
-}
-func (db SQLiteDB) SaveTutor(tutor db_model.Tutor) (err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// 	// Raw SQL for count group by query
+// 	booking_map := make(map[int]int)
+// 	var courseID int
+// 	var count int
+// 	rows, err := conn.Raw("SELECT courseID, COUNT(*) FROM bookings GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		booking_map[courseID] = count
+// 	}
 
-	var db_tutor db_model.Tutor
-	var found bool
-	found = true
+// 	// Raw SQL for count group by query
+// 	tutor_map := make(map[int]int)
+// 	rows, err = conn.Raw("SELECT courseID, COUNT(*) FROM tutor_courses GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		tutor_map[courseID] = count
+// 	}
 
-	// Get user if exists
-	result := conn.First(&db_tutor, "id = ?", tutor.ID)
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		// row not found
-		found = false
-	}
+// 	// format booking map and tutor courses map for results
+// 	for i := 0; i < len(courses); i++ {
+// 		n_students = append(n_students, booking_map[int(courses[i].ID)])
+// 		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+// 	}
 
-	// Update user fields
-	db_tutor.FirstName = tutor.FirstName
-	db_tutor.LastName = tutor.LastName
-	db_tutor.Email = tutor.Email
+// 	return
+// }
+// func (db SQLiteDB) GetCoursesForSchoolOfSizeWithOffset(school_code string, offset int, size int) (courses []db_model.Course, n_students []int, n_tutors []int, err error) {
+// 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
+// 	if err != nil {
+// 		// err opening database
+// 		log.Println(err)
+// 		return
+// 	}
 
-	if found {
-		// update existing record
-		result = conn.Save(&db_tutor)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-	} else {
-		// create new record
-		result = conn.Create(&db_tutor)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-	}
+// 	// Get all courses for school with offset and limit
+// 	result := conn.Where("course_code LIKE ?", school_code+"%").Order("course_code ASC").Offset(offset).Limit(size).Find(&courses)
+// 	if result.Error != nil {
+// 		// row not found
+// 		err = result.Error
+// 		return
+// 	}
 
-	return
-}
-func (db SQLiteDB) DeleteTutorById(tutor_id int) (err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// 	// Raw SQL for count group by query
+// 	booking_map := make(map[int]int)
+// 	var courseID int
+// 	var count int
+// 	rows, err := conn.Raw("SELECT courseID, COUNT(*) FROM bookings GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		booking_map[courseID] = count
+// 	}
 
-	// Delete tutor if exists
-	result := conn.Delete(&db_model.Tutor{}, tutor_id)
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	// Raw SQL for count group by query
+// 	tutor_map := make(map[int]int)
+// 	rows, err = conn.Raw("SELECT courseID, COUNT(*) FROM tutor_courses GROUP BY courseID").Rows()
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		rows.Scan(&courseID, &count)
+// 		tutor_map[courseID] = count
+// 	}
 
-	return
-}
-func (db SQLiteDB) DeleteTutorByEmail(email string) (err error) {
-	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
-	if err != nil {
-		// err opening database
-		log.Println(err)
-		return
-	}
+// 	// format booking map and tutor courses map for results
+// 	for i := 0; i < len(courses); i++ {
+// 		n_students = append(n_students, booking_map[int(courses[i].ID)])
+// 		n_tutors = append(n_tutors, tutor_map[int(courses[i].ID)])
+// 	}
 
-	// Delete tutor if exists
-	result := conn.Where("email LIKE ?", email).Delete(db_model.Tutor{})
-	if result.Error != nil {
-		// row not found
-		err = result.Error
-		return
-	}
+// 	return
+// }
 
-	return
-}
-func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDetails, err error) {
+func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetails, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -949,27 +771,27 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 
 	// Get bookings
 	var bookings_no_details []db_model.Booking
-	result := conn.Where("user_id = ?", user_id).Find(&bookings_no_details)
+	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of availability_ids and course_ids
-	availability_ids := make([]int, 0)
-	course_ids := make([]int, 0)
-	user_ids := make([]int, 0)
+	// create list of availability_IDs and courseIDs
+	availability_IDs := make([]int, 0)
+	courseIDs := make([]int, 0)
+	userIDs := make([]int, 0)
 
 	for i := 0; i < int(result.RowsAffected); i++ {
-		availability_ids = append(availability_ids, int(bookings_no_details[i].TutorAvailabilityID))
-		course_ids = append(course_ids, int(bookings_no_details[i].CourseID))
-		user_ids = append(user_ids, int(bookings_no_details[i].UserID))
+		availability_IDs = append(availability_IDs, int(bookings_no_details[i].TutorAvailabilityID))
+		courseIDs = append(courseIDs, int(bookings_no_details[i].CourseID))
+		userIDs = append(userIDs, int(bookings_no_details[i].UserID))
 	}
 
 	// get corresponding availabilities
 	var availabilities []db_model.Availability
-	result = conn.Where("id IN ? ", availability_ids).Find(&availabilities)
+	result = conn.Where("id IN ? ", availability_IDs).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -977,14 +799,14 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 	}
 
 	// get tutors corresponding to availabilities
-	tutor_ids := make([]int, 0)
+	tutorIDs := make([]int, 0)
 	for i := 0; i < len(availabilities); i++ {
-		tutor_ids = append(tutor_ids, int(availabilities[i].TutorID))
+		tutorIDs = append(tutorIDs, int(availabilities[i].TutorID))
 	}
 
 	// get corresponding course codes
 	var courses []db_model.Course
-	result = conn.Where("id IN ? ", course_ids).Find(&courses)
+	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -993,7 +815,7 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 
 	// get corresponding course codes
 	var users []db_model.User
-	result = conn.Where("id IN ? ", user_ids).Find(&users)
+	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1001,8 +823,8 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 	}
 
 	// get corresponding tutors
-	var tutors []db_model.Tutor
-	result = conn.Where("id IN ? ", tutor_ids).Find(&tutors)
+	var tutors []db_model.User
+	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1013,7 +835,7 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 	availability_map := make(map[int]db_model.Availability)
 	courses_map := make(map[int]db_model.Course)
 	users_map := make(map[int]db_model.User)
-	tutors_map := make(map[int]db_model.Tutor)
+	tutors_map := make(map[int]db_model.User)
 	for i := 0; i < len(bookings_no_details); i++ {
 		users_map[int(users[i].ID)] = users[i]
 		courses_map[int(courses[i].ID)] = courses[i]
@@ -1036,7 +858,7 @@ func (db SQLiteDB) GetBookingsById(user_id int) (bookings []db_model.BookingDeta
 
 	return
 }
-func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookings []db_model.BookingDetails, err error) {
+func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []db_model.BookingDetails, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1046,22 +868,22 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 
 	// Get bookings
 	var bookings_no_details []db_model.Booking
-	result := conn.Where("user_id = ?", user_id).Find(&bookings_no_details)
+	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of availability_ids
-	availability_ids := make([]int, 0)
+	// create list of availability_IDs
+	availability_IDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		availability_ids = append(availability_ids, int(bookings_no_details[i].TutorAvailabilityID))
+		availability_IDs = append(availability_IDs, int(bookings_no_details[i].TutorAvailabilityID))
 	}
 
 	// get corresponding availabilities
 	var availabilities []db_model.Availability
-	result = conn.Where("id IN ? AND available_from >= ?", availability_ids, from_time).Find(&availabilities)
+	result = conn.Where("ID IN ? AND available_from >= ?", availability_IDs, fromTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1079,23 +901,23 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 		}
 	}
 
-	// create list of course_ids and user_ids
-	course_ids := make([]int, 0)
-	user_ids := make([]int, 0)
+	// create list of courseIDs and userIDs
+	courseIDs := make([]int, 0)
+	userIDs := make([]int, 0)
 	for i := 0; i < len(bookings_no_details_after_filter); i++ {
-		course_ids = append(course_ids, int(bookings_no_details_after_filter[i].CourseID))
-		user_ids = append(user_ids, int(bookings_no_details_after_filter[i].UserID))
+		courseIDs = append(courseIDs, int(bookings_no_details_after_filter[i].CourseID))
+		userIDs = append(userIDs, int(bookings_no_details_after_filter[i].UserID))
 	}
 
 	// get tutors corresponding to availabilities
-	tutor_ids := make([]int, 0)
+	tutorIDs := make([]int, 0)
 	for i := 0; i < len(availabilities); i++ {
-		tutor_ids = append(tutor_ids, int(availabilities[i].TutorID))
+		tutorIDs = append(tutorIDs, int(availabilities[i].TutorID))
 	}
 
 	// get corresponding course codes
 	var courses []db_model.Course
-	result = conn.Where("id IN ? ", course_ids).Find(&courses)
+	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1104,7 +926,7 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 
 	// get corresponding course codes
 	var users []db_model.User
-	result = conn.Where("id IN ? ", user_ids).Find(&users)
+	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1112,8 +934,8 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 	}
 
 	// get corresponding tutors
-	var tutors []db_model.Tutor
-	result = conn.Where("id IN ? ", tutor_ids).Find(&tutors)
+	var tutors []db_model.User
+	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1124,7 +946,7 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 	availability_map := make(map[int]db_model.Availability)
 	courses_map := make(map[int]db_model.Course)
 	users_map := make(map[int]db_model.User)
-	tutors_map := make(map[int]db_model.Tutor)
+	tutors_map := make(map[int]db_model.User)
 	for i := 0; i < len(bookings_no_details); i++ {
 		users_map[int(users[i].ID)] = users[i]
 		courses_map[int(courses[i].ID)] = courses[i]
@@ -1148,7 +970,7 @@ func (db SQLiteDB) GetBookingsByIdFrom(user_id int, from_time time.Time) (bookin
 
 	return
 }
-func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings []db_model.BookingDetails, err error) {
+func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []db_model.BookingDetails, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1158,22 +980,22 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 
 	// Get bookings
 	var bookings_no_details []db_model.Booking
-	result := conn.Where("user_id = ?", user_id).Find(&bookings_no_details)
+	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of availability_ids
-	availability_ids := make([]int, 0)
+	// create list of availability_IDs
+	availability_IDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		availability_ids = append(availability_ids, int(bookings_no_details[i].TutorAvailabilityID))
+		availability_IDs = append(availability_IDs, int(bookings_no_details[i].TutorAvailabilityID))
 	}
 
 	// get corresponding availabilities
 	var availabilities []db_model.Availability
-	result = conn.Where("id IN ? AND available_to <= ?", availability_ids, to_time).Find(&availabilities)
+	result = conn.Where("id IN ? AND available_to <= ?", availability_IDs, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1191,23 +1013,23 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 		}
 	}
 
-	// create list of course_ids and user_ids
-	course_ids := make([]int, 0)
-	user_ids := make([]int, 0)
+	// create list of courseIDs and userIDs
+	courseIDs := make([]int, 0)
+	userIDs := make([]int, 0)
 	for i := 0; i < len(bookings_no_details_after_filter); i++ {
-		course_ids = append(course_ids, int(bookings_no_details_after_filter[i].CourseID))
-		user_ids = append(user_ids, int(bookings_no_details_after_filter[i].UserID))
+		courseIDs = append(courseIDs, int(bookings_no_details_after_filter[i].CourseID))
+		userIDs = append(userIDs, int(bookings_no_details_after_filter[i].UserID))
 	}
 
 	// get tutors corresponding to availabilities
-	tutor_ids := make([]int, 0)
+	tutorIDs := make([]int, 0)
 	for i := 0; i < len(availabilities); i++ {
-		tutor_ids = append(tutor_ids, int(availabilities[i].TutorID))
+		tutorIDs = append(tutorIDs, int(availabilities[i].TutorID))
 	}
 
 	// get corresponding course codes
 	var courses []db_model.Course
-	result = conn.Where("id IN ? ", course_ids).Find(&courses)
+	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1216,7 +1038,7 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 
 	// get corresponding course codes
 	var users []db_model.User
-	result = conn.Where("id IN ? ", user_ids).Find(&users)
+	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1224,8 +1046,8 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 	}
 
 	// get corresponding tutors
-	var tutors []db_model.Tutor
-	result = conn.Where("id IN ? ", tutor_ids).Find(&tutors)
+	var tutors []db_model.User
+	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1236,7 +1058,7 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 	availability_map := make(map[int]db_model.Availability)
 	courses_map := make(map[int]db_model.Course)
 	users_map := make(map[int]db_model.User)
-	tutors_map := make(map[int]db_model.Tutor)
+	tutors_map := make(map[int]db_model.User)
 	for i := 0; i < len(bookings_no_details); i++ {
 		users_map[int(users[i].ID)] = users[i]
 		courses_map[int(courses[i].ID)] = courses[i]
@@ -1259,7 +1081,7 @@ func (db SQLiteDB) GetBookingsByIdTo(user_id int, to_time time.Time) (bookings [
 	}
 	return
 }
-func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_time time.Time) (bookings []db_model.BookingDetails, err error) {
+func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []db_model.BookingDetails, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1269,22 +1091,22 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 
 	// Get bookings
 	var bookings_no_details []db_model.Booking
-	result := conn.Where("user_id = ?", user_id).Find(&bookings_no_details)
+	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
 		return
 	}
 
-	// create list of availability_ids
-	availability_ids := make([]int, 0)
+	// create list of availability_IDs
+	availability_IDs := make([]int, 0)
 	for i := 0; i < int(result.RowsAffected); i++ {
-		availability_ids = append(availability_ids, int(bookings_no_details[i].TutorAvailabilityID))
+		availability_IDs = append(availability_IDs, int(bookings_no_details[i].TutorAvailabilityID))
 	}
 
 	// get corresponding availabilities
 	var availabilities []db_model.Availability
-	result = conn.Where("id IN ? AND available_from >= ? AND available_to <= ?", availability_ids, from_time, to_time).Find(&availabilities)
+	result = conn.Where("id IN ? AND available_from >= ? AND available_to <= ?", availability_IDs, fromTime, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1302,23 +1124,23 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 		}
 	}
 
-	// create list of course_ids and user_ids
-	course_ids := make([]int, 0)
-	user_ids := make([]int, 0)
+	// create list of courseIDs and userIDs
+	courseIDs := make([]int, 0)
+	userIDs := make([]int, 0)
 	for i := 0; i < len(bookings_no_details_after_filter); i++ {
-		course_ids = append(course_ids, int(bookings_no_details_after_filter[i].CourseID))
-		user_ids = append(user_ids, int(bookings_no_details_after_filter[i].UserID))
+		courseIDs = append(courseIDs, int(bookings_no_details_after_filter[i].CourseID))
+		userIDs = append(userIDs, int(bookings_no_details_after_filter[i].UserID))
 	}
 
 	// get tutors corresponding to availabilities
-	tutor_ids := make([]int, 0)
+	tutorIDs := make([]int, 0)
 	for i := 0; i < len(availabilities); i++ {
-		tutor_ids = append(tutor_ids, int(availabilities[i].TutorID))
+		tutorIDs = append(tutorIDs, int(availabilities[i].TutorID))
 	}
 
 	// get corresponding course codes
 	var courses []db_model.Course
-	result = conn.Where("id IN ? ", course_ids).Find(&courses)
+	result = conn.Where("ID IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1327,7 +1149,7 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 
 	// get corresponding course codes
 	var users []db_model.User
-	result = conn.Where("id IN ? ", user_ids).Find(&users)
+	result = conn.Where("ID IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1335,8 +1157,8 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 	}
 
 	// get corresponding tutors
-	var tutors []db_model.Tutor
-	result = conn.Where("id IN ? ", tutor_ids).Find(&tutors)
+	var tutors []db_model.User
+	result = conn.Where("ID IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1347,7 +1169,7 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 	availability_map := make(map[int]db_model.Availability)
 	courses_map := make(map[int]db_model.Course)
 	users_map := make(map[int]db_model.User)
-	tutors_map := make(map[int]db_model.Tutor)
+	tutors_map := make(map[int]db_model.User)
 	for i := 0; i < len(bookings_no_details); i++ {
 		users_map[int(users[i].ID)] = users[i]
 		courses_map[int(courses[i].ID)] = courses[i]
@@ -1370,7 +1192,7 @@ func (db SQLiteDB) GetBookingsByIdFromTo(user_id int, from_time time.Time, to_ti
 	}
 	return
 }
-func (db SQLiteDB) SaveBooking(availability_id int, user_id int, course_id int) (err error) {
+func (db SQLiteDB) CreateBooking(availabilityID int, userID int, courseID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1382,37 +1204,33 @@ func (db SQLiteDB) SaveBooking(availability_id int, user_id int, course_id int) 
 	var found bool
 	found = true
 
-	// Get user if exists
-	result := conn.Where("tutor_availability_id = ? AND user_id = ? AND course_id = ?", availability_id, user_id, course_id).First(&db_booking)
+	// Get booking if exists
+	result := conn.Where("tutor_availability_ID = ? AND user_id = ? AND course_id = ?", availabilityID, userID, courseID).First(&db_booking)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		// row not found
 		found = false
 	}
 
-	// Update user fields
-	db_booking.TutorAvailabilityID = availability_id
-	db_booking.UserID = user_id
-	db_booking.CourseID = course_id
-
 	if found {
-		// update existing record
-		result = conn.Save(&db_booking)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-	} else {
-		// create new record
-		result = conn.Create(&db_booking)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
+		err = errors.New("Record already exists.")
+		return
+	}
+
+	// Update user fields
+	db_booking.TutorAvailabilityID = availabilityID
+	db_booking.UserID = userID
+	db_booking.CourseID = courseID
+
+	// create record
+	result = conn.Create(&db_booking)
+	if result.Error != nil {
+		err = result.Error
+		return
 	}
 
 	return
 }
-func (db SQLiteDB) DeleteBookingById(booking_id int) (err error) {
+func (db SQLiteDB) DeleteBookingByID(bookingID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1421,7 +1239,7 @@ func (db SQLiteDB) DeleteBookingById(booking_id int) (err error) {
 	}
 
 	// Get user if exists
-	result := conn.Delete(&db_model.Booking{}, booking_id)
+	result := conn.Delete(&db_model.Booking{}, bookingID)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1431,7 +1249,7 @@ func (db SQLiteDB) DeleteBookingById(booking_id int) (err error) {
 	return
 }
 
-func (db SQLiteDB) GetAvailabilityById(tutor_id int) (availabilities []db_model.Availability, err error) {
+func (db SQLiteDB) GetAvailabilityByID(tutorID int) (availabilities []db_model.Availability, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1440,7 +1258,7 @@ func (db SQLiteDB) GetAvailabilityById(tutor_id int) (availabilities []db_model.
 	}
 
 	// Get all users
-	result := conn.Where("tutor_id = ?", tutor_id).Find(&availabilities)
+	result := conn.Where("tutor_id = ?", tutorID).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1449,7 +1267,7 @@ func (db SQLiteDB) GetAvailabilityById(tutor_id int) (availabilities []db_model.
 
 	return
 }
-func (db SQLiteDB) GetAvailabilityByIdFrom(tutor_id int, from_time time.Time) (availabilities []db_model.Availability, err error) {
+func (db SQLiteDB) GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (availabilities []db_model.Availability, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1458,7 +1276,7 @@ func (db SQLiteDB) GetAvailabilityByIdFrom(tutor_id int, from_time time.Time) (a
 	}
 
 	// Get all users
-	result := conn.Where("tutor_id = ? AND available_from >= ?", tutor_id, from_time).Find(&availabilities)
+	result := conn.Where("tutor_id = ? AND available_from >= ?", tutorID, fromTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1467,7 +1285,7 @@ func (db SQLiteDB) GetAvailabilityByIdFrom(tutor_id int, from_time time.Time) (a
 
 	return
 }
-func (db SQLiteDB) GetAvailabilityByIdTo(tutor_id int, to_time time.Time) (availabilities []db_model.Availability, err error) {
+func (db SQLiteDB) GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabilities []db_model.Availability, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1476,7 +1294,7 @@ func (db SQLiteDB) GetAvailabilityByIdTo(tutor_id int, to_time time.Time) (avail
 	}
 
 	// Get all users
-	result := conn.Where("tutor_id = ? AND available_to <= ?", tutor_id, to_time).Find(&availabilities)
+	result := conn.Where("tutor_id = ? AND available_to <= ?", tutorID, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1485,7 +1303,7 @@ func (db SQLiteDB) GetAvailabilityByIdTo(tutor_id int, to_time time.Time) (avail
 
 	return
 }
-func (db SQLiteDB) GetAvailabilityByIdFromTo(tutor_id int, from_time time.Time, to_time time.Time) (availabilities []db_model.Availability, err error) {
+func (db SQLiteDB) GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []db_model.Availability, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1494,7 +1312,7 @@ func (db SQLiteDB) GetAvailabilityByIdFromTo(tutor_id int, from_time time.Time, 
 	}
 
 	// Get all users
-	result := conn.Where("tutor_id = ? AND available_from >= ? AND available_to = ?", tutor_id, from_time, to_time).Find(&availabilities)
+	result := conn.Where("tutor_id = ? AND available_from >= ? AND available_to = ?", tutorID, fromTime, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
 		err = result.Error
@@ -1503,7 +1321,7 @@ func (db SQLiteDB) GetAvailabilityByIdFromTo(tutor_id int, from_time time.Time, 
 
 	return
 }
-func (db SQLiteDB) SaveTutorAvailability(tutor_id int, from_time time.Time, to_time time.Time) (err error) {
+func (db SQLiteDB) CreateTutorAvailability(tutorID int, fromTime time.Time, toTime time.Time) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1516,36 +1334,32 @@ func (db SQLiteDB) SaveTutorAvailability(tutor_id int, from_time time.Time, to_t
 	found = true
 
 	// Get user if exists
-	result := conn.Where("tutor_id = ? AND available_from = ? AND available_to = ?", tutor_id, from_time, to_time).First(&db_availability)
+	result := conn.Where("tutor_id = ? AND available_from = ? AND available_to = ?", tutorID, fromTime, toTime).First(&db_availability)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		// row not found
 		found = false
 	}
 
-	// Update user fields
-	db_availability.TutorID = uint(tutor_id)
-	db_availability.AvailableFrom = from_time
-	db_availability.AvailableTo = to_time
-
 	if found {
-		// update existing record
-		result = conn.Save(&db_availability)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
-	} else {
-		// create new record
-		result = conn.Create(&db_availability)
-		if result.Error != nil {
-			err = result.Error
-			return
-		}
+		err = errors.New("Record already exists.")
+		return
+	}
+
+	// Update user fields
+	db_availability.TutorID = uint(tutorID)
+	db_availability.AvailableFrom = fromTime
+	db_availability.AvailableTo = toTime
+
+	// create new record
+	result = conn.Create(&db_availability)
+	if result.Error != nil {
+		err = result.Error
+		return
 	}
 
 	return
 }
-func (db SQLiteDB) DeleteTutorAvailabilityById(availability_id int) (err error) {
+func (db SQLiteDB) DeleteTutorAvailabilityByID(availabilityID int) (err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
 		// err opening database
@@ -1554,7 +1368,7 @@ func (db SQLiteDB) DeleteTutorAvailabilityById(availability_id int) (err error) 
 	}
 
 	// Get user if exists
-	result := conn.Delete(&db_model.Availability{}, availability_id)
+	result := conn.Delete(&db_model.Availability{}, availabilityID)
 	if result.Error != nil {
 		// row not found
 		err = result.Error

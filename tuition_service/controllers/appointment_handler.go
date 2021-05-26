@@ -13,8 +13,15 @@ import (
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
+// Put tutor available time
 func PutAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.GetString("id") != c.Param("tutor_id") {
+			err := errorHelper.RaiseUnauthorizedAccess()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
 		var slotQuery models.TimeSlot
 
 		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
@@ -22,7 +29,8 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
+
+		tutorId, _ := strconv.Atoi(c.GetString("id"))
 
 		availabilityConnector := availabilityConnector.Init()
 		e := availabilityConnector.SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
@@ -37,18 +45,26 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 	}
 }
 
+// Remove tutor available time
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		aId := c.Param("availability_id")
-		availabilityId, e := strconv.Atoi(aId)
+		if c.GetString("id") != c.Param("tutor_id") {
+			err := errorHelper.RaiseUnauthorizedAccess()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		availabilityId, e := strconv.Atoi(c.Param("availability_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
-		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
+
+		tutorId, _ := strconv.Atoi(c.GetString("id"))
 		availabilityConnector := availabilityConnector.Init()
 
+		// tutor id is needed to check whether the availabilityid belongs to the tutor id
 		e = availabilityConnector.SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
 
 		if e != nil {
@@ -61,6 +77,7 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	}
 }
 
+// Get a tutor available times with pagination
 func GetAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var slotQuery models.TimePaginatedQuery
@@ -80,9 +97,8 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 		}
 
 		availabilityConnector := availabilityConnector.Init()
-		availabilityConnector.SetTutorId(tutId)
 
-		times, e := availabilityConnector.SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
+		times, e := availabilityConnector.SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
@@ -94,18 +110,17 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 	}
 }
 
+// Book an available timeslot with the tutor with the course id
 func BookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		aId := c.Param("availability_id")
-		availabilityId, e := strconv.Atoi(aId)
+		availabilityId, e := strconv.Atoi(c.Param("availability_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		cId := c.Param("course_id")
-		courseId, e := strconv.Atoi(cId)
+		courseId, e := strconv.Atoi(c.Param("course_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
@@ -128,29 +143,29 @@ func BookTimeTutor() gin.HandlerFunc {
 	}
 }
 
+// Remove a booking
 func UnbookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		bId := c.Param("booking_id")
-		bookingId, e := strconv.Atoi(bId)
+		if c.GetString("id") != c.Param("user_id") {
+			err := errorHelper.RaiseUnauthorizedAccess()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
+
+		bookingId, e := strconv.Atoi(c.Param("booking_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
+		userId, _ := strconv.Atoi(c.GetString("id"))
+
 		bookingConnector := bookingConnector.Init()
 
-		tutorId, _ := strconv.Atoi(c.GetString("tut_id"))
-		studentId, _ := strconv.Atoi(c.GetString("id"))
-
-		e = bookingConnector.SetUserId(studentId).SetBookingId(bookingId).Delete()
+		// user id is needed to check whether the bookingid involves the user
+		e = bookingConnector.SetUserId(userId).SetBookingId(bookingId).Delete()
 		if e == nil {
 			c.JSON(http.StatusOK, "Success")
-			return
-		}
-		e = bookingConnector.SetUserId(tutorId).SetBookingId(bookingId).Delete()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
@@ -158,30 +173,27 @@ func UnbookTimeTutor() gin.HandlerFunc {
 	}
 }
 
+// Get all the booked time of a user with pagination
 func GetAllBookedTime() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var slotQuery models.TimePaginatedQuery
+		if c.GetString("id") != c.Param("user_id") {
+			err := errorHelper.RaiseUnauthorizedAccess()
+			c.JSON(err.StatusCode, err.Error())
+			return
+		}
 
+		var slotQuery models.TimePaginatedQuery
 		err := httpHelper.ExtractGetRequestBody(c, &slotQuery)
 		if err != nil {
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
+		userId, _ := strconv.Atoi(c.GetString("id"))
+
 		bookingConnector := bookingConnector.Init()
 
-		if slotQuery.IsStudent == nil || *slotQuery.IsStudent {
-			// if is a student, use current student id
-			// default is get user
-			studentId, _ := strconv.Atoi(c.GetString("id"))
-			bookingConnector.SetUserId(studentId)
-		} else {
-			// get the tutor
-			tutorId, _ := strconv.Atoi(c.Param("tutor_id"))
-			bookingConnector.SetUserId(tutorId)
-		}
-
-		times, e := bookingConnector.SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Get()
+		times, e := bookingConnector.SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
 
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()

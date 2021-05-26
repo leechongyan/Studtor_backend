@@ -71,7 +71,7 @@ func (c *userOptions) Delete() (err error) {
 		return c.err
 	}
 	if c.userId != nil {
-		return databaseService.CurrentDatabaseConnector.DeleteUserById(*c.userId)
+		return databaseService.CurrentDatabaseConnector.DeleteUserByID(*c.userId)
 	}
 	if c.email != nil {
 		return databaseService.CurrentDatabaseConnector.DeleteUserByEmail(*c.email)
@@ -84,7 +84,7 @@ func (c *userOptions) Get() (user models.User, err error) {
 		return models.User{}, c.err
 	}
 	if c.userId != nil {
-		user, err = databaseService.CurrentDatabaseConnector.GetUserById(*c.userId)
+		user, err = databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
 		if err != nil {
 			return models.User{}, err
 		}

@@ -16,9 +16,8 @@ type TutorPaginatedQuery struct {
 // default start from start
 // default end at end
 type TimePaginatedQuery struct {
-	IsStudent *bool     `form:"is_student"`
-	From      time.Time `form:"from"`
-	To        time.Time `form:"to"`
+	From time.Time `form:"from"`
+	To   time.Time `form:"to"`
 }
 
 type TimeSlot struct {

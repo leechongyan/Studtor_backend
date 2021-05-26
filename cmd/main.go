@@ -39,50 +39,53 @@ func main() {
 	// get other user by their user id
 	home.GET("/users/:user_id", authhandler.GetUser())
 
+	// student usage
+	// get the filtering field for student
+	home.GET("/schools/", tuthandler.GetSchools()) // done
+
 	// get a list of courses
-	home.GET("/courses", tuthandler.GetCourses())
+	home.GET("/courses", tuthandler.GetCourses()) // done
 
 	// get a course
-	home.GET("/courses/:course_id", tuthandler.GetSingleCourse())
+	home.GET("/courses/:course_id", tuthandler.GetSingleCourse()) // done
 
 	// get the tutors for a course
-	home.GET("/courses/:course_id/tutors/", tuthandler.GetTutorsForCourse())
+	home.GET("/courses/:course_id/tutors/", tuthandler.GetTutorsForCourse()) // done
+
+	// get a tutor for a course
+	home.GET("/courses/:course_id/tutors/:user_id", authhandler.GetUser()) // done
 
 	// get all schools (this is for filtering in modal)
-	home.GET("/schools", tuthandler.GetSchools())
+	home.GET("/schools", tuthandler.GetSchools()) // done
 
-	// get a single tutor
-	home.GET("/tutors/:tutor_id", tuthandler.GetSingleTutor())
-
-	// get all the tutors
-	home.GET("/tutors", tuthandler.GetAllTutors())
-
+	// tutors usage
 	// get a list of courses taught by a tutor
-	home.GET("/tutors/:tutor_id/courses", tuthandler.GetCoursesOfTutor())
+	home.GET("/tutors/:tutor_id/courses", tuthandler.GetCoursesOfTutor()) // done
 
 	// register for a course for a tutor
-	home.POST("/tutors/:tutor_id/courses/:course_id", tuthandler.RegisterCourse())
+	home.POST("/tutors/:tutor_id/courses/:course_id", tuthandler.RegisterCourse()) // done
 
 	// deregister a course for a tutor
-	home.DELETE("/tutors/:tutor_id/courses/:course_id", tuthandler.DeregisterCourse())
+	home.DELETE("/tutors/:tutor_id/courses/:course_id", tuthandler.DeregisterCourse()) // done
 
+	// making appointment
 	// put available time for tutor
-	home.POST("/availability", tuthandler.PutAvailableTimeTutor())
+	home.POST("/tutors/:tutor_id/availability", tuthandler.PutAvailableTimeTutor()) // done
 
 	// delete available time for tutor
-	home.DELETE("/availability/:availability_id", tuthandler.DeleteAvailableTimeTutor())
+	home.DELETE("/tutors/:tutor_id/availability/:availability_id", tuthandler.DeleteAvailableTimeTutor()) // done
 
 	// get availability for a tutor
-	home.GET("/availability/tutors/:tutor_id", tuthandler.GetAvailableTimeTutor())
+	home.GET("/tutors/:tutor_id/availability", tuthandler.GetAvailableTimeTutor()) // done
 
 	// book an available time for a tutor
-	home.POST("availability/:availability_id/courses/:course_id/tutors/:tutor_id", tuthandler.BookTimeTutor())
+	home.POST("/courses/:course_id/tutors/:tutor_id/availability/:availability_id", tuthandler.BookTimeTutor()) // done
 
 	// unbook a booking for a tutor (can be done by a student)
-	home.DELETE("/booking/:booking_id", tuthandler.UnbookTimeTutor())
+	home.DELETE("/users/:user_id/bookings/:booking_id", tuthandler.UnbookTimeTutor()) // done
 
 	// get all the booked time for a user or a tutor
-	home.GET("/users/:user_id/booking", tuthandler.GetAllBookedTime())
+	home.GET("/users/:user_id/bookings", tuthandler.GetAllBookedTime()) // done
 	// end of version v1
 
 	router.Run(viper.GetString("port"))

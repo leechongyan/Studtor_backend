@@ -54,7 +54,7 @@ func (c *tutorOptions) Add() (err error) {
 	if c.tutorId == nil || c.courseId == nil {
 		return errors.New("Tutor ID and Course ID must be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.SaveTutorCourse(*c.tutorId, *c.courseId)
+	return databaseService.CurrentDatabaseConnector.CreateTutorCourse(*c.tutorId, *c.courseId)
 }
 
 func (c *tutorOptions) Delete() (err error) {
@@ -76,7 +76,7 @@ func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
 		return nil, errors.New("Course ID must be provided")
 	}
 	if c.size != nil && c.tutorId != nil {
-		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIdOfSize(*c.courseId, *c.tutorId, *c.size)
+		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIDOfSize(*c.courseId, *c.tutorId, *c.size)
 	}
 	if c.size != nil {
 		// get from the start
@@ -85,7 +85,7 @@ func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
 
 	if c.tutorId != nil {
 		// get from from_id to the end
-		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromId(*c.courseId, *c.tutorId)
+		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromID(*c.courseId, *c.tutorId)
 	}
 	// get all courses
 	return databaseService.CurrentDatabaseConnector.GetTutorsForCourse(*c.courseId)

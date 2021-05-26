@@ -10,6 +10,7 @@ import (
 	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 )
 
+// Get all the courses
 func GetCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		courseConnector := courseConnector.Init()
@@ -24,21 +25,20 @@ func GetCourses() gin.HandlerFunc {
 	}
 }
 
+// Get a single course
 func GetSingleCourse() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		courseConnector := courseConnector.Init()
 
-		courseId := c.Param("course")
-
 		// get single course
-		i, e := strconv.Atoi(courseId)
+		courseId, e := strconv.Atoi(c.Param("course_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		course, e := courseConnector.SetCourseId(i).GetSingle()
+		course, e := courseConnector.SetCourseId(courseId).GetSingle()
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())
@@ -48,21 +48,19 @@ func GetSingleCourse() gin.HandlerFunc {
 	}
 }
 
+// Get all the courses taught by a tutor
 func GetCoursesOfTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		courseConnector := courseConnector.Init()
 
-		tutorId := c.Param("tutor_id")
-
-		// get single course
-		i, e := strconv.Atoi(tutorId)
+		tutorId, e := strconv.Atoi(c.Param("tutor_id"))
 		if e != nil {
 			err := errorHelper.RaiseCannotParseRequest()
 			c.JSON(err.StatusCode, err.Error())
 			return
 		}
 
-		courses, e := courseConnector.SetTutorId(i).GetAll()
+		courses, e := courseConnector.SetTutorId(tutorId).GetAll()
 		if e != nil {
 			err := errorHelper.RaiseDatabaseError()
 			c.JSON(err.StatusCode, err.Error())

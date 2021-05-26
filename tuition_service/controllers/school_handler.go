@@ -9,6 +9,7 @@ import (
 	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 )
 
+// Get all the schools and their associated school courses
 func GetSchools() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		schoolConnector := schoolConnector.Init()

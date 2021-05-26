@@ -23,7 +23,7 @@ type AvailabilityConnector interface {
 	SetToTime(toTime time.Time) *availabilityOptions
 	Add() (err error)
 	Delete() (err error)
-	Get() (times []models.Availability, err error)
+	GetAll() (times []models.Availability, err error)
 }
 
 func Init() *availabilityOptions {
@@ -61,7 +61,7 @@ func (c *availabilityOptions) Add() (err error) {
 	if c.tutorId == nil {
 		return errors.New("Tutor id has to be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.SaveTutorAvailability(*c.tutorId, c.fromTime, c.toTime)
+	return databaseService.CurrentDatabaseConnector.CreateTutorAvailability(*c.tutorId, c.fromTime, c.toTime)
 }
 
 func (c *availabilityOptions) Delete() (err error) {
@@ -73,20 +73,20 @@ func (c *availabilityOptions) Delete() (err error) {
 		return errors.New("Availability id and tutor id have to be provided")
 	}
 
-	availabilities, err := databaseService.CurrentDatabaseConnector.GetAvailabilityById(*c.tutorId)
+	availabilities, err := databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
 	if err != nil {
 		return
 	}
 	for _, availability := range availabilities {
 		if int(availability.TutorID) == *c.tutorId {
-			err = databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityById(*c.availabilityId)
+			err = databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityByID(*c.availabilityId)
 			return
 		}
 	}
 	return errors.New("Not authorised")
 }
 
-func (c *availabilityOptions) Get() (times []models.Availability, err error) {
+func (c *availabilityOptions) GetAll() (times []models.Availability, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -97,13 +97,13 @@ func (c *availabilityOptions) Get() (times []models.Availability, err error) {
 		if c.fromTime.After(c.toTime) {
 			return nil, errors.New("From Time cannot be greater than or equal to To Time")
 		}
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdFromTo(*c.tutorId, c.fromTime, c.toTime)
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFromTo(*c.tutorId, c.fromTime, c.toTime)
 	}
 	if !c.fromTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdFrom(*c.tutorId, c.fromTime)
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFrom(*c.tutorId, c.fromTime)
 	}
 	if !c.toTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIdTo(*c.tutorId, c.toTime)
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDTo(*c.tutorId, c.toTime)
 	}
-	return databaseService.CurrentDatabaseConnector.GetAvailabilityById(*c.tutorId)
+	return databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
 }

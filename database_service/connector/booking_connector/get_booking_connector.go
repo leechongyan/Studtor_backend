@@ -27,7 +27,7 @@ type BookingConnector interface {
 	SetToTime(toTime time.Time) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
-	Get() (times []models.BookingDetails, err error)
+	GetAll() (times []models.BookingDetails, err error)
 }
 
 func Init() *bookingOptions {
@@ -81,7 +81,7 @@ func (c *bookingOptions) Add() (err error) {
 	if c.availabilityId == nil {
 		return errors.New("Availability Id must be provided")
 	}
-	return databaseService.CurrentDatabaseConnector.SaveBooking(*c.availabilityId, *c.userId, *c.courseId)
+	return databaseService.CurrentDatabaseConnector.CreateBooking(*c.availabilityId, *c.userId, *c.courseId)
 }
 
 func (c *bookingOptions) Delete() (err error) {
@@ -97,11 +97,11 @@ func (c *bookingOptions) Delete() (err error) {
 		return errors.New("User Id must be provided")
 	}
 
-	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsById(*c.userId)
+	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
 	if err == nil {
 		for _, tutorBooking := range tutorBookings {
 			if tutorBooking.ID == *c.bookingId {
-				return databaseService.CurrentDatabaseConnector.DeleteBookingById(*c.bookingId)
+				return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func (c *bookingOptions) Delete() (err error) {
 	return errors.New("Not authorised")
 }
 
-func (c *bookingOptions) Get() (times []models.BookingDetails, err error) {
+func (c *bookingOptions) GetAll() (times []models.BookingDetails, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -120,13 +120,13 @@ func (c *bookingOptions) Get() (times []models.BookingDetails, err error) {
 		if c.fromTime.After(c.toTime) {
 			return nil, errors.New("From Time cannot be greater than or equal to To Time")
 		}
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIdFromTo(*c.userId, c.fromTime, c.toTime)
+		return databaseService.CurrentDatabaseConnector.GetBookingsByIDFromTo(*c.userId, c.fromTime, c.toTime)
 	}
 	if !c.fromTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIdFrom(*c.userId, c.fromTime)
+		return databaseService.CurrentDatabaseConnector.GetBookingsByIDFrom(*c.userId, c.fromTime)
 	}
 	if !c.toTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIdTo(*c.userId, c.toTime)
+		return databaseService.CurrentDatabaseConnector.GetBookingsByIDTo(*c.userId, c.toTime)
 	}
-	return databaseService.CurrentDatabaseConnector.GetBookingsById(*c.userId)
+	return databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
 }
