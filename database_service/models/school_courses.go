@@ -13,7 +13,7 @@ type SchoolCourses struct {
 	CourseID string
 }
 
-type CoursesForSchool struct {
+type SchoolCoursesDetails struct {
 	ID          int
 	Institution string
 	SchoolCode  string
