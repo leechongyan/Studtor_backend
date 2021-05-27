@@ -13,8 +13,9 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	err := initialization_helper.Initialize()
-	if err != nil {
+	e := initialization_helper.Initialize()
+	if e != nil {
+		// error in initialising
 		return
 	}
 

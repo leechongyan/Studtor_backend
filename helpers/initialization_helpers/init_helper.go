@@ -1,8 +1,7 @@
 package initialization_helpers
 
 import (
-	"fmt"
-
+	systemError "github.com/leechongyan/Studtor_backend/constants/error_messages/system_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
 	"github.com/spf13/viper"
@@ -20,8 +19,7 @@ func initializeViper() (err error) {
 
 	viper.SetConfigType("yml")
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
-		return err
+		return systemError.ErrInitFailure
 	}
 	return
 }

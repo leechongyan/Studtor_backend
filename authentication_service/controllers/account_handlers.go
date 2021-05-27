@@ -13,7 +13,10 @@ import (
 	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/models"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
+
+	// errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
 	mailService "github.com/leechongyan/Studtor_backend/mail_service"
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
@@ -27,6 +30,24 @@ func checkEduDomain(email string, domain string) bool {
 	return strings.Contains(dom, domain)
 }
 
+func getAccountWithEmail(email string) (user databaseModel.User, exist bool, err error) {
+	userConnector := userConnector.Init()
+	user, err = userConnector.SetUserEmail(email).Get()
+	if err != nil {
+		return user, false, err
+	}
+	return user, true, nil
+}
+
+func getAccountWithID(id int) (user databaseModel.User, exist bool, err error) {
+	userConnector := userConnector.Init()
+	user, err = userConnector.SetUserId(id).Get()
+	if err != nil {
+		return user, false, err
+	}
+	return user, true, nil
+}
+
 // handle sign up request
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -34,25 +55,24 @@ func SignUp() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &user)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		// validate whether the email is valid with edu
 		if !checkEduDomain(*user.Email, "edu") {
-			err := errorHelper.RaiseInvalidEmail()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, httpError.ErrInvalidEmail.Error())
 			return
 		}
 
 		// check whether this email exist
-		userConnector := userConnector.Init()
-		_, e := userConnector.SetUserEmail(*user.Email).Get()
-		if e == nil {
-			err := errorHelper.RaiseExistentAccount()
-			c.JSON(err.StatusCode, err.Error())
+		_, exist, err := getAccountWithEmail(*user.Email)
+		if exist {
+			c.JSON(http.StatusBadRequest, httpError.ErrExistentAccount.Error())
 			return
 		}
+
+		userConnector := userConnector.Init()
 
 		// hash the user password
 		password := authHelper.HashPassword(*user.Password)
@@ -72,18 +92,17 @@ func SignUp() gin.HandlerFunc {
 		database_user := typeHelper.ConvertFromAuthUserToDatabaseUser(user)
 
 		// save user in db
-		e = userConnector.SetUser(database_user).Add()
+		err = userConnector.SetUser(database_user).Add()
 
-		if e != nil {
-			err := errorHelper.RaiseCannotSaveUserInDatabase()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// send an email
 		err = mailService.SendVerificationCode(user, newVKey)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -97,35 +116,32 @@ func Verify() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &verification)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		userConnector := userConnector.Init()
-		user, e := userConnector.SetUserEmail(*verification.Email).Get()
-		if e != nil {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
+		user, exist, err := getAccountWithEmail(*verification.Email)
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		if !user.VKey.Valid {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
-			return
-		}
 		// check whether verification code is correct
 		if user.VKey.String != *verification.VKey {
-			err := errorHelper.RaiseWrongValidation()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrWrongValidation.Error())
 			return
 		}
 
 		// if verification all pass and correct then create access token
 		user.Verified = true
-		e = userConnector.SetUser(user).Add()
-		if e != nil {
-			c.JSON(http.StatusInternalServerError, e.Error())
+		err = userConnector.SetUser(user).Add()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -140,43 +156,44 @@ func Login() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &user)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserEmail(*user.Email).Get()
+
+		foundUser, exist, err := getAccountWithEmail(*user.Email)
 		// check whether user exists
-		if e != nil {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// check whether password exists
 		passwordIsValid := authHelper.VerifyPassword(*user.Password, foundUser.Password)
 		if !passwordIsValid {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrWrongCredential.Error())
 			return
 		}
 
 		// check whether is verified or not
 		if !foundUser.Verified {
-			err := errorHelper.RaiseNotVerified()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrNotVerified.Error())
 			return
 		}
 
 		// refresh token
 		token, refreshToken, err := authHelper.GenerateAllTokens(int(foundUser.ID), foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.UserType)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		err = authHelper.UpdateAllTokens(token, refreshToken, foundUser.Email)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -190,42 +207,43 @@ func RefreshToken() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &refresh)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserEmail(*refresh.Email).Get()
-
 		// check whether user exists
-		if e != nil {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
+		foundUser, exist, err := getAccountWithEmail(*refresh.Email)
+		// check whether user exists
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		if !foundUser.RefreshToken.Valid {
-			err := errorHelper.RaiseLoginExpired()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrExpiredRefreshToken.Error())
 			return
 		}
 
 		_, err = authHelper.ValidateToken(foundUser.RefreshToken.String)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		// if refresh is still valid then generate new token
 		token, _, err := authHelper.GenerateAllTokens(int(foundUser.ID), foundUser.Email, foundUser.FirstName, foundUser.LastName, foundUser.UserType)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		err = authHelper.UpdateAllTokens(token, foundUser.RefreshToken.String, foundUser.Email)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -238,18 +256,19 @@ func Logout() gin.HandlerFunc {
 		uid := c.GetString("id")
 		userId, e := strconv.Atoi(uid)
 		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserId(userId).Get()
-
 		// check whether user exists
-		if e != nil {
-			err := errorHelper.RaiseWrongLoginCredentials()
-			c.JSON(err.StatusCode, err.Error())
+		foundUser, exist, err := getAccountWithID(userId)
+		// check whether user exists
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -257,11 +276,11 @@ func Logout() gin.HandlerFunc {
 		foundUser.Token.Valid = false
 		foundUser.RefreshToken.Valid = false
 
-		e = userConnector.SetUser(foundUser).Add()
+		userConnector := userConnector.Init()
+		err = userConnector.SetUser(foundUser).Add()
 
-		if e != nil {
-			err := errorHelper.RaiseCannotSaveUserInDatabase()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -269,39 +288,33 @@ func Logout() gin.HandlerFunc {
 	}
 }
 
-func uploadUserProfilePicture(c *gin.Context) (url string, err *errorHelper.RequestError) {
-	file, fileHeader, e := c.Request.FormFile("file")
-	if e != nil {
-		err = errorHelper.RaiseCannotParseFile()
-		c.JSON(err.StatusCode, err.Error())
-		return
+func uploadUserProfilePicture(c *gin.Context) (url string, err error) {
+	file, fileHeader, err := c.Request.FormFile("file")
+	if err != nil {
+		return "", httpError.ErrFileParsingFailure
 	}
 	defer file.Close()
-	url, e = storageService.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file, *fileHeader)
-	if e != nil {
-		err = errorHelper.RaiseStorageFailure()
-		c.JSON(err.StatusCode, err.Error())
-		return
-	}
+	url, err = storageService.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file, *fileHeader)
 	return
 }
 
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user := c.Param("user")
+		user := c.Param("user_id")
 		userId, e := strconv.Atoi(user)
 		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserId(userId).Get()
-
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		// check whether user exists
+		foundUser, exist, err := getAccountWithID(userId)
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		profile := typeHelper.ConvertFromDatabaseUserToUserProfile(foundUser)
@@ -313,11 +326,15 @@ func GetCurrentUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.GetString("id")
 		userId, _ := strconv.Atoi(id)
-		userConnector := userConnector.Init()
-		foundUser, e := userConnector.SetUserId(userId).Get()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+
+		// check whether user exists
+		foundUser, exist, err := getAccountWithID(userId)
+		if !exist {
+			if err == databaseError.ErrNoEntry {
+				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		profile := typeHelper.ConvertFromDatabaseUserToUserProfile(foundUser)
