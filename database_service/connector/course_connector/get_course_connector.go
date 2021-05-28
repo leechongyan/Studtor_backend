@@ -1,8 +1,7 @@
 package course_connector
 
 import (
-	"errors"
-
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -49,7 +48,7 @@ func (c *courseOptions) Add() (err error) {
 		return c.err
 	}
 	// add course to database
-	return errors.New("Not implemented")
+	return databaseError.ErrMethodNotImplemented
 }
 
 func (c *courseOptions) Delete() (err error) {
@@ -57,7 +56,7 @@ func (c *courseOptions) Delete() (err error) {
 		return c.err
 	}
 	// delete course to database
-	return errors.New("Not implemented")
+	return databaseError.ErrMethodNotImplemented
 }
 
 func (c *courseOptions) GetSingle() (course models.CourseWithSize, err error) {
@@ -65,7 +64,7 @@ func (c *courseOptions) GetSingle() (course models.CourseWithSize, err error) {
 		return models.CourseWithSize{}, c.err
 	}
 	if c.courseId == nil {
-		return models.CourseWithSize{}, errors.New("Course id must be provided")
+		return models.CourseWithSize{}, databaseError.ErrNotEnoughParameters
 	}
 	courseWithoutSize, studentSize, tutorSize, err := databaseService.CurrentDatabaseConnector.GetCourse(*c.courseId)
 	if err != nil {

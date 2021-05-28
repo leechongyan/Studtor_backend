@@ -2,21 +2,6 @@ package http_errors
 
 import "errors"
 
-// const (
-// 	UNAUTHORIZED_ACCESS          string = "Unauthorized Access"
-// 	EMAIL_NOT_VALID              string = "Invalid Email"
-// 	WRONG_VALIDATION             string = "Wrong Validation Code"
-// 	WRONG_LOGIN_CREDENTIALS      string = "Incorrect Email or Password"
-// 	INVALID_TOKEN_FORMAT         string = "Invalid Token Format"
-// 	No_AUTHORIZATION_HEADER      string = "No Authorization Header"
-// 	INVALID_AUTHORIZATION_METHOD string = "Invalid Authorization Method"
-// 	INVALID_TOKEN                string = "Invalid Token"
-// 	EXPIRED_TOKEN                string = "Expired Token"
-// 	FAILURE_PARSE_JSON           string = "Json Parsing Failure"
-// 	VALIDATION_JSON_ERROR        string = "Json Validation Failure"
-// 	CANNOT_PARSE_FILE            string = "File Parsing Failure"
-// )
-
 var ErrUnauthorizedAccess = errors.New("unauthorized access")
 var ErrInvalidEmail = errors.New("invalid email")
 var ErrExistentAccount = errors.New("account exists")

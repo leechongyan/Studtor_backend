@@ -8,11 +8,11 @@ import (
 	"text/template"
 
 	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
+	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	"github.com/spf13/viper"
 )
 
-func SendVerificationCode(user authModel.User, code string) (err *errorHelper.RequestError) {
+func SendVerificationCode(user authModel.User, code string) (err error) {
 	serverEmail := viper.GetString("serverEmail")
 	serverEmailPW := viper.GetString("serverEmailPW")
 
@@ -44,10 +44,9 @@ func SendVerificationCode(user authModel.User, code string) (err *errorHelper.Re
 	})
 
 	// Sending email.
-	e := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
-	if e != nil {
-		err = errorHelper.RaiseFailureEmailSend()
-		return
+	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
+	if err != nil {
+		return systemError.ErrEmailSendingFailure
 	}
 
 	return

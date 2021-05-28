@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	schoolConnector "github.com/leechongyan/Studtor_backend/database_service/connector/school_connector"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 )
 
 // Get all the schools and their associated school courses
@@ -14,11 +13,10 @@ func GetSchools() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		schoolConnector := schoolConnector.Init()
 
-		schools, e := schoolConnector.GetAll()
+		schools, err := schoolConnector.GetAll()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, schools)

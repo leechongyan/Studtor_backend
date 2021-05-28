@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	availabilityConnector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
 	bookingConnector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
@@ -17,8 +17,7 @@ import (
 func PutAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString("id") != c.Param("tutor_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
@@ -26,18 +25,17 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
 
 		availabilityConnector := availabilityConnector.Init()
-		e := availabilityConnector.SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
+		err = availabilityConnector.SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -49,15 +47,13 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 func DeleteAvailableTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString("id") != c.Param("tutor_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
-		availabilityId, e := strconv.Atoi(c.Param("availability_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		availabilityId, err := strconv.Atoi(c.Param("availability_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
@@ -65,11 +61,14 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 		availabilityConnector := availabilityConnector.Init()
 
 		// tutor id is needed to check whether the availabilityid belongs to the tutor id
-		e = availabilityConnector.SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
+		err = availabilityConnector.SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			if err == httpError.ErrUnauthorizedAccess {
+				c.JSON(http.StatusUnauthorized, err.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -84,25 +83,21 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 
 		err := httpHelper.ExtractPostRequestBody(c, &slotQuery)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		tutorId := c.Param("tutor_id")
-		tutId, e := strconv.Atoi(tutorId)
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		tutId, err := strconv.Atoi(c.Param("tutor_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
 		availabilityConnector := availabilityConnector.Init()
 
-		times, e := availabilityConnector.SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
-
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		times, err := availabilityConnector.SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -113,29 +108,26 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 // Book an available timeslot with the tutor with the course id
 func BookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		availabilityId, e := strconv.Atoi(c.Param("availability_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		availabilityId, err := strconv.Atoi(c.Param("availability_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		courseId, e := strconv.Atoi(c.Param("course_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		courseId, err := strconv.Atoi(c.Param("course_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
-
-		bookingConnector := bookingConnector.Init()
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		e = bookingConnector.SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
+		bookingConnector := bookingConnector.Init()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		err = bookingConnector.SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -147,25 +139,28 @@ func BookTimeTutor() gin.HandlerFunc {
 func UnbookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString("id") != c.Param("user_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
-		bookingId, e := strconv.Atoi(c.Param("booking_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		bookingId, err := strconv.Atoi(c.Param("booking_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
+
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
 		bookingConnector := bookingConnector.Init()
 
 		// user id is needed to check whether the bookingid involves the user
-		e = bookingConnector.SetUserId(userId).SetBookingId(bookingId).Delete()
-		if e == nil {
-			c.JSON(http.StatusOK, "Success")
+		err = bookingConnector.SetUserId(userId).SetBookingId(bookingId).Delete()
+		if err != nil {
+			if err == httpError.ErrUnauthorizedAccess {
+				c.JSON(http.StatusUnauthorized, err.Error())
+				return
+			}
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -177,15 +172,14 @@ func UnbookTimeTutor() gin.HandlerFunc {
 func GetAllBookedTime() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString("id") != c.Param("user_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
 		var slotQuery models.TimePaginatedQuery
 		err := httpHelper.ExtractGetRequestBody(c, &slotQuery)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -193,11 +187,10 @@ func GetAllBookedTime() gin.HandlerFunc {
 
 		bookingConnector := bookingConnector.Init()
 
-		times, e := bookingConnector.SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
+		times, err := bookingConnector.SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 

@@ -1,7 +1,7 @@
 package initialization_helpers
 
 import (
-	systemError "github.com/leechongyan/Studtor_backend/constants/error_messages/system_errors"
+	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
 	"github.com/spf13/viper"

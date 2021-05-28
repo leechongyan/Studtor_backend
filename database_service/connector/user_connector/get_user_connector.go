@@ -1,9 +1,7 @@
 package user_connector
 
 import (
-	"errors"
-
-	"github.com/leechongyan/Studtor_backend/constants"
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -49,17 +47,17 @@ func (c *userOptions) Add() (err error) {
 		return c.err
 	}
 	if c.user == nil {
-		return errors.New("User object has to be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 	// check whether should update or add new to database
 	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(c.user.Email)
 	// differentiate between no user and error in database
-	// if is network error
-	if err.Error() == constants.DATABASE_ERROR {
+	// if is database error
+	if err == databaseError.ErrDatabaseInternalError {
 		return
 	}
 	// if error is account does not exist then create user
-	if err.Error() == constants.NONEXISTENT_ACCOUNT {
+	if err == databaseError.ErrNoEntry {
 		return databaseService.CurrentDatabaseConnector.CreateUser(*c.user)
 	}
 	// user exists
@@ -76,7 +74,7 @@ func (c *userOptions) Delete() (err error) {
 	if c.email != nil {
 		return databaseService.CurrentDatabaseConnector.DeleteUserByEmail(*c.email)
 	}
-	return errors.New("User id or User email has to be provided")
+	return databaseError.ErrNotEnoughParameters
 }
 
 func (c *userOptions) Get() (user models.User, err error) {
@@ -84,18 +82,10 @@ func (c *userOptions) Get() (user models.User, err error) {
 		return models.User{}, c.err
 	}
 	if c.userId != nil {
-		user, err = databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
-		if err != nil {
-			return models.User{}, err
-		}
-		return user, err
+		return databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
 	}
 	if c.email != nil {
-		user, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
-		if err != nil {
-			return models.User{}, err
-		}
-		return user, err
+		return databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
 	}
-	return models.User{}, errors.New("User id or User email has to be provided")
+	return models.User{}, databaseError.ErrNotEnoughParameters
 }

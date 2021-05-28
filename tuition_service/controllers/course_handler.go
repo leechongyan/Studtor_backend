@@ -6,19 +6,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	courseConnector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 )
 
 // Get all the courses
 func GetCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		courseConnector := courseConnector.Init()
-		courses, e := courseConnector.GetAll()
+		courses, err := courseConnector.GetAll()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, courses)
@@ -31,17 +30,15 @@ func GetSingleCourse() gin.HandlerFunc {
 		courseConnector := courseConnector.Init()
 
 		// get single course
-		courseId, e := strconv.Atoi(c.Param("course_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		courseId, err := strconv.Atoi(c.Param("course_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		course, e := courseConnector.SetCourseId(courseId).GetSingle()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		course, err := courseConnector.SetCourseId(courseId).GetSingle()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, course)
@@ -53,17 +50,15 @@ func GetCoursesOfTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		courseConnector := courseConnector.Init()
 
-		tutorId, e := strconv.Atoi(c.Param("tutor_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+		tutorId, err := strconv.Atoi(c.Param("tutor_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		courses, e := courseConnector.SetTutorId(tutorId).GetAll()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		courses, err := courseConnector.SetTutorId(tutorId).GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, courses)

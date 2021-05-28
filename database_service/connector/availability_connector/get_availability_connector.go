@@ -1,9 +1,10 @@
 package availability_connector
 
 import (
-	"errors"
 	"time"
 
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -56,10 +57,10 @@ func (c *availabilityOptions) Add() (err error) {
 		return c.err
 	}
 	if c.fromTime.IsZero() || c.toTime.IsZero() {
-		return errors.New("Two times have to be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 	if c.tutorId == nil {
-		return errors.New("Tutor id has to be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 	return databaseService.CurrentDatabaseConnector.CreateTutorAvailability(*c.tutorId, c.fromTime, c.toTime)
 }
@@ -70,7 +71,7 @@ func (c *availabilityOptions) Delete() (err error) {
 	}
 
 	if c.availabilityId == nil || c.tutorId == nil {
-		return errors.New("Availability id and tutor id have to be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 
 	availabilities, err := databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
@@ -79,11 +80,10 @@ func (c *availabilityOptions) Delete() (err error) {
 	}
 	for _, availability := range availabilities {
 		if int(availability.TutorID) == *c.tutorId {
-			err = databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityByID(*c.availabilityId)
-			return
+			return databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityByID(*c.availabilityId)
 		}
 	}
-	return errors.New("Not authorised")
+	return httpError.ErrUnauthorizedAccess
 }
 
 func (c *availabilityOptions) GetAll() (times []models.Availability, err error) {
@@ -91,11 +91,11 @@ func (c *availabilityOptions) GetAll() (times []models.Availability, err error) 
 		return nil, c.err
 	}
 	if c.tutorId == nil {
-		return nil, errors.New("Tutor id has to be provided")
+		return nil, databaseError.ErrNotEnoughParameters
 	}
 	if !c.fromTime.IsZero() && !c.toTime.IsZero() {
 		if c.fromTime.After(c.toTime) {
-			return nil, errors.New("From Time cannot be greater than or equal to To Time")
+			return nil, databaseError.ErrInvalidTimes
 		}
 		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFromTo(*c.tutorId, c.fromTime, c.toTime)
 	}

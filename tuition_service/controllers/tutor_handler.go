@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	tutorConnector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
-	errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
@@ -19,14 +19,18 @@ func GetTutorsForCourse() gin.HandlerFunc {
 
 		err := httpHelper.ExtractGetRequestBody(c, &query)
 		if err != nil {
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		courseId, err := strconv.Atoi(c.Param("course_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
 		tutorConnector := tutorConnector.Init()
 
-		course := c.Param("course")
-		courseId, _ := strconv.Atoi(course)
 		tutorConnector.SetCourseId(courseId)
 
 		if query.FromId != nil {
@@ -37,11 +41,10 @@ func GetTutorsForCourse() gin.HandlerFunc {
 			tutorConnector.SetSize(*query.Size)
 		}
 
-		tutors, e := tutorConnector.GetAll()
+		tutors, err := tutorConnector.GetAll()
 
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, tutors)
@@ -54,24 +57,22 @@ func RegisterCourse() gin.HandlerFunc {
 
 		// check tutid param whether is same as the token id
 		if c.GetString("id") != c.Param("tutor_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
-		courseId, e := strconv.Atoi(c.Param("course_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+
+		courseId, err := strconv.Atoi(c.Param("course_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
 		tutorConnector := tutorConnector.Init()
-		e = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Add()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		err = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Add()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, "Success")
@@ -84,24 +85,22 @@ func DeregisterCourse() gin.HandlerFunc {
 
 		// check tutid param whether is same as the token id
 		if c.GetString("id") != c.Param("tutor_id") {
-			err := errorHelper.RaiseUnauthorizedAccess()
-			c.JSON(err.StatusCode, err.Error())
+			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
-		courseId, e := strconv.Atoi(c.Param("course_id"))
-		if e != nil {
-			err := errorHelper.RaiseCannotParseRequest()
-			c.JSON(err.StatusCode, err.Error())
+
+		courseId, err := strconv.Atoi(c.Param("course_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
 		tutorConnector := tutorConnector.Init()
-		e = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Delete()
-		if e != nil {
-			err := errorHelper.RaiseDatabaseError()
-			c.JSON(err.StatusCode, err.Error())
+		err = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Delete()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, "Success")

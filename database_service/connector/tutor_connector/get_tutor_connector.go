@@ -1,8 +1,7 @@
 package tutor_connector
 
 import (
-	"errors"
-
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -36,7 +35,7 @@ func (c *tutorOptions) SetCourseId(courseId int) *tutorOptions {
 func (c *tutorOptions) SetSize(size int) *tutorOptions {
 	// check for size
 	if size <= 0 {
-		c.err = errors.New("Size cannot be 0 or negative")
+		c.err = databaseError.ErrInvalidSizeParameter
 	}
 	c.size = &size
 	return c
@@ -52,7 +51,7 @@ func (c *tutorOptions) Add() (err error) {
 		return c.err
 	}
 	if c.tutorId == nil || c.courseId == nil {
-		return errors.New("Tutor ID and Course ID must be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 	return databaseService.CurrentDatabaseConnector.CreateTutorCourse(*c.tutorId, *c.courseId)
 }
@@ -62,7 +61,7 @@ func (c *tutorOptions) Delete() (err error) {
 		return c.err
 	}
 	if c.tutorId == nil || c.courseId == nil {
-		return errors.New("Tutor ID and Course ID must be provided")
+		return databaseError.ErrNotEnoughParameters
 	}
 	return databaseService.CurrentDatabaseConnector.DeleteTutorCourse(*c.tutorId, *c.courseId)
 }
@@ -73,7 +72,7 @@ func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
 	}
 
 	if c.courseId == nil {
-		return nil, errors.New("Course ID must be provided")
+		return nil, databaseError.ErrNotEnoughParameters
 	}
 	if c.size != nil && c.tutorId != nil {
 		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIDOfSize(*c.courseId, *c.tutorId, *c.size)

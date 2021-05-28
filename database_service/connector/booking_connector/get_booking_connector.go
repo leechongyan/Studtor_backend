@@ -1,9 +1,10 @@
 package booking_connector
 
 import (
-	"errors"
 	"time"
 
+	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	"github.com/leechongyan/Studtor_backend/database_service/models"
 )
@@ -70,17 +71,10 @@ func (c *bookingOptions) Add() (err error) {
 		return c.err
 	}
 
-	if c.userId == nil {
-		return errors.New("Student id must be provided")
+	if c.userId == nil || c.courseId == nil || c.availabilityId == nil {
+		return databaseError.ErrNotEnoughParameters
 	}
 
-	if c.courseId == nil {
-		return errors.New("Course Id must be provided")
-	}
-
-	if c.availabilityId == nil {
-		return errors.New("Availability Id must be provided")
-	}
 	return databaseService.CurrentDatabaseConnector.CreateBooking(*c.availabilityId, *c.userId, *c.courseId)
 }
 
@@ -89,24 +83,22 @@ func (c *bookingOptions) Delete() (err error) {
 		return c.err
 	}
 
-	if c.bookingId == nil {
-		return errors.New("Booking Id must be provided")
-	}
-
-	if c.userId == nil {
-		return errors.New("User Id must be provided")
+	if c.bookingId == nil || c.userId == nil {
+		return databaseError.ErrNotEnoughParameters
 	}
 
 	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
-	if err == nil {
-		for _, tutorBooking := range tutorBookings {
-			if tutorBooking.ID == *c.bookingId {
-				return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
-			}
+	if err != nil {
+		return
+	}
+
+	for _, tutorBooking := range tutorBookings {
+		if tutorBooking.ID == *c.bookingId {
+			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
 		}
 	}
 
-	return errors.New("Not authorised")
+	return httpError.ErrUnauthorizedAccess
 }
 
 func (c *bookingOptions) GetAll() (times []models.BookingDetails, err error) {
@@ -114,11 +106,11 @@ func (c *bookingOptions) GetAll() (times []models.BookingDetails, err error) {
 		return nil, c.err
 	}
 	if c.userId == nil {
-		return nil, errors.New("User id must be provided")
+		return nil, databaseError.ErrNotEnoughParameters
 	}
 	if !c.fromTime.IsZero() && !c.toTime.IsZero() {
 		if c.fromTime.After(c.toTime) {
-			return nil, errors.New("From Time cannot be greater than or equal to To Time")
+			return nil, databaseError.ErrInvalidTimes
 		}
 		return databaseService.CurrentDatabaseConnector.GetBookingsByIDFromTo(*c.userId, c.fromTime, c.toTime)
 	}

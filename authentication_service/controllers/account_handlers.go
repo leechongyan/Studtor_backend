@@ -14,7 +14,6 @@ import (
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/models"
 
-	// errorHelper "github.com/leechongyan/Studtor_backend/helpers/error_helpers"
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
@@ -30,22 +29,16 @@ func checkEduDomain(email string, domain string) bool {
 	return strings.Contains(dom, domain)
 }
 
-func getAccountWithEmail(email string) (user databaseModel.User, exist bool, err error) {
+func getAccountWithEmail(email string) (user databaseModel.User, err error) {
 	userConnector := userConnector.Init()
 	user, err = userConnector.SetUserEmail(email).Get()
-	if err != nil {
-		return user, false, err
-	}
-	return user, true, nil
+	return
 }
 
-func getAccountWithID(id int) (user databaseModel.User, exist bool, err error) {
+func getAccountWithID(id int) (user databaseModel.User, err error) {
 	userConnector := userConnector.Init()
 	user, err = userConnector.SetUserId(id).Get()
-	if err != nil {
-		return user, false, err
-	}
-	return user, true, nil
+	return
 }
 
 // handle sign up request
@@ -66,9 +59,13 @@ func SignUp() gin.HandlerFunc {
 		}
 
 		// check whether this email exist
-		_, exist, err := getAccountWithEmail(*user.Email)
-		if exist {
+		_, err = getAccountWithEmail(*user.Email)
+		if err == nil {
 			c.JSON(http.StatusBadRequest, httpError.ErrExistentAccount.Error())
+			return
+		}
+		if err != nil && err == databaseError.ErrDatabaseInternalError {
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -121,8 +118,8 @@ func Verify() gin.HandlerFunc {
 		}
 
 		userConnector := userConnector.Init()
-		user, exist, err := getAccountWithEmail(*verification.Email)
-		if !exist {
+		user, err := getAccountWithEmail(*verification.Email)
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -160,9 +157,9 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		foundUser, exist, err := getAccountWithEmail(*user.Email)
+		foundUser, err = getAccountWithEmail(*user.Email)
 		// check whether user exists
-		if !exist {
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -212,9 +209,9 @@ func RefreshToken() gin.HandlerFunc {
 		}
 
 		// check whether user exists
-		foundUser, exist, err := getAccountWithEmail(*refresh.Email)
+		foundUser, err := getAccountWithEmail(*refresh.Email)
 		// check whether user exists
-		if !exist {
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -261,9 +258,9 @@ func Logout() gin.HandlerFunc {
 		}
 
 		// check whether user exists
-		foundUser, exist, err := getAccountWithID(userId)
+		foundUser, err := getAccountWithID(userId)
 		// check whether user exists
-		if !exist {
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -308,8 +305,8 @@ func GetUser() gin.HandlerFunc {
 		}
 
 		// check whether user exists
-		foundUser, exist, err := getAccountWithID(userId)
-		if !exist {
+		foundUser, err := getAccountWithID(userId)
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -317,6 +314,7 @@ func GetUser() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
+
 		profile := typeHelper.ConvertFromDatabaseUserToUserProfile(foundUser)
 		c.JSON(http.StatusOK, profile)
 	}
@@ -328,8 +326,8 @@ func GetCurrentUser() gin.HandlerFunc {
 		userId, _ := strconv.Atoi(id)
 
 		// check whether user exists
-		foundUser, exist, err := getAccountWithID(userId)
-		if !exist {
+		foundUser, err := getAccountWithID(userId)
+		if err != nil {
 			if err == databaseError.ErrNoEntry {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
@@ -337,6 +335,7 @@ func GetCurrentUser() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
+
 		profile := typeHelper.ConvertFromDatabaseUserToUserProfile(foundUser)
 		c.JSON(http.StatusOK, profile)
 	}

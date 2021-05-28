@@ -131,13 +131,13 @@ func InitDatabase() (err error) {
 	isMock, _ := strconv.ParseBool(viper.GetString("mock_database"))
 	if isMock {
 		// TODO: Chong Yan, please change the methods here for your mockdb if you'd still like to test with it
-		// CurrentDatabaseConnector = InitMock()
+		CurrentDatabaseConnector = InitMock()
 		return
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
-	sqlitedb := &SQLiteDB{}
-	sqlitedb.Init()
-	CurrentDatabaseConnector = sqlitedb
+	// sqlitedb := &SQLiteDB{}
+	// sqlitedb.Init()
+	// CurrentDatabaseConnector = sqlitedb
 	return
 }
