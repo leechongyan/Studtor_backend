@@ -16,6 +16,7 @@ refreshExpirationTime: "2"
 serverEmail: "studtorr@gmail.com"
 serverEmailPW: "password"
 
+google_bucket_name: "studtor"
 mock_database: "true"
 mock_storage: "true"
 ```
@@ -37,32 +38,43 @@ go run main.go
 
 ##### (POST) localhost:3000/v1/auth/login
 
-##### (POST) localhost:3000/v1/auth/logout
-
 ##### (POST) localhost:3000/v1/auth/refresh
 
-##### (GET) localhost:3000/v1
+##### (POST) localhost:3000/v1/user/logout
 
-##### (GET) localhost:3000/v1/user/:user
+##### (GET) localhost:3000/v1/user
+
+##### (GET) localhost:3000/v1/user/:user_id
 
 #### Tuition Service (Refer to Readme in Tuition Service for more details)
 
+##### (GET) localhost:3000/v1/schools
+
 ##### (GET) localhost:3000/v1/courses
 
-##### (POST) localhost:3000/v1/putavailabletime
+##### (GET) localhost:3000/v1/courses/:course_id
 
-##### (POST) localhost:3000/v1/deleteavailabletime
+##### (GET) localhost:3000/v1/courses/:course_id/tutors
 
-##### (GET) localhost:3000/v1/tutors/*course
+##### (GET) localhost:3000/v1/courses/:course_id/tutors/:user_id
 
-##### (GET) localhost:3000/v1/availabletime/:tutor
+##### (GET) localhost:3000/v1/tutors/:tutor_id/courses
 
-##### (GET) localhost:3000/v1/bookedtime/:user
+##### (POST) localhost:3000/v1/tutors/:tutor_id/courses/:course_id
 
-##### (POST) localhost:3000/v1/book
+##### (DELETE) localhost:3000/v1/tutors/:tutor_id/courses/:course_id
 
-##### (POST) localhost:3000/v1/unbook
+##### (POST) localhost:3000/v1/tutors/:tutor_id/availability
 
+##### (DELETE) localhost:3000/v1/tutors/:tutor_id/availability/:availability_id
+
+##### (GET) localhost:3000/v1/tutors/:tutor_id/availability
+
+##### (POST) localhost:3000/v1/courses/:course_id/tutors/:tutor_id/availability/:availability_id
+
+##### (DELETE) localhost:3000/v1/users/:user_id/bookings/:booking_id
+
+##### (GET) localhost:3000/v1/users/:user_id/bookings
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

@@ -8,7 +8,7 @@ Authentication Service provides authentication service for Studtor backend with 
 - [x] Refresh Token will be used to get a new Access Token if existing Access Token has expired
 - [x] Refresh Token will be deleted after logout
 
-![Alt text](https://github.com/leechongyan/Studtor_backend/blob/database_interface/images/workflow.JPG "Authentication Flow")
+![Alt text](https://github.com/leechongyan/Studtor_backend/blob/option_chain/images/workflow.JPG "Authentication Flow")
 
 ## Set Up
 
@@ -25,9 +25,10 @@ refreshExpirationTime: "2"
 serverEmail: "studtorr@gmail.com"
 serverEmailPW: "password"
 
+google_bucket_name: "studtor"
 mock_database: "true"
+mock_storage: "true"
 ```
-
 
 ## API Endpoints
 ### API version 1
@@ -40,11 +41,12 @@ Request Body:
 
 ```
 {
-"first_name": "Jeff",
-"last_name": "Lee",
-"password": "password1",
-"email": "clee051@e.ntu.edu.sg",
-"user_type" : "USER"
+    "first_name": "Jeff",
+    "last_name": "Lee",
+    "password": "password1",
+    "email": "clee051@e.ntu.edu.sg",
+    "user_type": "USER",
+    "file": IMAGE_FILE
 }
 ```
 
@@ -61,8 +63,8 @@ Request Body:
 
 ```
 {
-"email": "clee051@e.ntu.edu.sg",
-"verification_key": "838291"
+    "email": "clee051@e.ntu.edu.sg",
+    "verification_key": "838291"
 }
 ```
 
@@ -79,8 +81,8 @@ Request Body:
 
 ```
 {
-"email": "clee051@e.ntu.edu.sg",
-"password": "password1"
+    "email": "clee051@e.ntu.edu.sg",
+    "password": "password1"
 }
 ```
 
@@ -91,13 +93,11 @@ Expected Returns:
 ```
 
 #### Logout 
-##### (POST) localhost:3000/v1/auth/logout
+##### (POST) localhost:3000/v1/user/logout
 
-Request Body:
+Request Header:
 
-```
-"clee051@e.ntu.edu.sg"
-```
+Token: "Bearer: ACCESS_TOKEN"
 
 Expected Returns:
 
@@ -111,7 +111,9 @@ Expected Returns:
 Request Body:
 
 ```
-"clee051@e.ntu.edu.sg"
+{
+    "email": "clee051@e.ntu.edu.sg"
+}
 ```
 
 Expected Returns:
@@ -120,23 +122,8 @@ Expected Returns:
 "Access Token"
 ```
 
-#### Access authorized pages
-This is for testing authority
-##### (GET) localhost:3000/v1
-
-Request Header:
-
-Token: "Bearer: ACCESS_TOKEN"
-
-Expected Returns:
-
-```
-"Success"
-```
-
 #### Get User Information
-If no user id is specified, then the current user will be returned
-##### (GET) localhost:3000/v1/user/*user
+##### (GET) localhost:3000/v1/user
 
 Request Header:
 
@@ -146,9 +133,30 @@ Expected Returns:
 
 ```
 {
-    "first_name": "Jeff",
-    "id": "10",
-    "last_name": "Lee"
+    "ID": 0,
+    "FirsName": "Jeff",
+    "LastName": "Lee",
+    "Email": "clee051@e.ntu.edu.sg",
+    "ProfilePicture": "IMAGE_URL"
+}
+```
+
+#### Get Other User Information
+##### (GET) localhost:3000/v1/user/:user_id
+
+Request Header:
+
+Token: "Bearer: ACCESS_TOKEN"
+
+Expected Returns:
+
+```
+{
+    "ID": 0,
+    "FirsName": "Jeff",
+    "LastName": "Lee",
+    "Email": "clee051@e.ntu.edu.sg",
+    "ProfilePicture": "IMAGE_URL"
 }
 ```
 

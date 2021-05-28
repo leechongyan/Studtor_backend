@@ -42,7 +42,7 @@ func main() {
 
 	// student usage
 	// get the filtering field for student
-	home.GET("/schools/", tuthandler.GetSchools()) // done
+	home.GET("/schools", tuthandler.GetSchools()) // done
 
 	// get a list of courses
 	home.GET("/courses", tuthandler.GetCourses()) // done
@@ -51,13 +51,10 @@ func main() {
 	home.GET("/courses/:course_id", tuthandler.GetSingleCourse()) // done
 
 	// get the tutors for a course
-	home.GET("/courses/:course_id/tutors/", tuthandler.GetTutorsForCourse()) // done
+	home.GET("/courses/:course_id/tutors", tuthandler.GetTutorsForCourse()) // done
 
 	// get a tutor for a course
 	home.GET("/courses/:course_id/tutors/:user_id", authhandler.GetUser()) // done
-
-	// get all schools (this is for filtering in modal)
-	home.GET("/schools", tuthandler.GetSchools()) // done
 
 	// tutors usage
 	// get a list of courses taught by a tutor

@@ -250,12 +250,7 @@ func RefreshToken() gin.HandlerFunc {
 
 func Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		uid := c.GetString("id")
-		userId, e := strconv.Atoi(uid)
-		if e != nil {
-			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
-			return
-		}
+		userId, _ := strconv.Atoi(c.GetString("id"))
 
 		// check whether user exists
 		foundUser, err := getAccountWithID(userId)

@@ -16,151 +16,216 @@ Tuition Service provides service for querying tuition matters:
 ## API Endpoints
 ### API version 1
 
-#### Get all courses from a specified course code up to a specified size
+#### Get all the schools for filtering of courses
 
-##### (GET) localhost:3000/v1/courses
-
-##### Optional Arguments: ?from=0&size=2
+##### (GET) localhost:3000/v1/schools
 
 Expected Returns:
 
 ```
 [
     {
-        "code": "CZ1003",
-        "students": 10,
-        "title": "Computational Thinking",
-        "tutors": 15
+        "ID": 1,
+        "SchoolCode": "NTU",
+        "SchoolName": "Nanyang Technological University",
+        "FacultyCodes": [
+            "SCSE",
+            "NBS",
+            "NIE"
+        ],
+        "FacultyNames": [
+            "Computer Science",
+            "Business School",
+            "Education"
+        ]
     },
     {
-        "code": "CZ3003",
-        "students": 4,
-        "title": "Object Thinking",
-        "tutors": 20
+        "ID": 2,
+        "SchoolCode": "NUS",
+        "SchoolName": "National University Singapore",
+        "FacultyCodes": [
+            "CS",
+            "BIZ",
+            "EDU"
+        ],
+        "FacultyNames": [
+            "Computer Science",
+            "Business School",
+            "Education"
+        ]
     }
 ]
 ```
 
-#### Save an available time slot for a tutor
+#### Get all the courses
 
-##### (POST) localhost:3000/v1/home/putavailabletime
-
-Request Body:
-
-```
-{
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
-}
-```
+##### (GET) localhost:3000/v1/courses
 
 Expected Returns:
 
 ```
-"Success"
+[
+    {
+        "ID": 1,
+        "CourseCode": "CZ1003",
+        "CourseName": "Computational Thinking",
+        "TutorSize": 10,
+        "StudentSize": 15
+    },
+    {
+        "ID": 2,
+        "CourseCode": "CZ1004",
+        "CourseName": "Computational System",
+        "TutorSize": 10,
+        "StudentSize": 15
+    }
+]
 ```
 
-#### Delete an available time slot for a tutor
+#### Get a courses
 
-##### (POST) localhost:3000/v1/home/deleteavailabletime
-
-Request Body:
-
-```
-{
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z"
-}
-```
+##### (GET) localhost:3000/v1/courses/:course_id
 
 Expected Returns:
 
 ```
-"Success"
+{
+    "ID": 1,
+    "CourseCode": "CZ1003",
+    "CourseName": "Computational Thinking",
+    "TutorSize": 10,
+    "StudentSize": 15
+}
 ```
 
-#### Get all tutors for a particular course from a specified tutor ID up to a specified size
+#### Get the tutors for a course 
 
-##### (GET) localhost:3000/v1/tutors/*course
+##### (GET) localhost:3000/v1/courses/:course_id/tutors
 
 ##### Optional Arguments: ?from_id=0&size=2
 
 Expected Returns:
 
+List of Tutors
+
+#### Get a tutor for a course 
+
+##### (GET) localhost:3000/v1/courses/:course_id/tutors/:user_id
+
+Expected Returns:
+
+A Tutor
+
+#### Get all the courses taught by a tutor
+
+##### (GET) localhost:3000/v1/tutors/:tutor_id/courses
+
+Expected Returns:
+
 ```
 [
-  "Jordan",
-  "Chin",
-  "Kangyu"
+    {
+        "ID": 1,
+        "CourseCode": "CZ1003",
+        "CourseName": "Computational Thinking",
+        "TutorSize": 10,
+        "StudentSize": 15
+    },
+    {
+        "ID": 2,
+        "CourseCode": "CZ1004",
+        "CourseName": "Computational System",
+        "TutorSize": 10,
+        "StudentSize": 15
+    }
 ]
 ```
 
-#### Get all available time slot for a tutor with a start date and end date
+#### Register to teach a course
 
-##### (GET) localhost:3000/v1/availabletime/:tutor
-
-##### Optional Arguments: ?from=2018-09-25T12:50:31Z&to=2018-09-25T12:50:31Z
+##### (POST) localhost:3000/v1/tutors/:tutor_id/courses/:course_id
 
 Expected Returns:
 
 ```
+"Success"
+```
+
+#### Deregister to teach a course
+
+##### (DELETE) localhost:3000/v1/tutors/:tutor_id/courses/:course_id
+
+Expected Returns:
+
+```
+"Success"
+```
+
+#### Put an availability
+
+##### (POST) localhost:3000/v1/tutors/:tutor_id/availability
+
+Request Body:
+
+```
 {
-    "email": "clee051@e.ntu.edu.sg",
-    "first_name": "Jeff",
-    "last_name": "Lee",
-    "time_slots": [
-        [
-            "2021-05-19T16:39:05.9712695+08:00",
-            "2021-05-19T16:39:05.9712695+08:00"
-        ],
-        [
-            "2021-05-19T16:39:05.9712695+08:00",
-            "2021-05-19T16:39:05.9712695+08:00"
-        ]
-    ]
+  "from": "2018-09-22T12:42:31Z",
+  "to": "2018-09-25T12:50:31Z"
 }
 ```
 
-#### Get all the booked times for a user
+Expected Returns:
 
-##### (GET) localhost:3000/v1/bookedtime/:user
+```
+"Success"
+```
 
-##### Optional Arguments: ?from=2018-09-25T12:50:31Z&to=2018-09-25T12:50:31Z
+#### Delete an availability
+
+##### (DELETE) localhost:3000/v1/tutors/:tutor_id/availability
+
+Request Body:
+
+```
+{
+  "availability_id": 1
+}
+```
 
 Expected Returns:
 
 ```
-{
-    "email": "clee051@e.ntu.edu.sg",
-    "first_name": "Jeff",
-    "last_name": "Lee",
-    "time_slots": {
-        "CZ1003": [
-            "2021-05-20T00:16:03.2733615+08:00",
-            "2021-05-20T00:16:03.2733615+08:00"
-        ],
-        "CZ1004": [
-            "2021-05-20T00:16:03.2733615+08:00",
-            "2021-05-20T00:16:03.2733615+08:00"
-        ]
+"Success"
+```
+
+#### Get the availability of a tutor
+
+##### (GET) localhost:3000/v1/tutors/:tutor_id/availability
+
+##### Optional Arguments: ?from=2018-09-22T12:42:31Z&to=2018-09-25T12:50:31Z
+
+Expected Returns:
+
+```
+[
+    {
+        "ID": 1,
+        "TutorID": 2,
+        "AvailableFrom": 2018-09-22T12:42:31Z,
+        "AvailableTo": 2018-09-25T12:50:31Z
+    },
+    {
+        "ID": 2,
+        "TutorID": 2,
+        "AvailableFrom": 2018-09-22T12:42:31Z,
+        "AvailableTo": 2018-09-25T12:50:31Z
     }
-}
+]
 ```
 
-#### Book the time of a tutor
+#### Book the availability of a tutor
 
-##### (POST) localhost:3000/v1/book
-
-Request Body:
-
-```
-{
-  "course": "CZ1003",
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z",
-  "tutor": "Jeff"
-}
-```
+##### (POST) localhost:3000/v1/courses/:course_id/tutors/:tutor_id/availability/:availability_id
 
 Expected Returns:
 
@@ -168,25 +233,45 @@ Expected Returns:
 "Success"
 ```
 
-#### Unbook the time of a tutor
+#### Delete a booking
 
-##### (POST) localhost:3000/v1/unbook
-
-Request Body:
-
-```
-{
-  "course": "CZ1003",
-  "from": "2018-09-22T12:42:31Z",
-  "to": "2018-09-25T12:50:31Z",
-  "tutor": "Jeff"
-}
-```
+##### (DELETE) localhost:3000/v1/users/:user_id/bookings/:booking_id
 
 Expected Returns:
 
 ```
 "Success"
+```
+
+#### Get all bookings
+
+##### (GET) localhost:3000/v1/users/:user_id/bookings
+
+Expected Returns:
+
+```
+[
+    {
+        "ID": 1,
+        "CourseCode": "CZ1003",
+        "CourseName": "Introduction to Computational Thinking",
+        "TutorID": 1,
+        "StudentID": 2,
+        "StudentName": "Jeff",
+        "FromTime": 2018-09-25T12:50:31Z,
+        "ToTime": 2018-09-25T12:50:31Z
+    },
+    {
+        "ID": 2,
+        "CourseCode": "CZ1004",
+        "CourseName": "Introduction to Computational System",
+        "TutorID": 4,
+        "StudentID": 2,
+        "StudentName": "Jeff",
+        "FromTime": 2018-09-25T12:50:31Z,
+        "ToTime": 2018-09-25T12:50:31Z
+    }
+]
 ```
 
 ## Contributing
