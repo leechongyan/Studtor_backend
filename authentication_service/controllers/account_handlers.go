@@ -120,7 +120,7 @@ func Verify() gin.HandlerFunc {
 		userConnector := userConnector.Init()
 		user, err := getAccountWithEmail(*verification.Email)
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -160,7 +160,7 @@ func Login() gin.HandlerFunc {
 		foundUser, err = getAccountWithEmail(*user.Email)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -212,7 +212,7 @@ func RefreshToken() gin.HandlerFunc {
 		foundUser, err := getAccountWithEmail(*refresh.Email)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -256,7 +256,7 @@ func Logout() gin.HandlerFunc {
 		foundUser, err := getAccountWithID(userId)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -302,7 +302,7 @@ func GetUser() gin.HandlerFunc {
 		// check whether user exists
 		foundUser, err := getAccountWithID(userId)
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -323,7 +323,7 @@ func GetCurrentUser() gin.HandlerFunc {
 		// check whether user exists
 		foundUser, err := getAccountWithID(userId)
 		if err != nil {
-			if err == databaseError.ErrNoEntry {
+			if err == databaseError.ErrNoRecordFound {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}

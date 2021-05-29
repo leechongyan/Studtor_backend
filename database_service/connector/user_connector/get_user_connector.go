@@ -57,7 +57,7 @@ func (c *userOptions) Add() (err error) {
 		return
 	}
 	// if error is account does not exist then create user
-	if err == databaseError.ErrNoEntry {
+	if err == databaseError.ErrNoRecordFound {
 		return databaseService.CurrentDatabaseConnector.CreateUser(*c.user)
 	}
 	// user exists

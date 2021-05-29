@@ -92,7 +92,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 	userConnector := userConnector.Init()
 	oldUser, err := userConnector.SetUserEmail(userEmail).Get()
 	if err != nil {
-		if err == databaseError.ErrNoEntry {
+		if err == databaseError.ErrNoRecordFound {
 			return httpError.ErrNonExistentAccount
 		}
 		return database_errors.ErrDatabaseInternalError

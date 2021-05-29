@@ -36,7 +36,7 @@ func (db mockdb) GetUserByID(userID int) (user db_model.User, err error) {
 func (db mockdb) GetUserByEmail(email string) (user db_model.User, err error) {
 	user, ok := db.UserCollection[email]
 	if !ok {
-		return db_model.User{}, databaseError.ErrNoEntry
+		return db_model.User{}, databaseError.ErrNoRecordFound
 	}
 	return
 }

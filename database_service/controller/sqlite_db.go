@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	database_errors "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	db_model "github.com/leechongyan/Studtor_backend/database_service/models"
 	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/sqlite"
@@ -72,7 +73,7 @@ func (db *SQLiteDB) GetUsers() (users []db_model.User, err error) {
 	result := conn.Find(&users)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -91,7 +92,7 @@ func (db SQLiteDB) GetUserByID(userID int) (user db_model.User, err error) {
 	result := conn.First(&user, "id = ?", userID)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -110,7 +111,7 @@ func (db SQLiteDB) GetUserByEmail(email string) (user db_model.User, err error) 
 	result := conn.First(&user, "email = ?", email)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -127,7 +128,7 @@ func (db SQLiteDB) CreateUser(user db_model.User) (err error) {
 
 	// user model input should not have an id set!
 	if user.ID != 0 {
-		err = errors.New("ID of user model for CreateUser must either be unset or zero.")
+		err = database_errors.ErrInvalidParameters
 		return
 	}
 
@@ -166,7 +167,7 @@ func (db SQLiteDB) CreateUser(user db_model.User) (err error) {
 	// create user record
 	result := conn.Create(&db_user)
 	if result.Error != nil {
-		err = result.Error
+		err = database_errors.ErrCreateRecordFailed
 		return
 	}
 
@@ -183,7 +184,7 @@ func (db SQLiteDB) UpdateUser(user db_model.User) (err error) {
 
 	// user model input must have an id set!
 	if user.ID == 0 {
-		err = errors.New("ID of user model for CreateUser cannot be unset or zero.")
+		err = database_errors.ErrInvalidParameters
 		return
 	}
 
@@ -200,7 +201,7 @@ func (db SQLiteDB) UpdateUser(user db_model.User) (err error) {
 
 	// if not found, throw error!
 	if !found {
-		err = errors.New("user model for input ID does not exist. Unable to update object.")
+		err = database_errors.ErrRecordToBeUpdatedNotFound
 		return
 	}
 
@@ -237,7 +238,7 @@ func (db SQLiteDB) UpdateUser(user db_model.User) (err error) {
 	// update existing record
 	result = conn.Save(&db_user)
 	if result.Error != nil {
-		err = result.Error
+		err = database_errors.ErrUpdateRecordFailed
 		return
 	}
 
@@ -256,7 +257,7 @@ func (db SQLiteDB) DeleteUserByID(userID int) (err error) {
 	result := conn.Delete(&db_model.User{}, userID)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrDeleteRecordFailed
 		return
 	}
 
@@ -275,7 +276,7 @@ func (db SQLiteDB) DeleteUserByEmail(email string) (err error) {
 	result := conn.Where("email = ?", email).Delete(db_model.User{})
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrDeleteRecordFailed
 		return
 	}
 
@@ -295,7 +296,7 @@ func (db SQLiteDB) GetCoursesForTutor(tutorID int) (courses []db_model.Course, e
 	result := conn.Where("tutor_id = ?", tutorID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -309,7 +310,7 @@ func (db SQLiteDB) GetCoursesForTutor(tutorID int) (courses []db_model.Course, e
 	result = conn.Where("id IN ?", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -329,7 +330,7 @@ func (db SQLiteDB) GetTutorsForCourse(courseID int) (tutors []db_model.User, err
 	result := conn.Where("courseID = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -343,7 +344,7 @@ func (db SQLiteDB) GetTutorsForCourse(courseID int) (tutors []db_model.User, err
 	result = conn.Where("ID IN ?", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -363,7 +364,7 @@ func (db SQLiteDB) GetTutorsForCourseFromIDOfSize(courseID int, tutorID int, siz
 	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -377,7 +378,7 @@ func (db SQLiteDB) GetTutorsForCourseFromIDOfSize(courseID int, tutorID int, siz
 	result = conn.Where("id IN ? AND id >= ?", tutorIDs, tutorID).Limit(size).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -397,7 +398,7 @@ func (db SQLiteDB) GetTutorsForCourseFromID(courseID, tutorID int) (tutors []db_
 	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -411,7 +412,7 @@ func (db SQLiteDB) GetTutorsForCourseFromID(courseID, tutorID int) (tutors []db_
 	result = conn.Where("id IN ? AND id >= ?", tutorIDs, tutorID).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -431,7 +432,7 @@ func (db SQLiteDB) GetTutorsForCourseOfSize(courseID, size int) (tutors []db_mod
 	result := conn.Where("course_id = ?", courseID).Find(&tutorCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -445,7 +446,7 @@ func (db SQLiteDB) GetTutorsForCourseOfSize(courseID, size int) (tutors []db_mod
 	result = conn.Where("id IN ?", tutorIDs).Limit(size).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -478,7 +479,7 @@ func (db SQLiteDB) CreateTutorCourse(tutorID int, courseID int) (err error) {
 		// create new record
 		result = conn.Create(&db_tutor_course)
 		if result.Error != nil {
-			err = result.Error
+			err = database_errors.ErrCreateRecordFailed
 			return
 		}
 	}
@@ -498,7 +499,7 @@ func (db SQLiteDB) DeleteTutorCourse(tutorID int, courseID int) (err error) {
 	result := conn.Where("tutorID = ? AND courseID = ?", tutorID, courseID).Delete(db_model.TutorCourses{})
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrDeleteRecordFailed
 		return
 	}
 
@@ -517,7 +518,7 @@ func (db SQLiteDB) GetCourse(courseID int) (course db_model.Course, n_students i
 	result := conn.First(&course, "id = ?", courseID)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -526,7 +527,7 @@ func (db SQLiteDB) GetCourse(courseID int) (course db_model.Course, n_students i
 	result = conn.Model(&db_model.Booking{}).Where("course_id = ?", courseID).Count(&count)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 	n_students = int(count)
@@ -535,7 +536,7 @@ func (db SQLiteDB) GetCourse(courseID int) (course db_model.Course, n_students i
 	result = conn.Model(&db_model.TutorCourses{}).Where("course_id = ?", courseID).Count(&count)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 	n_tutors = int(count)
@@ -555,7 +556,7 @@ func (db SQLiteDB) GetCourses() (courses []db_model.Course, n_students []int, n_
 	result := conn.Order("course_code ASC").Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -600,7 +601,7 @@ func (db SQLiteDB) GetSchools() (schools []db_model.School, err error) {
 	result := conn.Order("school_code ASC").Find(&schools)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -619,7 +620,7 @@ func (db SQLiteDB) GetSchoolByInstitutionAndSchoolCode(institution string, schoo
 	result := conn.First(&school, "institution = ? AND school_code = ?", institution, schoolCode)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -641,7 +642,7 @@ func (db SQLiteDB) GetCoursesForSchool(school_id int) (schoolCoursesDetails db_m
 	result := conn.First(&school, "id = ?", school_id)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -649,7 +650,7 @@ func (db SQLiteDB) GetCoursesForSchool(school_id int) (schoolCoursesDetails db_m
 	result = conn.Where("school_id = ?", school_id).Find(&schoolCourses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -665,7 +666,7 @@ func (db SQLiteDB) GetCoursesForSchool(school_id int) (schoolCoursesDetails db_m
 	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -700,7 +701,7 @@ func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetai
 	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -720,7 +721,7 @@ func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetai
 	result = conn.Where("id IN ? ", availability_IDs).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -735,7 +736,7 @@ func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetai
 	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -744,7 +745,7 @@ func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetai
 	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -753,7 +754,7 @@ func (db SQLiteDB) GetBookingsByID(userID int) (bookings []db_model.BookingDetai
 	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -797,7 +798,7 @@ func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings
 	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -812,7 +813,7 @@ func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings
 	result = conn.Where("ID IN ? AND available_from >= ?", availability_IDs, fromTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -846,7 +847,7 @@ func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings
 	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -855,7 +856,7 @@ func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings
 	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -864,7 +865,7 @@ func (db SQLiteDB) GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings
 	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -909,7 +910,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -924,7 +925,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	result = conn.Where("id IN ? AND available_to <= ?", availability_IDs, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -958,7 +959,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	result = conn.Where("id IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -967,7 +968,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	result = conn.Where("id IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -976,7 +977,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	result = conn.Where("id IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1007,6 +1008,7 @@ func (db SQLiteDB) GetBookingsByIDTo(userID int, toTime time.Time) (bookings []d
 	}
 	return
 }
+
 func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []db_model.BookingDetails, err error) {
 	conn, err := gorm.Open(sqlite.Open(db.DatabaseFilename), &gorm.Config{})
 	if err != nil {
@@ -1020,7 +1022,7 @@ func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime 
 	result := conn.Where("user_id = ?", userID).Find(&bookings_no_details)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1035,7 +1037,7 @@ func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime 
 	result = conn.Where("id IN ? AND available_from >= ? AND available_to <= ?", availability_IDs, fromTime, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1069,7 +1071,7 @@ func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime 
 	result = conn.Where("ID IN ? ", courseIDs).Find(&courses)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1078,7 +1080,7 @@ func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime 
 	result = conn.Where("ID IN ? ", userIDs).Find(&users)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1087,7 +1089,7 @@ func (db SQLiteDB) GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime 
 	result = conn.Where("ID IN ? ", tutorIDs).Find(&tutors)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1138,7 +1140,7 @@ func (db SQLiteDB) CreateBooking(availabilityID int, userID int, courseID int) (
 	}
 
 	if found {
-		err = errors.New("Record already exists.")
+		err = database_errors.ErrRecordAlreadyExists
 		return
 	}
 
@@ -1150,7 +1152,7 @@ func (db SQLiteDB) CreateBooking(availabilityID int, userID int, courseID int) (
 	// create record
 	result = conn.Create(&db_booking)
 	if result.Error != nil {
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1168,7 +1170,7 @@ func (db SQLiteDB) DeleteBookingByID(bookingID int) (err error) {
 	result := conn.Delete(&db_model.Booking{}, bookingID)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrDeleteRecordFailed
 		return
 	}
 
@@ -1187,7 +1189,7 @@ func (db SQLiteDB) GetAvailabilityByID(tutorID int) (availabilities []db_model.A
 	result := conn.Where("tutor_id = ?", tutorID).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1205,7 +1207,7 @@ func (db SQLiteDB) GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (ava
 	result := conn.Where("tutor_id = ? AND available_from >= ?", tutorID, fromTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1223,7 +1225,7 @@ func (db SQLiteDB) GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availab
 	result := conn.Where("tutor_id = ? AND available_to <= ?", tutorID, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1241,7 +1243,7 @@ func (db SQLiteDB) GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, to
 	result := conn.Where("tutor_id = ? AND available_from >= ? AND available_to = ?", tutorID, fromTime, toTime).Find(&availabilities)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1267,7 +1269,7 @@ func (db SQLiteDB) CreateTutorAvailability(tutorID int, fromTime time.Time, toTi
 	}
 
 	if found {
-		err = errors.New("Record already exists.")
+		err = database_errors.ErrRecordAlreadyExists
 		return
 	}
 
@@ -1279,7 +1281,7 @@ func (db SQLiteDB) CreateTutorAvailability(tutorID int, fromTime time.Time, toTi
 	// create new record
 	result = conn.Create(&db_availability)
 	if result.Error != nil {
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
@@ -1297,7 +1299,7 @@ func (db SQLiteDB) DeleteTutorAvailabilityByID(availabilityID int) (err error) {
 	result := conn.Delete(&db_model.Availability{}, availabilityID)
 	if result.Error != nil {
 		// row not found
-		err = result.Error
+		err = database_errors.ErrNoRecordFound
 		return
 	}
 
