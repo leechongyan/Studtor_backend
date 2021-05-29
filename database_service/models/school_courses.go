@@ -14,7 +14,6 @@ type SchoolCourses struct {
 }
 
 type SchoolCoursesDetails struct {
-	ID          int
 	Institution string
 	SchoolCode  string
 	SchoolName  string

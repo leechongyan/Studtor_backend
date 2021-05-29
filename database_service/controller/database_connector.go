@@ -76,8 +76,6 @@ type DatabaseConnector interface {
 
 	// GetSchools retrieves the list of schools from the database
 	GetSchools() (schools []db_model.School, err error)
-	// TODO (Jordan GetCoursesIdForSchool gets a list of course code attached the the school)
-	GetCoursesForSchool(school_id int) (courses db_model.SchoolCoursesDetails, err error)
 	// GetSchoolByInstitutionAndSchoolCode retrieves a school from the database
 	GetSchoolByInstitutionAndSchoolCode(institution string, schoolCode string) (school db_model.School, err error)
 
@@ -85,10 +83,8 @@ type DatabaseConnector interface {
 		SchoolCourses model
 	*/
 
-	// GetCoursesForSchoolByID retrieves a list of course codes attached to a school by school courses ID
-
-	// TODO: Jordan issue #27
-	// GetCoursesForSchoolByID(schoolCoursesID string) (schoolCourses []db_model.SchoolCoursesDetails, err error)
+	// GetCoursesForSchool retrieves a list of course codes attached to a school by school courses ID
+	GetCoursesForSchool(school_id int) (schoolCoursesDetails db_model.SchoolCoursesDetails, err error)
 
 	/*
 		Booking model
