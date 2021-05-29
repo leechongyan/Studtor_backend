@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	authHelper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
-	typeHelper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/type_conversion"
 	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/models"
+	typeHelper "github.com/leechongyan/Studtor_backend/helpers/type_conversion"
 
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
