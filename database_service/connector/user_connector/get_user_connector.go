@@ -2,24 +2,28 @@ package user_connector
 
 import (
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
+
+// user can only access userModel
 
 type userOptions struct {
 	userId *int
 	email  *string
 	err    error
-	user   *models.User
+	user   *userModel.User
 }
 
 type UserConnector interface {
 	SetUserId(userId int) *userOptions
 	SetUserEmail(email string) *userOptions
-	SetUser(user models.User) *userOptions
+	SetUser(user userModel.User) *userOptions
 	Add() (err error)
 	Delete() (err error)
-	Get() (user models.User, err error)
+	GetUser() (user userModel.User, err error)
+	GetProfile() (user userModel.UserProfile, err error)
 }
 
 func Init() *userOptions {
@@ -37,7 +41,7 @@ func (c *userOptions) SetUserEmail(email string) *userOptions {
 	return c
 }
 
-func (c *userOptions) SetUser(user models.User) *userOptions {
+func (c *userOptions) SetUser(user userModel.User) *userOptions {
 	c.user = &user
 	return c
 }
@@ -50,18 +54,19 @@ func (c *userOptions) Add() (err error) {
 		return databaseError.ErrNotEnoughParameters
 	}
 	// check whether should update or add new to database
-	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(c.user.Email)
+	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.user.Email())
 	// differentiate between no user and error in database
 	// if is database error
 	if err == databaseError.ErrDatabaseInternalError {
 		return
 	}
 	// if error is account does not exist then create user
+	databaseUser := userModel.ConvertFromAuthUserToDatabaseUser(*c.user)
 	if err == databaseError.ErrNoRecordFound {
-		return databaseService.CurrentDatabaseConnector.CreateUser(*c.user)
+		return databaseService.CurrentDatabaseConnector.CreateUser(databaseUser)
 	}
 	// user exists
-	return databaseService.CurrentDatabaseConnector.UpdateUser(*c.user)
+	return databaseService.CurrentDatabaseConnector.UpdateUser(databaseUser)
 }
 
 func (c *userOptions) Delete() (err error) {
@@ -77,15 +82,42 @@ func (c *userOptions) Delete() (err error) {
 	return databaseError.ErrNotEnoughParameters
 }
 
-func (c *userOptions) Get() (user models.User, err error) {
+func (c *userOptions) GetUser() (user userModel.User, err error) {
 	if c.err != nil {
-		return models.User{}, c.err
+		return userModel.User{}, c.err
 	}
+
+	var databaseUser databaseModel.User
 	if c.userId != nil {
-		return databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
+		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
+	} else if c.email != nil {
+		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
+	} else {
+		return userModel.User{}, databaseError.ErrNotEnoughParameters
 	}
-	if c.email != nil {
-		return databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
+	if err != nil {
+		return userModel.User{}, err
 	}
-	return models.User{}, databaseError.ErrNotEnoughParameters
+	user = userModel.ConvertFromToDatabaseUserToAuthUser(databaseUser)
+	return
+}
+
+func (c *userOptions) GetProfile() (user userModel.UserProfile, err error) {
+	if c.err != nil {
+		return userModel.UserProfile{}, c.err
+	}
+
+	var databaseUser databaseModel.User
+	if c.userId != nil {
+		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByID(*c.userId)
+	} else if c.email != nil {
+		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
+	} else {
+		return userModel.UserProfile{}, databaseError.ErrNotEnoughParameters
+	}
+	if err != nil {
+		return userModel.UserProfile{}, err
+	}
+	user = userModel.ConvertFromDatabaseUserToUserProfile(databaseUser)
+	return
 }

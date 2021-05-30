@@ -7,12 +7,12 @@ import (
 
 	"text/template"
 
-	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
+	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	"github.com/spf13/viper"
 )
 
-func SendVerificationCode(user authModel.User, code string) (err error) {
+func SendVerificationCode(user userModel.User, code string) (err error) {
 	serverEmail := viper.GetString("serverEmail")
 	serverEmailPW := viper.GetString("serverEmailPW")
 
@@ -22,7 +22,7 @@ func SendVerificationCode(user authModel.User, code string) (err error) {
 
 	// Receiver email address.
 	to := []string{
-		*user.Email,
+		*user.Email(),
 	}
 	// smtp server configuration.
 	smtpHost := "smtp.gmail.com"
@@ -39,7 +39,7 @@ func SendVerificationCode(user authModel.User, code string) (err error) {
 		Name    string
 		Message string
 	}{
-		Name:    *user.FirstName + " " + *user.LastName,
+		Name:    *user.FirstName() + " " + *user.LastName(),
 		Message: code,
 	})
 

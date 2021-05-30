@@ -6,11 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	authModel "github.com/leechongyan/Studtor_backend/authentication_service/models"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	tutorConnector "github.com/leechongyan/Studtor_backend/database_service/connector/tutor_connector"
+
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
-	typeHelper "github.com/leechongyan/Studtor_backend/helpers/type_conversion"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
@@ -50,13 +49,7 @@ func GetTutorsForCourse() gin.HandlerFunc {
 			return
 		}
 
-		// convert tutors to hide confidential info
-		tutorProfiles := make([]authModel.Userprofile, len(tutors))
-		for i, tutor := range tutors {
-			tutorProfiles[i] = typeHelper.ConvertFromDatabaseUserToUserProfile(tutor)
-		}
-
-		c.JSON(http.StatusOK, tutorProfiles)
+		c.JSON(http.StatusOK, tutors)
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type availabilityOptions struct {
@@ -24,7 +24,7 @@ type AvailabilityConnector interface {
 	SetToTime(toTime time.Time) *availabilityOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (times []models.Availability, err error)
+	GetAll() (times []databaseModel.Availability, err error)
 }
 
 func Init() *availabilityOptions {
@@ -86,7 +86,7 @@ func (c *availabilityOptions) Delete() (err error) {
 	return httpError.ErrUnauthorizedAccess
 }
 
-func (c *availabilityOptions) GetAll() (times []models.Availability, err error) {
+func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}

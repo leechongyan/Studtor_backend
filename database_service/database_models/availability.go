@@ -1,4 +1,4 @@
-package models
+package database_models
 
 import (
 	"time"

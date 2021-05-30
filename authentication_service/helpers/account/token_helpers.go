@@ -90,7 +90,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
 
 func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err error) {
 	userConnector := userConnector.Init()
-	oldUser, err := userConnector.SetUserEmail(userEmail).Get()
+	oldUser, err := userConnector.SetUserEmail(userEmail).GetUser()
 	if err != nil {
 		if err == databaseError.ErrNoRecordFound {
 			return httpError.ErrNonExistentAccount
@@ -98,19 +98,17 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 		return database_errors.ErrDatabaseInternalError
 	}
 
-	oldUser.Token.Valid = true
-	oldUser.Token.String = signedToken
-	oldUser.RefreshToken.Valid = true
-	oldUser.RefreshToken.String = signedRefreshToken
+	oldUser.SetToken(signedToken)
+	oldUser.SetRefreshToken(signedRefreshToken)
 
 	// if is a new creation
-	if oldUser.UserCreatedAt.IsZero() {
+	if oldUser.UserCreatedAt().IsZero() {
 		createdAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		oldUser.UserCreatedAt = createdAt
+		oldUser.SetUserCreatedAt(createdAt)
 	}
 
 	updatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	oldUser.UpdatedAt = updatedAt
+	oldUser.SetUserUpdatedAt(updatedAt)
 
 	// updating database
 	err = userConnector.SetUser(oldUser).Add()

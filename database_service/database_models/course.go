@@ -1,4 +1,4 @@
-package models
+package database_models
 
 import (
 	"gorm.io/gorm"
@@ -13,12 +13,4 @@ type Course struct {
 	ID         uint `gorm:"primaryKey"`
 	CourseCode string
 	CourseName string
-}
-
-type CourseWithSize struct {
-	ID          int
-	CourseCode  string
-	CourseName  string
-	TutorSize   int
-	StudentSize int
 }

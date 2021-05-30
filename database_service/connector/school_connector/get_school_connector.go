@@ -2,7 +2,7 @@ package school_connector
 
 import (
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type schoolOptions struct {
@@ -10,7 +10,7 @@ type schoolOptions struct {
 }
 
 type SchoolConnector interface {
-	GetAll() (schools []models.SchoolCoursesDetails, err error)
+	GetAll() (schools []databaseModel.SchoolCoursesDetails, err error)
 }
 
 func Init() *schoolOptions {
@@ -18,7 +18,7 @@ func Init() *schoolOptions {
 	return &r
 }
 
-func (c *schoolOptions) GetAll() (schools []models.SchoolCoursesDetails, err error) {
+func (c *schoolOptions) GetAll() (schools []databaseModel.SchoolCoursesDetails, err error) {
 	// check for error first
 	if c.err != nil {
 		return nil, c.err
@@ -28,7 +28,7 @@ func (c *schoolOptions) GetAll() (schools []models.SchoolCoursesDetails, err err
 	if err != nil {
 		return
 	}
-	schools = make([]models.SchoolCoursesDetails, len(schs))
+	schools = make([]databaseModel.SchoolCoursesDetails, len(schs))
 	for i, sch := range schs {
 		schools[i], err = databaseService.CurrentDatabaseConnector.GetCoursesForSchool(int(sch.ID))
 		if err != nil {

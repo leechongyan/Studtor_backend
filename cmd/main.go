@@ -33,7 +33,7 @@ func main() {
 	home := v1.Group("/")
 	home.Use(authMiddleWare.Authentication())
 
-	authorized.POST("/user/logout", authhandler.Logout())
+	home.POST("/user/logout", authhandler.Logout())
 
 	// get current user
 	home.GET("/user", authhandler.GetCurrentUser())

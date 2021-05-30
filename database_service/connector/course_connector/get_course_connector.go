@@ -2,25 +2,26 @@ package course_connector
 
 import (
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type courseOptions struct {
 	courseId *int
 	tutorId  *int
-	course   *models.Course
+	course   *databaseModel.Course
 	err      error
 }
 
 type CourseConnector interface {
 	SetCourseId(courseId int) *courseOptions
 	SetTutorId(tutorId int) *courseOptions
-	SetCourse(course models.Course) *courseOptions
+	SetCourse(course databaseModel.Course) *courseOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (courses []models.CourseWithSize, err error)
-	GetSingle() (course models.CourseWithSize, err error)
+	GetAll() (courses []userModel.CourseWithSize, err error)
+	GetSingle() (course userModel.CourseWithSize, err error)
 }
 
 func Init() *courseOptions {
@@ -38,7 +39,7 @@ func (c *courseOptions) SetTutorId(tutorId int) *courseOptions {
 	return c
 }
 
-func (c *courseOptions) SetCourse(course models.Course) *courseOptions {
+func (c *courseOptions) SetCourse(course databaseModel.Course) *courseOptions {
 	c.course = &course
 	return c
 }
@@ -59,28 +60,28 @@ func (c *courseOptions) Delete() (err error) {
 	return databaseError.ErrMethodNotImplemented
 }
 
-func (c *courseOptions) GetSingle() (course models.CourseWithSize, err error) {
+func (c *courseOptions) GetSingle() (course userModel.CourseWithSize, err error) {
 	if c.err != nil {
-		return models.CourseWithSize{}, c.err
+		return userModel.CourseWithSize{}, c.err
 	}
 	if c.courseId == nil {
-		return models.CourseWithSize{}, databaseError.ErrNotEnoughParameters
+		return userModel.CourseWithSize{}, databaseError.ErrNotEnoughParameters
 	}
 	courseWithoutSize, studentSize, tutorSize, err := databaseService.CurrentDatabaseConnector.GetCourse(*c.courseId)
 	if err != nil {
-		return models.CourseWithSize{}, err
+		return userModel.CourseWithSize{}, err
 	}
 	// convert to course with size
 	course = convertFromCourseToCourseWithSize(courseWithoutSize, studentSize, tutorSize)
 	return
 }
 
-func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
+func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error) {
 	// check for error first
 	if c.err != nil {
 		return nil, c.err
 	}
-	var coursesWithoutSize []models.Course
+	var coursesWithoutSize []databaseModel.Course
 	var tutorSizes []int
 	var studentSizes []int
 
@@ -92,7 +93,7 @@ func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	if err != nil {
 		return nil, err
 	}
-	courses = make([]models.CourseWithSize, len(coursesWithoutSize))
+	courses = make([]userModel.CourseWithSize, len(coursesWithoutSize))
 	for i, courseWithoutSize := range coursesWithoutSize {
 		// convert to course with size
 		courses[i] = convertFromCourseToCourseWithSize(courseWithoutSize, studentSizes[i], tutorSizes[i])
@@ -100,8 +101,8 @@ func (c *courseOptions) GetAll() (courses []models.CourseWithSize, err error) {
 	return
 }
 
-func convertFromCourseToCourseWithSize(courseWithoutSize models.Course, studentSize int, tutorSize int) (courseWithSize models.CourseWithSize) {
-	courseWithSize = models.CourseWithSize{}
+func convertFromCourseToCourseWithSize(courseWithoutSize databaseModel.Course, studentSize int, tutorSize int) (courseWithSize userModel.CourseWithSize) {
+	courseWithSize = userModel.CourseWithSize{}
 	courseWithSize.CourseCode = courseWithoutSize.CourseCode
 	courseWithSize.CourseName = courseWithoutSize.CourseName
 	courseWithSize.ID = int(courseWithoutSize.ID)

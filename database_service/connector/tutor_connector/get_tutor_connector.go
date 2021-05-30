@@ -2,8 +2,9 @@ package tutor_connector
 
 import (
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type tutorOptions struct {
@@ -19,7 +20,7 @@ type TutorConnector interface {
 	SetTutorId(tutorId int) *tutorOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (tutors []models.User, err error)
+	GetAll() (tutors []userModel.UserProfile, err error)
 }
 
 func Init() *tutorOptions {
@@ -66,7 +67,7 @@ func (c *tutorOptions) Delete() (err error) {
 	return databaseService.CurrentDatabaseConnector.DeleteTutorCourse(*c.tutorId, *c.courseId)
 }
 
-func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
+func (c *tutorOptions) GetAll() (tutors []userModel.UserProfile, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -74,18 +75,24 @@ func (c *tutorOptions) GetAll() (tutors []models.User, err error) {
 	if c.courseId == nil {
 		return nil, databaseError.ErrNotEnoughParameters
 	}
+	var databaseUsers []databaseModel.User
+
 	if c.size != nil && c.tutorId != nil {
-		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIDOfSize(*c.courseId, *c.tutorId, *c.size)
-	}
-	if c.size != nil {
+		databaseUsers, err = databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromIDOfSize(*c.courseId, *c.tutorId, *c.size)
+	} else if c.size != nil {
 		// get from the start
-		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseOfSize(*c.courseId, *c.size)
+		databaseUsers, err = databaseService.CurrentDatabaseConnector.GetTutorsForCourseOfSize(*c.courseId, *c.size)
+	} else if c.tutorId != nil {
+		// get from from_id to the end
+		databaseUsers, err = databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromID(*c.courseId, *c.tutorId)
+	} else {
+		// get all courses
+		databaseUsers, err = databaseService.CurrentDatabaseConnector.GetTutorsForCourse(*c.courseId)
 	}
 
-	if c.tutorId != nil {
-		// get from from_id to the end
-		return databaseService.CurrentDatabaseConnector.GetTutorsForCourseFromID(*c.courseId, *c.tutorId)
+	tutors = make([]userModel.UserProfile, len(databaseUsers))
+	for i, databaseUser := range databaseUsers {
+		tutors[i] = userModel.ConvertFromDatabaseUserToUserProfile(databaseUser)
 	}
-	// get all courses
-	return databaseService.CurrentDatabaseConnector.GetTutorsForCourse(*c.courseId)
+	return
 }

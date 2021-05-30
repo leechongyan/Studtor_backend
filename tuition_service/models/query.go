@@ -22,7 +22,9 @@ type TimePaginatedQuery struct {
 }
 
 type TimeSlot struct {
-	TimeId *int `json:"time_id" validate:"required"`
+	// TimeId *int `json:"time_id" validate:"required"`
+	From time.Time `json:"from"`
+	To   time.Time `json:"to"`
 }
 
 type Availability struct {

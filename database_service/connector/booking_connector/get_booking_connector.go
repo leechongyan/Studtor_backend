@@ -6,7 +6,7 @@ import (
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	"github.com/leechongyan/Studtor_backend/database_service/models"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type bookingOptions struct {
@@ -28,7 +28,7 @@ type BookingConnector interface {
 	SetToTime(toTime time.Time) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (times []models.BookingDetails, err error)
+	GetAll() (times []databaseModel.BookingDetails, err error)
 }
 
 func Init() *bookingOptions {
@@ -101,7 +101,7 @@ func (c *bookingOptions) Delete() (err error) {
 	return httpError.ErrUnauthorizedAccess
 }
 
-func (c *bookingOptions) GetAll() (times []models.BookingDetails, err error) {
+func (c *bookingOptions) GetAll() (times []databaseModel.BookingDetails, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
