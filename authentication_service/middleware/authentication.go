@@ -10,6 +10,14 @@ import (
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 )
 
+func setGinVariables(c *gin.Context, claims *authHelper.SignedDetails) {
+	c.Set("email", claims.Email)
+	c.Set("id", strconv.Itoa(claims.ID))
+	c.Set("first_name", claims.FirstName)
+	c.Set("last_name", claims.LastName)
+	c.Set("user_type", claims.UserType)
+}
+
 func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientToken := c.Request.Header.Get("Authorization")
@@ -37,11 +45,7 @@ func Authentication() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("email", claims.Email)
-		c.Set("id", strconv.Itoa(claims.ID))
-		c.Set("first_name", claims.FirstName)
-		c.Set("last_name", claims.LastName)
-		c.Set("user_type", claims.UserType)
+		setGinVariables(c, claims)
 
 		c.Next()
 	}

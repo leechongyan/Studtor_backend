@@ -31,9 +31,7 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
 
-		availabilityConnector := availabilityConnector.Init()
-		err = availabilityConnector.SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
-
+		err = availabilityConnector.Init().SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -58,11 +56,9 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 		}
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
-		availabilityConnector := availabilityConnector.Init()
 
 		// tutor id is needed to check whether the availabilityid belongs to the tutor id
-		err = availabilityConnector.SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
-
+		err = availabilityConnector.Init().SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
 		if err != nil {
 			if err == httpError.ErrUnauthorizedAccess {
 				c.JSON(http.StatusUnauthorized, err.Error())
@@ -93,9 +89,7 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		availabilityConnector := availabilityConnector.Init()
-
-		times, err := availabilityConnector.SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
+		times, err := availabilityConnector.Init().SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -122,10 +116,7 @@ func BookTimeTutor() gin.HandlerFunc {
 
 		id, _ := strconv.Atoi(c.GetString("id"))
 
-		bookingConnector := bookingConnector.Init()
-
-		err = bookingConnector.SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
-
+		err = bookingConnector.Init().SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -151,10 +142,8 @@ func UnbookTimeTutor() gin.HandlerFunc {
 
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
-		bookingConnector := bookingConnector.Init()
-
 		// user id is needed to check whether the bookingid involves the user
-		err = bookingConnector.SetUserId(userId).SetBookingId(bookingId).Delete()
+		err = bookingConnector.Init().SetUserId(userId).SetBookingId(bookingId).Delete()
 		if err != nil {
 			if err == httpError.ErrUnauthorizedAccess {
 				c.JSON(http.StatusUnauthorized, err.Error())
@@ -185,10 +174,7 @@ func GetAllBookedTime() gin.HandlerFunc {
 
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
-		bookingConnector := bookingConnector.Init()
-
-		times, err := bookingConnector.SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
-
+		times, err := bookingConnector.Init().SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return

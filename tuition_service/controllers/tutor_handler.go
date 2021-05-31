@@ -30,9 +30,7 @@ func GetTutorsForCourse() gin.HandlerFunc {
 			return
 		}
 
-		tutorConnector := tutorConnector.Init()
-
-		tutorConnector.SetCourseId(courseId)
+		tutorConnector := tutorConnector.Init().SetCourseId(courseId)
 
 		if query.FromId != nil {
 			tutorConnector.SetTutorId(*query.FromId)
@@ -43,7 +41,6 @@ func GetTutorsForCourse() gin.HandlerFunc {
 		}
 
 		tutors, err := tutorConnector.GetAll()
-
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -71,8 +68,7 @@ func RegisterCourse() gin.HandlerFunc {
 			return
 		}
 
-		tutorConnector := tutorConnector.Init()
-		err = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Add()
+		err = tutorConnector.Init().SetTutorId(tutorId).SetCourseId(courseId).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -99,8 +95,7 @@ func DeregisterCourse() gin.HandlerFunc {
 			return
 		}
 
-		tutorConnector := tutorConnector.Init()
-		err = tutorConnector.SetTutorId(tutorId).SetCourseId(courseId).Delete()
+		err = tutorConnector.Init().SetTutorId(tutorId).SetCourseId(courseId).Delete()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return

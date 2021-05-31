@@ -29,26 +29,22 @@ func checkEduDomain(email string, domain string) bool {
 }
 
 func getUserAccountWithEmail(email string) (user userModel.User, err error) {
-	userConnector := userConnector.Init()
-	user, err = userConnector.SetUserEmail(email).GetUser()
+	user, err = userConnector.Init().SetUserEmail(email).GetUser()
 	return
 }
 
 func getUserAccountWithID(id int) (user userModel.User, err error) {
-	userConnector := userConnector.Init()
-	user, err = userConnector.SetUserId(id).GetUser()
+	user, err = userConnector.Init().SetUserId(id).GetUser()
 	return
 }
 
 func getUserProfileWithID(id int) (user userModel.UserProfile, err error) {
-	userConnector := userConnector.Init()
-	user, err = userConnector.SetUserId(id).GetProfile()
+	user, err = userConnector.Init().SetUserId(id).GetProfile()
 	return
 }
 
 func saveUser(user userModel.User) (err error) {
-	userConnector := userConnector.Init()
-	err = userConnector.SetUser(user).Add()
+	err = userConnector.Init().SetUser(user).Add()
 	return
 }
 

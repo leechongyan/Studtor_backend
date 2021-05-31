@@ -13,9 +13,7 @@ import (
 // Get all the courses
 func GetCourses() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		courseConnector := courseConnector.Init()
-		courses, err := courseConnector.GetAll()
-
+		courses, err := courseConnector.Init().GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -27,8 +25,6 @@ func GetCourses() gin.HandlerFunc {
 // Get a single course
 func GetSingleCourse() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		courseConnector := courseConnector.Init()
-
 		// get single course
 		courseId, err := strconv.Atoi(c.Param("course_id"))
 		if err != nil {
@@ -36,7 +32,7 @@ func GetSingleCourse() gin.HandlerFunc {
 			return
 		}
 
-		course, err := courseConnector.SetCourseId(courseId).GetSingle()
+		course, err := courseConnector.Init().SetCourseId(courseId).GetSingle()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -48,15 +44,13 @@ func GetSingleCourse() gin.HandlerFunc {
 // Get all the courses taught by a tutor
 func GetCoursesOfTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		courseConnector := courseConnector.Init()
-
 		tutorId, err := strconv.Atoi(c.Param("tutor_id"))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, httpError.ErrParamParsingFailure.Error())
 			return
 		}
 
-		courses, err := courseConnector.SetTutorId(tutorId).GetAll()
+		courses, err := courseConnector.Init().SetTutorId(tutorId).GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return

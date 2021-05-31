@@ -11,10 +11,7 @@ import (
 // Get all the schools and their associated school courses
 func GetSchools() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		schoolConnector := schoolConnector.Init()
-
-		schools, err := schoolConnector.GetAll()
-
+		schools, err := schoolConnector.Init().GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
