@@ -46,6 +46,66 @@ func getUserProfileWithID(id int) (user userModel.UserProfile, err error) {
 	return
 }
 
+func saveUser(user userModel.User) (err error) {
+	userConnector := userConnector.Init()
+	err = userConnector.SetUser(user).Add()
+	return
+}
+
+func sendVerificationToUser(user *userModel.User) (err error) {
+	newVKey := authHelper.GenerateVerificationCode(6)
+	user.SetVKey(newVKey)
+	// send an email
+	err = mailService.SendVerificationCode(*user, newVKey)
+	return err
+}
+
+func preprocessUserSignUp(c *gin.Context, user *userModel.User) {
+	password := authHelper.HashPassword(*user.Password())
+	user.SetPassword(password)
+
+	// save the user profile picture
+	url, err := uploadUserProfilePicture(c)
+	if err == nil {
+		user.SetProfilePicture(url)
+	}
+}
+
+func verifyUser(user *userModel.User, verificationCode string) (err error) {
+	if *user.VKey() != verificationCode {
+		return httpError.ErrWrongValidation
+	}
+	user.SetVerified(true)
+	return
+}
+
+func generateTokens(generateRefresh bool, user userModel.User) (token string, err error) {
+	// refresh token
+	token, refreshToken, err := authHelper.GenerateAllTokens(*user.ID(), *user.Email(), *user.FirstName(), *user.LastName(), *user.UserType())
+	if err != nil {
+		return
+	}
+	if !generateRefresh {
+		refreshToken = *user.RefreshToken()
+	}
+	err = authHelper.UpdateAllTokens(token, refreshToken, *user.Email())
+	return
+}
+
+func isExpiredClient(user userModel.User) (expired bool) {
+	if user.RefreshToken() == nil {
+		return true
+	}
+
+	_, err := authHelper.ValidateToken(*user.RefreshToken())
+	return err != nil
+}
+
+func clearAllTokens(user *userModel.User) {
+	user.SetToken("")
+	user.SetRefreshToken("")
+}
+
 // handle sign up request
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -72,32 +132,17 @@ func SignUp() gin.HandlerFunc {
 			return
 		}
 
-		userConnector := userConnector.Init()
+		// hash the user password and upload user profile picture
+		preprocessUserSignUp(c, &user)
 
-		// hash the user password
-		password := authHelper.HashPassword(*user.Password())
-		user.SetPassword(password)
-
-		// save the user profile picture
-		url, err := uploadUserProfilePicture(c)
-		if err == nil {
-			user.SetProfilePicture(url)
-		}
-
-		// create a new verification code for user
-		newVKey := authHelper.GenerateVerificationCode(6)
-		user.SetVKey(newVKey)
-
-		// save user in db
-		err = userConnector.SetUser(user).Add()
-
+		err = sendVerificationToUser(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		// send an email
-		err = mailService.SendVerificationCode(user, newVKey)
+		// save user in db
+		err = saveUser(user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -117,7 +162,6 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		userConnector := userConnector.Init()
 		user, err := getUserAccountWithEmail(*verification.Email)
 		if err != nil {
 			if err == databaseError.ErrNoRecordFound {
@@ -129,13 +173,13 @@ func Verify() gin.HandlerFunc {
 		}
 
 		// check whether verification code is correct
-		if *user.VKey() != *verification.VKey {
-			c.JSON(http.StatusUnauthorized, httpError.ErrWrongValidation.Error())
+		err = verifyUser(&user, *verification.VKey)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		user.SetVerified(true)
-		err = userConnector.SetUser(user).Add()
+		err = saveUser(user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -179,14 +223,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		// refresh token
-		token, refreshToken, err := authHelper.GenerateAllTokens(*foundUser.ID(), *foundUser.Email(), *foundUser.FirstName(), *foundUser.LastName(), *foundUser.UserType())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		err = authHelper.UpdateAllTokens(token, refreshToken, *foundUser.Email())
+		token, err := generateTokens(true, foundUser)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -218,25 +255,12 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 
-		if foundUser.RefreshToken() == nil {
+		if isExpiredClient(foundUser) {
 			c.JSON(http.StatusUnauthorized, httpError.ErrExpiredRefreshToken.Error())
 			return
 		}
 
-		_, err = authHelper.ValidateToken(*foundUser.RefreshToken())
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		// if refresh is still valid then generate new token
-		token, _, err := authHelper.GenerateAllTokens(*foundUser.ID(), *foundUser.Email(), *foundUser.FirstName(), *foundUser.LastName(), *foundUser.UserType())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		err = authHelper.UpdateAllTokens(token, *foundUser.RefreshToken(), *foundUser.Email())
+		token, err := generateTokens(false, foundUser)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -263,12 +287,9 @@ func Logout() gin.HandlerFunc {
 		}
 
 		// remove refresh token and force user to login again
-		foundUser.SetToken("")
-		foundUser.SetRefreshToken("")
+		clearAllTokens(&foundUser)
 
-		userConnector := userConnector.Init()
-		err = userConnector.SetUser(foundUser).Add()
-
+		err = saveUser(foundUser)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
