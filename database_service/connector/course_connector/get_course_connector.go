@@ -7,10 +7,12 @@ import (
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
+// user can only access userModel
+
 type courseOptions struct {
 	courseId *int
 	tutorId  *int
-	course   *databaseModel.Course
+	course   *userModel.CourseWithSize
 	err      error
 }
 
@@ -39,7 +41,7 @@ func (c *courseOptions) SetTutorId(tutorId int) *courseOptions {
 	return c
 }
 
-func (c *courseOptions) SetCourse(course databaseModel.Course) *courseOptions {
+func (c *courseOptions) SetCourse(course userModel.CourseWithSize) *courseOptions {
 	c.course = &course
 	return c
 }
@@ -72,7 +74,7 @@ func (c *courseOptions) GetSingle() (course userModel.CourseWithSize, err error)
 		return userModel.CourseWithSize{}, err
 	}
 	// convert to course with size
-	course = convertFromCourseToCourseWithSize(courseWithoutSize, studentSize, tutorSize)
+	course = userModel.ConvertFromWithoutSizeToWithSize(courseWithoutSize, tutorSize, studentSize)
 	return
 }
 
@@ -96,17 +98,7 @@ func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error)
 	courses = make([]userModel.CourseWithSize, len(coursesWithoutSize))
 	for i, courseWithoutSize := range coursesWithoutSize {
 		// convert to course with size
-		courses[i] = convertFromCourseToCourseWithSize(courseWithoutSize, studentSizes[i], tutorSizes[i])
+		courses[i] = userModel.ConvertFromWithoutSizeToWithSize(courseWithoutSize, tutorSizes[i], studentSizes[i])
 	}
-	return
-}
-
-func convertFromCourseToCourseWithSize(courseWithoutSize databaseModel.Course, studentSize int, tutorSize int) (courseWithSize userModel.CourseWithSize) {
-	courseWithSize = userModel.CourseWithSize{}
-	courseWithSize.CourseCode = courseWithoutSize.CourseCode
-	courseWithSize.CourseName = courseWithoutSize.CourseName
-	courseWithSize.ID = int(courseWithoutSize.ID)
-	courseWithSize.StudentSize = studentSize
-	courseWithSize.TutorSize = tutorSize
 	return
 }
