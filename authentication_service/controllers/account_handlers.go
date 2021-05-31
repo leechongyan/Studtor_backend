@@ -296,12 +296,12 @@ func Logout() gin.HandlerFunc {
 }
 
 func uploadUserProfilePicture(c *gin.Context) (url string, err error) {
-	file, fileHeader, err := c.Request.FormFile("file")
+	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		return "", httpError.ErrFileParsingFailure
 	}
 	defer file.Close()
-	url, err = storageService.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file, *fileHeader)
+	url, err = storageService.CurrentStorageConnector.SaveUserProfilePicture(c.GetString("id"), file)
 	return
 }
 

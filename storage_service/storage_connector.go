@@ -17,7 +17,7 @@ import (
 var CurrentStorageConnector StorageConnector
 
 type StorageConnector interface {
-	SaveUserProfilePicture(user_id string, file multipart.File, fileheader multipart.FileHeader) (url string, err error)
+	SaveUserProfilePicture(user_id string, file multipart.File) (url string, err error)
 	SaveTutorNotesForACourse(tutor_id string, course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error)
 	SaveCourseProfilePicture(course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error)
 }

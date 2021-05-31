@@ -29,8 +29,8 @@ func InitGoogleStorage() (gs googlestorage, err error) {
 	return
 }
 
-func (gs googlestorage) SaveUserProfilePicture(user_id string, file multipart.File, fileheader multipart.FileHeader) (url string, err error) {
-	return gs.saveImage(fileheader.Filename, "users/"+user_id, file)
+func (gs googlestorage) SaveUserProfilePicture(user_id string, file multipart.File) (url string, err error) {
+	return gs.saveImage(user_id, "users/"+user_id, file)
 }
 
 func (gs googlestorage) SaveTutorNotesForACourse(tutor_id string, course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error) {
