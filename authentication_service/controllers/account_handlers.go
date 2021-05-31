@@ -52,7 +52,7 @@ func sendVerificationToUser(user *userModel.User) (err error) {
 	newVKey := authHelper.GenerateVerificationCode(6)
 	user.SetVKey(newVKey)
 	// send an email
-	err = mailService.SendVerificationCode(*user, newVKey)
+	err = mailService.CurrentMailService.SendVerificationCode(*user, newVKey)
 	return err
 }
 

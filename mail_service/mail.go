@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/smtp"
+	"time"
 
 	"text/template"
 
@@ -12,28 +13,35 @@ import (
 	"github.com/spf13/viper"
 )
 
-func SendVerificationCode(user userModel.User, code string) (err error) {
-	serverEmail := viper.GetString("serverEmail")
-	serverEmailPW := viper.GetString("serverEmailPW")
+var CurrentMailService MailService
 
+type MailService struct {
+	serverEmail string
+	smtpHost    string
+	smtpPort    string
+	smtpAuth    smtp.Auth
+	mimeHeaders string
+}
+
+func InitMailService() {
+	CurrentMailService = MailService{}
+	CurrentMailService.serverEmail = viper.GetString("serverEmail")
+	CurrentMailService.smtpHost = "smtp.gmail.com"
+	CurrentMailService.smtpPort = "587"
+	CurrentMailService.mimeHeaders = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	CurrentMailService.smtpAuth = smtp.PlainAuth("", CurrentMailService.serverEmail, viper.GetString("serverEmailPW"), CurrentMailService.smtpHost)
+}
+
+func (mailService MailService) SendVerificationCode(user userModel.User, code string) (err error) {
 	// Sender data.
-	from := serverEmail
-	password := serverEmailPW
-
 	// Receiver email address.
 	to := []string{
 		*user.Email(),
 	}
-	// smtp server configuration.
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-
-	auth := smtp.PlainAuth("", from, password, smtpHost)
 
 	t, _ := template.ParseFiles("../mail_service/templates/verification_template.html")
 	var body bytes.Buffer
-	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	body.Write([]byte(fmt.Sprintf("Subject: Verification Code for Studtor \n%s\n\n", mimeHeaders)))
+	body.Write([]byte(fmt.Sprintf("Subject: Verification Code for Studtor \n%s\n\n", mailService.mimeHeaders)))
 
 	t.Execute(&body, struct {
 		Name    string
@@ -44,7 +52,60 @@ func SendVerificationCode(user userModel.User, code string) (err error) {
 	})
 
 	// Sending email.
-	err = smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, body.Bytes())
+	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
+	if err != nil {
+		return systemError.ErrEmailSendingFailure
+	}
+
+	return
+}
+
+func (mailService MailService) SendBookingConfirmation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string, isStudent bool) (err error) {
+	var to []string
+
+	var body bytes.Buffer
+	body.Write([]byte(fmt.Sprintf("Subject: Confirmation of Appointment\n%s\n\n", mailService.mimeHeaders)))
+
+	if isStudent {
+		to = []string{
+			*student.Email(),
+		}
+		t, _ := template.ParseFiles("../mail_service/templates/student_confirmation_template.html")
+		t.Execute(&body, struct {
+			Name   string
+			Tutor  string
+			Course string
+			Date   string
+			Time   string
+		}{
+			Name:   *student.FirstName() + " " + *student.LastName(),
+			Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
+			Course: courseName,
+			Date:   date.Format("Jan 2, 2006"),
+			Time:   time,
+		})
+	} else {
+		to = []string{
+			*tutor.Email(),
+		}
+		t, _ := template.ParseFiles("../mail_service/templates/tutor_confirmation_template.html")
+		t.Execute(&body, struct {
+			Name    string
+			Student string
+			Course  string
+			Date    string
+			Time    string
+		}{
+			Name:    *tutor.FirstName() + " " + *tutor.LastName(),
+			Student: *student.FirstName() + " " + *student.LastName(),
+			Course:  courseName,
+			Date:    date.Format("Jan 2, 2006"),
+			Time:    time,
+		})
+	}
+
+	// Sending email.
+	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
 	if err != nil {
 		return systemError.ErrEmailSendingFailure
 	}

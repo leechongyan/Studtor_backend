@@ -3,6 +3,7 @@ package initialization_helpers
 import (
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
+	mailService "github.com/leechongyan/Studtor_backend/mail_service"
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
 	"github.com/spf13/viper"
 )
@@ -29,6 +30,7 @@ func initializeViper() (err error) {
 // }
 
 func Initialize() (err error) {
+	mailService.InitMailService()
 	err = initializeViper()
 	if err != nil {
 		return
