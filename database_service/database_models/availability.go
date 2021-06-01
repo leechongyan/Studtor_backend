@@ -11,8 +11,8 @@ import (
 // Availability is the model for tutor availability ORM
 type Availability struct {
 	gorm.Model
-	ID            uint `gorm:"primaryKey"`
-	TutorID       uint
-	AvailableFrom time.Time
-	AvailableTo   time.Time
+	ID       uint `gorm:"primaryKey"`
+	TutorID  uint
+	Date     time.Time
+	TimeSlot int
 }

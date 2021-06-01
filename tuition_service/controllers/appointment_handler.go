@@ -1,15 +1,22 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	availabilityConnector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
 	bookingConnector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
+	courseConnector "github.com/leechongyan/Studtor_backend/database_service/connector/course_connector"
+	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
+	timeslotHelper "github.com/leechongyan/Studtor_backend/helpers/timeslot_helpers"
+	mailService "github.com/leechongyan/Studtor_backend/mail_service"
 	"github.com/leechongyan/Studtor_backend/tuition_service/models"
 )
 
@@ -99,6 +106,61 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 	}
 }
 
+func getAvailabilityFromID(availabilityId int) (availability databaseModel.Availability, err error) {
+	return availabilityConnector.Init().SetAvailabilityId(availabilityId).GetSingle()
+}
+
+func getUserFromID(userId int) (user userModel.User, err error) {
+	return userConnector.Init().SetUserId(userId).GetUser()
+}
+
+func getCourseFromID(courseId int) (course userModel.CourseWithSize, err error) {
+	return courseConnector.Init().SetCourseId(courseId).GetSingle()
+}
+
+func notifyBooking(availabilityId int, userId int, courseId int) (err error) {
+	// get availability details
+	availability, err := getAvailabilityFromID(availabilityId)
+	if err != nil {
+		return
+	}
+	// get tutor
+	tutor, err := getUserFromID(int(availability.TutorID))
+	if err != nil {
+		return
+	}
+
+	// get student
+	student, err := getUserFromID(userId)
+	if err != nil {
+		return
+	}
+
+	// get course name
+	course, err := getCourseFromID(courseId)
+	if err != nil {
+		return
+	}
+
+	return mailService.CurrentMailService.SendBookingConfirmation(student, tutor, course.CourseName(), availability.Date, timeslotHelper.ConvertSlotIdToTimeString(availability.TimeSlot))
+}
+
+func notifyUnbooking(bookingDetails databaseModel.BookingDetails) (err error) {
+	// get tutor
+	tutor, err := getUserFromID(bookingDetails.TutorID)
+	if err != nil {
+		return
+	}
+
+	// get student
+	student, err := getUserFromID(bookingDetails.StudentID)
+	if err != nil {
+		return
+	}
+
+	return mailService.CurrentMailService.SendBookingCancellation(student, tutor, bookingDetails.CourseName, bookingDetails.Date, timeslotHelper.ConvertSlotIdToTimeString(bookingDetails.TimeSlot))
+}
+
 // Book an available timeslot with the tutor with the course id
 func BookTimeTutor() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -114,13 +176,19 @@ func BookTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		id, _ := strconv.Atoi(c.GetString("id"))
+		uid, _ := strconv.Atoi(c.GetString("id"))
 
-		err = bookingConnector.Init().SetCourseId(courseId).SetUserId(id).SetAvailabilityId(availabilityId).Add()
+		err = bookingConnector.Init().SetCourseId(courseId).SetUserId(uid).SetAvailabilityId(availabilityId).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
+
+		// notify booking
+		err = notifyBooking(availabilityId, uid, courseId)
+
+		// TODO: log the error instead as db changes have been done
+		fmt.Print(err.Error())
 
 		c.JSON(http.StatusOK, "Success")
 	}
@@ -142,6 +210,13 @@ func UnbookTimeTutor() gin.HandlerFunc {
 
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
+		// get the booking details first
+		booking, err := bookingConnector.Init().SetBookingId(bookingId).GetSingle()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		// user id is needed to check whether the bookingid involves the user
 		err = bookingConnector.Init().SetUserId(userId).SetBookingId(bookingId).Delete()
 		if err != nil {
@@ -152,6 +227,12 @@ func UnbookTimeTutor() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
+
+		// if successful cancellation then notify
+		err = notifyUnbooking(booking)
+
+		// TODO: log the error instead as db changes have been done
+		fmt.Print(err.Error())
 
 		c.JSON(http.StatusOK, "Success")
 	}

@@ -28,7 +28,8 @@ type BookingConnector interface {
 	SetToTime(toTime time.Time) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (times []databaseModel.BookingDetails, err error)
+	GetAll() (bookings []databaseModel.BookingDetails, err error)
+	GetSingle() (booking databaseModel.BookingDetails, err error)
 }
 
 func Init() *bookingOptions {
@@ -101,7 +102,7 @@ func (c *bookingOptions) Delete() (err error) {
 	return httpError.ErrUnauthorizedAccess
 }
 
-func (c *bookingOptions) GetAll() (times []databaseModel.BookingDetails, err error) {
+func (c *bookingOptions) GetAll() (bookings []databaseModel.BookingDetails, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -121,4 +122,14 @@ func (c *bookingOptions) GetAll() (times []databaseModel.BookingDetails, err err
 		return databaseService.CurrentDatabaseConnector.GetBookingsByIDTo(*c.userId, c.toTime)
 	}
 	return databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
+}
+
+func (c *bookingOptions) GetSingle() (booking databaseModel.BookingDetails, err error) {
+	if c.err != nil {
+		return databaseModel.BookingDetails{}, c.err
+	}
+	if c.bookingId == nil {
+		return databaseModel.BookingDetails{}, databaseError.ErrNotEnoughParameters
+	}
+	return databaseService.CurrentDatabaseConnector.GetSingleBooking(*c.bookingId)
 }

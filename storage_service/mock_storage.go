@@ -19,7 +19,3 @@ func (storage mockstorage) SaveUserProfilePicture(user_id string, file multipart
 func (storage mockstorage) SaveTutorNotesForACourse(tutor_id string, course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error) {
 	return "www.sample.com/" + fileheader.Filename, nil
 }
-
-func (storage mockstorage) SaveCourseProfilePicture(course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error) {
-	return "www.sample.com/" + fileheader.Filename, nil
-}

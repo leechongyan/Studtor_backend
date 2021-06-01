@@ -154,6 +154,10 @@ func (db mockdb) GetSchoolByInstitutionAndSchoolCode(institution string, schoolC
 	Booking model
 */
 
+func (db mockdb) GetSingleBooking(bookingID int) (booking databaseModel.BookingDetails, err error) {
+	return
+}
+
 // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
 func (db mockdb) GetBookingsByID(userID int) (bookings []databaseModel.BookingDetails, err error) {
 	return
@@ -207,6 +211,10 @@ func (db mockdb) GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabil
 // GetAvailabilityByID retrieves a list of all available timeslots for a tutor,
 // starting from time fromTime and ending with time toTime
 func (db mockdb) GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []databaseModel.Availability, err error) {
+	return
+}
+
+func (db mockdb) GetSingleAvailability(availabilityID int) (availability databaseModel.Availability, err error) {
 	return
 }
 

@@ -89,7 +89,8 @@ type DatabaseConnector interface {
 	/*
 		Booking model
 	*/
-
+	// GetSingleBooking gets a single booking details for a booking ID
+	GetSingleBooking(bookingID int) (booking databaseModel.BookingDetails, err error)
 	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
 	GetBookingsByID(userID int) (bookings []databaseModel.BookingDetails, err error)
 	// GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
@@ -114,6 +115,8 @@ type DatabaseConnector interface {
 	GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (availabilities []databaseModel.Availability, err error)
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, ending with time toTime
 	GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabilities []databaseModel.Availability, err error)
+	// GetSingleAvailability gets an availability information based on the availability ID
+	GetSingleAvailability(availabilityID int) (availability databaseModel.Availability, err error)
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor,
 	// starting from time fromTime and ending with time toTime
 	GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []databaseModel.Availability, err error)

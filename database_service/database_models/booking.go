@@ -24,6 +24,6 @@ type BookingDetails struct {
 	TutorName   string
 	StudentID   int
 	StudentName string
-	FromTime    time.Time
-	ToTime      time.Time
+	Date        time.Time
+	TimeSlot    int
 }

@@ -25,6 +25,7 @@ type AvailabilityConnector interface {
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (times []databaseModel.Availability, err error)
+	GetSingle() (time databaseModel.Availability, err error)
 }
 
 func Init() *availabilityOptions {
@@ -106,4 +107,14 @@ func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err 
 		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDTo(*c.tutorId, c.toTime)
 	}
 	return databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
+}
+
+func (c *availabilityOptions) GetSingle() (time databaseModel.Availability, err error) {
+	if c.err != nil {
+		return databaseModel.Availability{}, c.err
+	}
+	if c.availabilityId == nil {
+		return databaseModel.Availability{}, databaseError.ErrNotEnoughParameters
+	}
+	return databaseService.CurrentDatabaseConnector.GetSingleAvailability(*c.availabilityId)
 }

@@ -60,55 +60,110 @@ func (mailService MailService) SendVerificationCode(user userModel.User, code st
 	return
 }
 
-func (mailService MailService) SendBookingConfirmation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string, isStudent bool) (err error) {
-	var to []string
-
+func (mailService MailService) SendBookingConfirmation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string) (err error) {
+	// send to student
 	var body bytes.Buffer
 	body.Write([]byte(fmt.Sprintf("Subject: Confirmation of Appointment\n%s\n\n", mailService.mimeHeaders)))
-
-	if isStudent {
-		to = []string{
-			*student.Email(),
-		}
-		t, _ := template.ParseFiles("../mail_service/templates/student_confirmation_template.html")
-		t.Execute(&body, struct {
-			Name   string
-			Tutor  string
-			Course string
-			Date   string
-			Time   string
-		}{
-			Name:   *student.FirstName() + " " + *student.LastName(),
-			Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
-			Course: courseName,
-			Date:   date.Format("Jan 2, 2006"),
-			Time:   time,
-		})
-	} else {
-		to = []string{
-			*tutor.Email(),
-		}
-		t, _ := template.ParseFiles("../mail_service/templates/tutor_confirmation_template.html")
-		t.Execute(&body, struct {
-			Name    string
-			Student string
-			Course  string
-			Date    string
-			Time    string
-		}{
-			Name:    *tutor.FirstName() + " " + *tutor.LastName(),
-			Student: *student.FirstName() + " " + *student.LastName(),
-			Course:  courseName,
-			Date:    date.Format("Jan 2, 2006"),
-			Time:    time,
-		})
+	to := []string{
+		*student.Email(),
 	}
+	t, _ := template.ParseFiles("../mail_service/templates/student_confirmation_template.html")
+	t.Execute(&body, struct {
+		Name   string
+		Tutor  string
+		Course string
+		Date   string
+		Time   string
+	}{
+		Name:   *student.FirstName() + " " + *student.LastName(),
+		Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
+		Course: courseName,
+		Date:   date.Format("Jan 2, 2006"),
+		Time:   time,
+	})
 
-	// Sending email.
 	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
 	if err != nil {
 		return systemError.ErrEmailSendingFailure
 	}
 
+	body.Reset()
+
+	to = []string{
+		*tutor.Email(),
+	}
+	t, _ = template.ParseFiles("../mail_service/templates/tutor_confirmation_template.html")
+	t.Execute(&body, struct {
+		Name    string
+		Student string
+		Course  string
+		Date    string
+		Time    string
+	}{
+		Name:    *tutor.FirstName() + " " + *tutor.LastName(),
+		Student: *student.FirstName() + " " + *student.LastName(),
+		Course:  courseName,
+		Date:    date.Format("Jan 2, 2006"),
+		Time:    time,
+	})
+
+	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
+	if err != nil {
+		return systemError.ErrEmailSendingFailure
+	}
+	return
+}
+
+func (mailService MailService) SendBookingCancellation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string) (err error) {
+	// send to student
+	var body bytes.Buffer
+	body.Write([]byte(fmt.Sprintf("Subject: Cancellation of Appointment\n%s\n\n", mailService.mimeHeaders)))
+	to := []string{
+		*student.Email(),
+	}
+	t, _ := template.ParseFiles("../mail_service/templates/student_cancellation_template.html")
+	t.Execute(&body, struct {
+		Name   string
+		Tutor  string
+		Course string
+		Date   string
+		Time   string
+	}{
+		Name:   *student.FirstName() + " " + *student.LastName(),
+		Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
+		Course: courseName,
+		Date:   date.Format("Jan 2, 2006"),
+		Time:   time,
+	})
+
+	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
+	if err != nil {
+		return systemError.ErrEmailSendingFailure
+	}
+
+	body.Reset()
+
+	to = []string{
+		*tutor.Email(),
+	}
+	t, _ = template.ParseFiles("../mail_service/templates/tutor_cancellation_template.html")
+	t.Execute(&body, struct {
+		Name    string
+		Student string
+		Course  string
+		Date    string
+		Time    string
+	}{
+		Name:    *tutor.FirstName() + " " + *tutor.LastName(),
+		Student: *student.FirstName() + " " + *student.LastName(),
+		Course:  courseName,
+		Date:    date.Format("Jan 2, 2006"),
+		Time:    time,
+	})
+
+	err = smtp.SendMail(mailService.smtpHost+":"+mailService.smtpPort, mailService.smtpAuth, mailService.serverEmail, to, body.Bytes())
+	if err != nil {
+		return systemError.ErrEmailSendingFailure
+	}
 	return
 }

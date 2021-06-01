@@ -12,6 +12,14 @@ type CourseWithSize struct {
 	studentSize int
 }
 
+func (course *CourseWithSize) ID() int {
+	return course.id
+}
+
+func (course *CourseWithSize) CourseName() string {
+	return course.courseName
+}
+
 func ConvertFromWithoutSizeToWithSize(courseWithoutSize databaseModel.Course, tutorSize int, studentSize int) (coureWithSize CourseWithSize) {
 	courseWithSize := CourseWithSize{}
 	courseWithSize.courseCode = courseWithoutSize.CourseCode

@@ -37,10 +37,6 @@ func (gs googlestorage) SaveTutorNotesForACourse(tutor_id string, course_code st
 	return gs.saveImage(fileheader.Filename, "notes/"+tutor_id+"/"+course_code, file)
 }
 
-func (gs googlestorage) SaveCourseProfilePicture(course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error) {
-	return gs.saveImage(fileheader.Filename, "courses/"+course_code, file)
-}
-
 func (gs googlestorage) saveImage(file_name string, sub_directory string, file multipart.File) (url string, err error) {
 	sw := gs.storageClient.Bucket(gs.bucketName).Object(sub_directory + "/" + file_name).NewWriter(gs.ctx)
 	if _, err = io.Copy(sw, file); err != nil {
