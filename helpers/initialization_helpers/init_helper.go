@@ -1,6 +1,11 @@
 package initialization_helpers
 
 import (
+	"io"
+	"log"
+	"os"
+
+	"github.com/gin-gonic/gin"
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	mailService "github.com/leechongyan/Studtor_backend/mail_service"
@@ -25,6 +30,17 @@ func initializeViper() (err error) {
 	return
 }
 
+func initLogging() (err error) {
+	f, err := os.Create("../logs/log.log")
+	if err != nil {
+		return systemError.ErrInitFailure
+	}
+	multiWriter := io.MultiWriter(f, os.Stdout)
+	log.SetOutput(multiWriter)
+	gin.DefaultWriter = multiWriter
+	return
+}
+
 // func checkConfigInputs() (error error) {
 
 // }
@@ -40,5 +56,8 @@ func Initialize() (err error) {
 		return
 	}
 	err = storageService.InitStorage()
-	return err
+	if err != nil {
+		return
+	}
+	return initLogging()
 }

@@ -16,7 +16,7 @@ func GenerateVerificationCode(max int) string {
 	b := make([]byte, max)
 	n, err := io.ReadAtLeast(rand.Reader, b, max)
 	if n != max {
-		panic(err)
+		log.Printf("%v", err)
 	}
 	for i := 0; i < len(b); i++ {
 		b[i] = INTEGER_TABLE[int(b[i])%len(INTEGER_TABLE)]
@@ -29,7 +29,7 @@ func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 
 	if err != nil {
-		log.Panic(err)
+		log.Printf("%v", err)
 	}
 
 	return string(bytes)

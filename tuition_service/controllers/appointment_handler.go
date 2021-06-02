@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -187,8 +187,7 @@ func BookTimeTutor() gin.HandlerFunc {
 		// notify booking
 		err = notifyBooking(availabilityId, uid, courseId)
 
-		// TODO: log the error instead as db changes have been done
-		fmt.Print(err.Error())
+		log.Printf("%v", err)
 
 		c.JSON(http.StatusOK, "Success")
 	}
@@ -231,8 +230,7 @@ func UnbookTimeTutor() gin.HandlerFunc {
 		// if successful cancellation then notify
 		err = notifyUnbooking(booking)
 
-		// TODO: log the error instead as db changes have been done
-		fmt.Print(err.Error())
+		log.Printf("%v", err)
 
 		c.JSON(http.StatusOK, "Success")
 	}

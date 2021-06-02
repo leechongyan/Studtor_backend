@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	authhandler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
 	authMiddleWare "github.com/leechongyan/Studtor_backend/authentication_service/middleware"
@@ -10,15 +12,14 @@ import (
 )
 
 func main() {
-	router := gin.New()
-	router.Use(gin.Logger())
-
-	e := initialization_helper.Initialize()
-	if e != nil {
-		// error in initialising
+	err := initialization_helper.Initialize()
+	if err != nil {
+		log.Fatalf("%v", err)
 		return
 	}
+	log.Print("YAY IS DONE")
 
+	router := gin.Default()
 	// current version is v1
 	v1 := router.Group("/v1")
 
