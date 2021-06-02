@@ -95,11 +95,11 @@ import(
 // call init to get the connector 
 connector := availabilityConnector.Init()
 
-// get all availability for a tutor
-availabilities, err := availabilityConnector.Init().SetTutorId(1).SetFromTime("Set a from time").SetToTime("Set a to time").GetAll()
+// get all availability for a tutor for 7 days
+availabilities, err := availabilityConnector.Init().SetTutorId(1).SetDate("Set a start date").SetDays(7).GetAll()
 
 // add an availability for a tutor
-err := availabilityConnector.Init().SetTutorId(1).SetFromTime("Set a from time").SetToTime("Set a to time").Add()
+err := availabilityConnector.Init().SetTutorId(1).SetDate("Set a start date").SetTimeId(2).Add()
 
 // delete an availability of a tutor
 err := availabilityConnector.Init().SetTutorId(1).SetAvailabilityId(5).Delete()
@@ -114,8 +114,8 @@ import(
 // call init to get the connector 
 connector := bookingConnector.Init()
 
-// get all booking for a user
-bookings, err := bookingConnector.Init().SetUserId(1).SetFromTime("Set a from time").SetToTime("Set a to time").GetAll()
+// get all booking for a user for 7 days
+bookings, err := bookingConnector.Init().SetUserId(1).SetDate("Set a start date").SetDays(7).GetAll()
 
 // add a booking for a student
 err := bookingConnector.Init().SetUserId(1).SetCourseId(2).SetAvailabilityId(3).Add()
