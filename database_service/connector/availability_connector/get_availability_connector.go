@@ -12,16 +12,18 @@ import (
 type availabilityOptions struct {
 	tutorId        *int
 	availabilityId *int
-	fromTime       time.Time
-	toTime         time.Time
+	timeId         *int
+	date           time.Time
+	days           *int
 	err            error
 }
 
 type AvailabilityConnector interface {
 	SetTutorId(tutorId int) *availabilityOptions
 	SetAvailabilityId(availabilityId int) *availabilityOptions
-	SetFromTime(fromTime time.Time) *availabilityOptions
-	SetToTime(toTime time.Time) *availabilityOptions
+	SetTimeId(timeId int) *availabilityOptions
+	SetDate(date time.Time) *availabilityOptions
+	SetDays(days int) *availabilityOptions
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (times []databaseModel.Availability, err error)
@@ -43,13 +45,18 @@ func (c *availabilityOptions) SetAvailabilityId(availabilityId int) *availabilit
 	return c
 }
 
-func (c *availabilityOptions) SetFromTime(fromTime time.Time) *availabilityOptions {
-	c.fromTime = fromTime
+func (c *availabilityOptions) SetTimeId(timeId int) *availabilityOptions {
+	c.timeId = &timeId
 	return c
 }
 
-func (c *availabilityOptions) SetToTime(toTime time.Time) *availabilityOptions {
-	c.toTime = toTime
+func (c *availabilityOptions) SetDate(date time.Time) *availabilityOptions {
+	c.date = date
+	return c
+}
+
+func (c *availabilityOptions) SetDays(days int) *availabilityOptions {
+	c.days = &days
 	return c
 }
 
@@ -57,13 +64,10 @@ func (c *availabilityOptions) Add() (err error) {
 	if c.err != nil {
 		return c.err
 	}
-	if c.fromTime.IsZero() || c.toTime.IsZero() {
+	if c.date.IsZero() || c.timeId == nil || c.tutorId == nil {
 		return databaseError.ErrNotEnoughParameters
 	}
-	if c.tutorId == nil {
-		return databaseError.ErrNotEnoughParameters
-	}
-	return databaseService.CurrentDatabaseConnector.CreateTutorAvailability(*c.tutorId, c.fromTime, c.toTime)
+	return databaseService.CurrentDatabaseConnector.CreateTutorAvailability(*c.tutorId, c.date, *c.timeId)
 }
 
 func (c *availabilityOptions) Delete() (err error) {
@@ -91,22 +95,10 @@ func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err 
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.tutorId == nil {
+	if c.tutorId == nil || c.date.IsZero() || c.days == nil {
 		return nil, databaseError.ErrNotEnoughParameters
 	}
-	if !c.fromTime.IsZero() && !c.toTime.IsZero() {
-		if c.fromTime.After(c.toTime) {
-			return nil, databaseError.ErrInvalidTimes
-		}
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFromTo(*c.tutorId, c.fromTime, c.toTime)
-	}
-	if !c.fromTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFrom(*c.tutorId, c.fromTime)
-	}
-	if !c.toTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDTo(*c.tutorId, c.toTime)
-	}
-	return databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
+	return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFromDateForSize(*c.tutorId, c.date, *c.days)
 }
 
 func (c *availabilityOptions) GetSingle() (time databaseModel.Availability, err error) {

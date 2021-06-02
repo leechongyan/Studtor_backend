@@ -93,13 +93,17 @@ type DatabaseConnector interface {
 	GetSingleBooking(bookingID int) (booking databaseModel.BookingDetails, err error)
 	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
 	GetBookingsByID(userID int) (bookings []databaseModel.BookingDetails, err error)
-	// GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
-	GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, ending with time toTime
-	GetBookingsByIDTo(userID int, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID,
-	// starting from time fromTime and ending with time toTime
-	GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
+
+	// // GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
+	// GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []databaseModel.BookingDetails, err error)
+	// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, ending with time toTime
+	// GetBookingsByIDTo(userID int, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
+	// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID,
+	// // starting from time fromTime and ending with time toTime
+	// GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
+
+	// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
+	GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.BookingDetails, err error)
 	// CreateBooking saves a booking model object into the database
 	CreateBooking(availabilityID int, userID int, courseID int) (err error)
 	// DeleteBooking deletes a booking model object into the database
@@ -111,17 +115,23 @@ type DatabaseConnector interface {
 
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, with no time constraints
 	GetAvailabilityByID(tutorID int) (availabilities []databaseModel.Availability, err error)
+
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, starting from time fromTime
-	GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (availabilities []databaseModel.Availability, err error)
+	// GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (availabilities []databaseModel.Availability, err error)
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, ending with time toTime
-	GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabilities []databaseModel.Availability, err error)
+	// GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabilities []databaseModel.Availability, err error)
+
 	// GetSingleAvailability gets an availability information based on the availability ID
 	GetSingleAvailability(availabilityID int) (availability databaseModel.Availability, err error)
 	// GetAvailabilityByID retrieves a list of all available timeslots for a tutor,
 	// starting from time fromTime and ending with time toTime
-	GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []databaseModel.Availability, err error)
+	// GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []databaseModel.Availability, err error)
+
+	// GetAvailabiltyByIDFromDateForSize retrieves a list of all available timeslots for a tutor from a date up to x days
+	GetAvailabilityByIDFromDateForSize(tutorId int, date time.Time, days int) (availabilities []databaseModel.Availability, err error)
+
 	// CreateTutorAvailability saves a tutor availability model object into the database
-	CreateTutorAvailability(tutorID int, fromTime time.Time, toTime time.Time) (err error)
+	CreateTutorAvailability(tutorID int, date time.Time, timeID int) (err error)
 	// DeleteTutorAvailability deletes a tutor availability model object by ID from the database
 	DeleteTutorAvailabilityByID(availabilityID int) (err error)
 }

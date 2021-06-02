@@ -219,11 +219,19 @@ func (db mockdb) GetSingleAvailability(availabilityID int) (availability databas
 }
 
 // CreateTutorAvailability saves a tutor availability model object into the database
-func (db mockdb) CreateTutorAvailability(tutorID int, fromTime time.Time, toTime time.Time) (err error) {
+func (db mockdb) CreateTutorAvailability(tutorID int, date time.Time, timeID int) (err error) {
 	return
 }
 
 // DeleteTutorAvailability deletes a tutor availability model object by ID from the database
 func (db mockdb) DeleteTutorAvailabilityByID(availabilityID int) (err error) {
+	return
+}
+
+func (db mockdb) GetAvailabilityByIDFromDateForSize(tutorId int, date time.Time, days int) (availabilities []databaseModel.Availability, err error) {
+	return
+}
+
+func (db mockdb) GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.BookingDetails, err error) {
 	return
 }

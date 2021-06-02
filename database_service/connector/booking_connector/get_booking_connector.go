@@ -14,8 +14,8 @@ type bookingOptions struct {
 	userId         *int
 	availabilityId *int
 	bookingId      *int
-	fromTime       time.Time
-	toTime         time.Time
+	date           time.Time
+	days           *int
 	err            error
 }
 
@@ -24,8 +24,9 @@ type BookingConnector interface {
 	SetUserId(userId int) *bookingOptions
 	SetAvailabilityId(availabilityId int) *bookingOptions
 	SetBookingId(bookingId int) *bookingOptions
-	SetFromTime(fromTime time.Time) *bookingOptions
-	SetToTime(toTime time.Time) *bookingOptions
+	SetDate(date time.Time) *bookingOptions
+	SetTimeId(timeId int) *bookingOptions
+	SetDays(days int) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (bookings []databaseModel.BookingDetails, err error)
@@ -57,13 +58,13 @@ func (c *bookingOptions) SetBookingId(bookingId int) *bookingOptions {
 	return c
 }
 
-func (c *bookingOptions) SetFromTime(fromTime time.Time) *bookingOptions {
-	c.fromTime = fromTime
+func (c *bookingOptions) SetDate(date time.Time) *bookingOptions {
+	c.date = date
 	return c
 }
 
-func (c *bookingOptions) SetToTime(toTime time.Time) *bookingOptions {
-	c.toTime = toTime
+func (c *bookingOptions) SetDays(days int) *bookingOptions {
+	c.days = &days
 	return c
 }
 
@@ -106,22 +107,12 @@ func (c *bookingOptions) GetAll() (bookings []databaseModel.BookingDetails, err 
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.userId == nil {
+	if c.userId == nil || c.date.IsZero() || c.days == nil {
 		return nil, databaseError.ErrNotEnoughParameters
 	}
-	if !c.fromTime.IsZero() && !c.toTime.IsZero() {
-		if c.fromTime.After(c.toTime) {
-			return nil, databaseError.ErrInvalidTimes
-		}
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIDFromTo(*c.userId, c.fromTime, c.toTime)
-	}
-	if !c.fromTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIDFrom(*c.userId, c.fromTime)
-	}
-	if !c.toTime.IsZero() {
-		return databaseService.CurrentDatabaseConnector.GetBookingsByIDTo(*c.userId, c.toTime)
-	}
-	return databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
+
+	return databaseService.CurrentDatabaseConnector.GetBookingsByIDFromDateForSize(*c.userId, c.date, *c.days)
+
 }
 
 func (c *bookingOptions) GetSingle() (booking databaseModel.BookingDetails, err error) {

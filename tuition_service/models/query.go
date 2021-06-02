@@ -17,14 +17,15 @@ type TutorPaginatedQuery struct {
 // default end at end
 // need state just the date, time no need to specify
 type TimePaginatedQuery struct {
-	From time.Time `form:"from"`
-	To   time.Time `form:"to"`
+	Date time.Time `form:"date" validate:"required"`
+	Days *int      `form:"days" validate:"required"`
 }
 
 type TimeSlot struct {
-	// TimeId *int `json:"time_id" validate:"required"`
-	From time.Time `json:"from"`
-	To   time.Time `json:"to"`
+	TimeId *int      `json:"time_id" validate:"required"`
+	Date   time.Time `json:"date" validate:"required"`
+	// From time.Time `json:"from"`
+	// To   time.Time `json:"to"`
 }
 
 type Availability struct {

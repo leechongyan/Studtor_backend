@@ -38,7 +38,7 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
 
-		err = availabilityConnector.Init().SetTutorId(tutorId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).Add()
+		err = availabilityConnector.Init().SetTutorId(tutorId).SetDate(slotQuery.Date).SetTimeId(*slotQuery.TimeId).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -96,7 +96,7 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		times, err := availabilityConnector.Init().SetTutorId(tutId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
+		times, err := availabilityConnector.Init().SetTutorId(tutId).SetDays(*slotQuery.Days).SetDate(slotQuery.Date).GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -253,7 +253,7 @@ func GetAllBookedTime() gin.HandlerFunc {
 
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
-		times, err := bookingConnector.Init().SetUserId(userId).SetFromTime(slotQuery.From).SetToTime(slotQuery.To).GetAll()
+		times, err := bookingConnector.Init().SetUserId(userId).SetDate(slotQuery.Date).SetDays(*slotQuery.Days).GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
