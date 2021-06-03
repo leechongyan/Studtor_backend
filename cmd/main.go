@@ -8,7 +8,6 @@ import (
 	authMiddleWare "github.com/leechongyan/Studtor_backend/authentication_service/middleware"
 	initialization_helper "github.com/leechongyan/Studtor_backend/helpers/initialization_helpers"
 	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -17,7 +16,6 @@ func main() {
 		log.Fatalf("%v", err)
 		return
 	}
-	log.Print("YAY IS DONE")
 
 	router := gin.Default()
 	// current version is v1
@@ -87,5 +85,5 @@ func main() {
 	home.GET("/users/:user_id/bookings", tuthandler.GetAllBookedTime()) // done
 	// end of version v1
 
-	router.Run(viper.GetString("port"))
+	router.Run(":3000")
 }

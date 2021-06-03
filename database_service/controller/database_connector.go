@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"strconv"
 	"time"
 
 	// "github.com/leechongyan/Studtor_backend/authentication_service/databaseModel"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
-	"github.com/spf13/viper"
 )
 
 var CurrentDatabaseConnector DatabaseConnector
@@ -136,8 +134,7 @@ type DatabaseConnector interface {
 	DeleteTutorAvailabilityByID(availabilityID int) (err error)
 }
 
-func InitDatabase() (err error) {
-	isMock, _ := strconv.ParseBool(viper.GetString("mock_database"))
+func InitDatabase(isMock bool) (err error) {
 	if isMock {
 		// TODO: Chong Yan, please change the methods here for your mockdb if you'd still like to test with it
 		CurrentDatabaseConnector = InitMock()

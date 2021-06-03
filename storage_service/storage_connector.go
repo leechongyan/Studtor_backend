@@ -2,9 +2,6 @@ package storage_service
 
 import (
 	"mime/multipart"
-	"strconv"
-
-	"github.com/spf13/viper"
 )
 
 // store it by user/ course profile picture/ notes also
@@ -21,13 +18,11 @@ type StorageConnector interface {
 	SaveTutorNotesForACourse(tutor_id string, course_code string, file multipart.File, fileheader multipart.FileHeader) (url string, err error)
 }
 
-func InitStorage() (err error) {
-	isMock, _ := strconv.ParseBool(viper.GetString("mock_storage"))
+func InitStorage(isMock bool) (err error) {
 	if isMock {
 		CurrentStorageConnector = InitMock()
 		return
 	}
-	// future add cred file
 	CurrentStorageConnector, err = InitGoogleStorage()
 	return
 }

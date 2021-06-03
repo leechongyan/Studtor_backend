@@ -1,7 +1,6 @@
 package account
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,10 +10,12 @@ import (
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 
-	"github.com/spf13/viper"
-
 	jwt "github.com/dgrijalva/jwt-go"
 )
+
+var jwtKey string
+var accessExpirationTime int
+var refreshExpirationTime int
 
 type SignedDetails struct {
 	Email     string
@@ -25,12 +26,13 @@ type SignedDetails struct {
 	jwt.StandardClaims
 }
 
-var SECRET_KEY string = viper.GetString("jwtKey")
+func InitJWT(jKey string, accessExpiration int, refreshExpiration int) {
+	jwtKey = jKey
+	accessExpirationTime = accessExpiration
+	refreshExpirationTime = refreshExpiration
+}
 
 func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err error) {
-	accessDuration, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
-	refreshDuration, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
-
 	claims := &SignedDetails{
 		Email:     email,
 		ID:        id,
@@ -38,23 +40,23 @@ func GenerateAllTokens(id int, email string, firstName string, lastName string, 
 		LastName:  lastName,
 		UserType:  userType,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(accessDuration)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(accessExpirationTime)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refreshDuration)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refreshExpirationTime)).Unix(),
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(jwtKey))
 
 	if err != nil {
 		return "", "", systemError.ErrClaimsGenerateFailure
 	}
 
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(jwtKey))
 
 	if err != nil {
 		return "", "", systemError.ErrClaimsGenerateFailure
@@ -68,7 +70,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
 		signedToken,
 		&SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
-			return []byte(SECRET_KEY), nil
+			return []byte(jwtKey), nil
 		},
 	)
 

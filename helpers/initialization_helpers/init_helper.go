@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	tokenHelper "github.com/leechongyan/Studtor_backend/authentication_service/helpers/account"
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	mailService "github.com/leechongyan/Studtor_backend/mail_service"
@@ -13,7 +15,20 @@ import (
 	"github.com/spf13/viper"
 )
 
-func initializeViper() (err error) {
+type config struct {
+	JwtKey                *string `mapstructure:"jwtKey" validate:"required"`
+	AccessExpirationTime  *int    `mapstructure:"accessExpirationTime"`
+	RefreshExpirationTime *int    `mapstructure:"refreshExpirationTime"`
+	ServerEmail           *string `mapstructure:"serverEmail" validate:"required,email"`
+	ServerEmailPW         *string `mapstructure:"serverEmailPW" validate:"required"`
+	GoogleBucketName      *string `mapstructure:"google_bucket_name" validate:"required"`
+	IsMockDB              *bool   `mapstructure:"mock_database"`
+	IsMockStorage         *bool   `mapstructure:"mock_storage"`
+}
+
+func getConfiguration() (conf config, err error) {
+	validate := validator.New()
+
 	// Set the file name of the configurations file
 	viper.SetConfigName("config")
 
@@ -25,8 +40,27 @@ func initializeViper() (err error) {
 
 	viper.SetConfigType("yml")
 	if err := viper.ReadInConfig(); err != nil {
-		return systemError.ErrInitFailure
+		return conf, systemError.ErrInitFailure
 	}
+
+	if err := viper.Unmarshal(&conf); err != nil {
+		return conf, systemError.ErrInitFailure
+	}
+
+	if err := validate.Struct(&conf); err != nil {
+		return conf, err
+	}
+
+	if conf.AccessExpirationTime == nil {
+		defaultAET := 1
+		conf.AccessExpirationTime = &defaultAET
+	}
+
+	if conf.RefreshExpirationTime == nil {
+		defaultRET := 2
+		conf.RefreshExpirationTime = &defaultRET
+	}
+
 	return
 }
 
@@ -41,23 +75,25 @@ func initLogging() (err error) {
 	return
 }
 
-// func checkConfigInputs() (error error) {
-
-// }
-
 func Initialize() (err error) {
-	mailService.InitMailService()
-	err = initializeViper()
+	err = initLogging()
 	if err != nil {
 		return
 	}
-	err = databaseService.InitDatabase()
+	conf, err := getConfiguration()
 	if err != nil {
 		return
 	}
-	err = storageService.InitStorage()
+
+	mailService.InitMailService(*conf.ServerEmail, *conf.ServerEmailPW)
+
+	tokenHelper.InitJWT(*conf.JwtKey, *conf.AccessExpirationTime, *conf.RefreshExpirationTime)
+
+	// default is mock db
+	err = databaseService.InitDatabase(conf.IsMockDB == nil || *conf.IsMockDB)
 	if err != nil {
 		return
 	}
-	return initLogging()
+	// default is mock storage
+	return storageService.InitStorage(conf.IsMockStorage == nil || *conf.IsMockStorage)
 }

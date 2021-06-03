@@ -10,7 +10,6 @@ import (
 
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
-	"github.com/spf13/viper"
 )
 
 var CurrentMailService MailService
@@ -23,13 +22,13 @@ type MailService struct {
 	mimeHeaders string
 }
 
-func InitMailService() {
+func InitMailService(serverEmail string, serverEmailPW string) {
 	CurrentMailService = MailService{}
-	CurrentMailService.serverEmail = viper.GetString("serverEmail")
+	CurrentMailService.serverEmail = serverEmail
 	CurrentMailService.smtpHost = "smtp.gmail.com"
 	CurrentMailService.smtpPort = "587"
 	CurrentMailService.mimeHeaders = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	CurrentMailService.smtpAuth = smtp.PlainAuth("", CurrentMailService.serverEmail, viper.GetString("serverEmailPW"), CurrentMailService.smtpHost)
+	CurrentMailService.smtpAuth = smtp.PlainAuth("", CurrentMailService.serverEmail, serverEmailPW, CurrentMailService.smtpHost)
 }
 
 func (mailService MailService) SendVerificationCode(user userModel.User, code string) (err error) {
