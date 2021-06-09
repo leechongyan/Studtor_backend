@@ -60,12 +60,12 @@ func (c *availabilityOptions) SetDays(days int) *availabilityOptions {
 	return c
 }
 
-func (c *availabilityOptions) Add() (err error) {
+func (c *availabilityOptions) Add() (id int, err error) {
 	if c.err != nil {
-		return c.err
+		return id, c.err
 	}
 	if c.date.IsZero() || c.timeId == nil || c.tutorId == nil {
-		return databaseError.ErrNotEnoughParameters
+		return id, databaseError.ErrNotEnoughParameters
 	}
 	return databaseService.CurrentDatabaseConnector.CreateTutorAvailability(*c.tutorId, c.date, *c.timeId)
 }

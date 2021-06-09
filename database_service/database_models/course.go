@@ -10,7 +10,9 @@ import (
 // Each course can be taught by multiple tutors
 type Course struct {
 	gorm.Model
-	ID         uint `gorm:"primaryKey"`
+	ID         uint
 	CourseCode string
 	CourseName string
+	// FacultyID  uint
+	Tutors []User `gorm:"many2many:tutor_course;"`
 }

@@ -1,29 +1,17 @@
 package database_models
 
-import (
-	"time"
-)
+import "gorm.io/gorm"
 
 // Follow conventions here: https://gorm.io/docs/models.html#Conventions
 
 // Booking is the model for bookings ORM
-type Booking struct {
-	ID                  uint `gorm:"primaryKey"`
-	TutorAvailabilityID int
-	TutorID             int
-	UserID              int
-	CourseID            int
-}
-
-// BookingDetails describes the booking for a particular TutorAvailabilityID
-type BookingDetails struct {
-	ID          int
-	CourseCode  string
-	CourseName  string
-	TutorID     int
-	TutorName   string
-	StudentID   int
-	StudentName string
-	Date        time.Time
-	TimeSlot    int
+type Booking struct { // belongs to so TODO need to change
+	gorm.Model
+	ID             uint
+	Student        User `gorm:"foreignKey:StudentID"`
+	StudentID      uint
+	Availability   Availability
+	AvailabilityID uint
+	Course         Course
+	CourseID       uint
 }

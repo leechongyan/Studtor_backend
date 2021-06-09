@@ -18,11 +18,10 @@ var accessExpirationTime int
 var refreshExpirationTime int
 
 type SignedDetails struct {
-	Email     string
-	ID        int
-	FirstName string
-	LastName  string
-	UserType  string
+	Email    string
+	ID       int
+	Name     string
+	UserType string
 	jwt.StandardClaims
 }
 
@@ -32,13 +31,12 @@ func InitJWT(jKey string, accessExpiration int, refreshExpiration int) {
 	refreshExpirationTime = refreshExpiration
 }
 
-func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(id int, email string, name string, userType string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedDetails{
-		Email:     email,
-		ID:        id,
-		FirstName: firstName,
-		LastName:  lastName,
-		UserType:  userType,
+		Email:    email,
+		ID:       id,
+		Name:     name,
+		UserType: userType,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(accessExpirationTime)).Unix(),
 		},
@@ -113,7 +111,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 	oldUser.SetUserUpdatedAt(updatedAt)
 
 	// updating database
-	err = userConnector.SetUser(oldUser).Add()
+	_, err = userConnector.SetUser(oldUser).Add()
 	if err != nil {
 		return database_errors.ErrDatabaseInternalError
 	}

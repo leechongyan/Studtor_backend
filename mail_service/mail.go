@@ -46,7 +46,7 @@ func (mailService MailService) SendVerificationCode(user userModel.User, code st
 		Name    string
 		Message string
 	}{
-		Name:    *user.FirstName() + " " + *user.LastName(),
+		Name:    *user.Name(),
 		Message: code,
 	})
 
@@ -59,12 +59,12 @@ func (mailService MailService) SendVerificationCode(user userModel.User, code st
 	return
 }
 
-func (mailService MailService) SendBookingConfirmation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string) (err error) {
+func (mailService MailService) SendBookingConfirmation(studentName string, studentEmail string, tutorName string, tutorEmail string, courseName string, date time.Time, time string) (err error) {
 	// send to student
 	var body bytes.Buffer
 	body.Write([]byte(fmt.Sprintf("Subject: Confirmation of Appointment\n%s\n\n", mailService.mimeHeaders)))
 	to := []string{
-		*student.Email(),
+		studentEmail,
 	}
 	t, _ := template.ParseFiles("../mail_service/templates/student_confirmation_template.html")
 	t.Execute(&body, struct {
@@ -74,8 +74,8 @@ func (mailService MailService) SendBookingConfirmation(student userModel.User, t
 		Date   string
 		Time   string
 	}{
-		Name:   *student.FirstName() + " " + *student.LastName(),
-		Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
+		Name:   studentName,
+		Tutor:  tutorName,
 		Course: courseName,
 		Date:   date.Format("Jan 2, 2006"),
 		Time:   time,
@@ -89,7 +89,7 @@ func (mailService MailService) SendBookingConfirmation(student userModel.User, t
 	body.Reset()
 
 	to = []string{
-		*tutor.Email(),
+		tutorEmail,
 	}
 	t, _ = template.ParseFiles("../mail_service/templates/tutor_confirmation_template.html")
 	t.Execute(&body, struct {
@@ -99,8 +99,8 @@ func (mailService MailService) SendBookingConfirmation(student userModel.User, t
 		Date    string
 		Time    string
 	}{
-		Name:    *tutor.FirstName() + " " + *tutor.LastName(),
-		Student: *student.FirstName() + " " + *student.LastName(),
+		Name:    tutorName,
+		Student: studentName,
 		Course:  courseName,
 		Date:    date.Format("Jan 2, 2006"),
 		Time:    time,
@@ -113,12 +113,12 @@ func (mailService MailService) SendBookingConfirmation(student userModel.User, t
 	return
 }
 
-func (mailService MailService) SendBookingCancellation(student userModel.User, tutor userModel.User, courseName string, date time.Time, time string) (err error) {
+func (mailService MailService) SendBookingCancellation(studentName string, studentEmail string, tutorName string, tutorEmail string, courseName string, date time.Time, time string) (err error) {
 	// send to student
 	var body bytes.Buffer
 	body.Write([]byte(fmt.Sprintf("Subject: Cancellation of Appointment\n%s\n\n", mailService.mimeHeaders)))
 	to := []string{
-		*student.Email(),
+		studentEmail,
 	}
 	t, _ := template.ParseFiles("../mail_service/templates/student_cancellation_template.html")
 	t.Execute(&body, struct {
@@ -128,8 +128,8 @@ func (mailService MailService) SendBookingCancellation(student userModel.User, t
 		Date   string
 		Time   string
 	}{
-		Name:   *student.FirstName() + " " + *student.LastName(),
-		Tutor:  *tutor.FirstName() + " " + *tutor.LastName(),
+		Name:   studentName,
+		Tutor:  tutorName,
 		Course: courseName,
 		Date:   date.Format("Jan 2, 2006"),
 		Time:   time,
@@ -143,7 +143,7 @@ func (mailService MailService) SendBookingCancellation(student userModel.User, t
 	body.Reset()
 
 	to = []string{
-		*tutor.Email(),
+		tutorEmail,
 	}
 	t, _ = template.ParseFiles("../mail_service/templates/tutor_cancellation_template.html")
 	t.Execute(&body, struct {
@@ -153,8 +153,8 @@ func (mailService MailService) SendBookingCancellation(student userModel.User, t
 		Date    string
 		Time    string
 	}{
-		Name:    *tutor.FirstName() + " " + *tutor.LastName(),
-		Student: *student.FirstName() + " " + *student.LastName(),
+		Name:    tutorName,
+		Student: studentName,
 		Course:  courseName,
 		Date:    date.Format("Jan 2, 2006"),
 		Time:    time,

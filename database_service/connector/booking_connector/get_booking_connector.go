@@ -5,8 +5,8 @@ import (
 
 	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
-	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 )
 
 type bookingOptions struct {
@@ -29,8 +29,8 @@ type BookingConnector interface {
 	SetDays(days int) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
-	GetAll() (bookings []databaseModel.BookingDetails, err error)
-	GetSingle() (booking databaseModel.BookingDetails, err error)
+	GetAll() (bookings []clientModel.BookingDetails, err error)
+	GetSingle() (booking clientModel.BookingDetails, err error)
 }
 
 func Init() *bookingOptions {
@@ -68,13 +68,13 @@ func (c *bookingOptions) SetDays(days int) *bookingOptions {
 	return c
 }
 
-func (c *bookingOptions) Add() (err error) {
+func (c *bookingOptions) Add() (id int, err error) {
 	if c.err != nil {
-		return c.err
+		return id, c.err
 	}
 
 	if c.userId == nil || c.courseId == nil || c.availabilityId == nil {
-		return databaseError.ErrNotEnoughParameters
+		return id, databaseError.ErrNotEnoughParameters
 	}
 
 	return databaseService.CurrentDatabaseConnector.CreateBooking(*c.availabilityId, *c.userId, *c.courseId)
@@ -95,7 +95,7 @@ func (c *bookingOptions) Delete() (err error) {
 	}
 
 	for _, tutorBooking := range tutorBookings {
-		if tutorBooking.ID == *c.bookingId {
+		if tutorBooking.ID == uint(*c.bookingId) {
 			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
 		}
 	}
@@ -103,7 +103,7 @@ func (c *bookingOptions) Delete() (err error) {
 	return httpError.ErrUnauthorizedAccess
 }
 
-func (c *bookingOptions) GetAll() (bookings []databaseModel.BookingDetails, err error) {
+func (c *bookingOptions) GetAll() (bookings []clientModel.BookingDetails, err error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -111,16 +111,27 @@ func (c *bookingOptions) GetAll() (bookings []databaseModel.BookingDetails, err 
 		return nil, databaseError.ErrNotEnoughParameters
 	}
 
-	return databaseService.CurrentDatabaseConnector.GetBookingsByIDFromDateForSize(*c.userId, c.date, *c.days)
-
+	books, err := databaseService.CurrentDatabaseConnector.GetBookingsByIDFromDateForSize(*c.userId, c.date, *c.days)
+	if err != nil {
+		return bookings, err
+	}
+	bookings = make([]clientModel.BookingDetails, len(books))
+	for i, book := range books {
+		bookings[i] = clientModel.ConvertBookingToBookingDetails(book)
+	}
+	return
 }
 
-func (c *bookingOptions) GetSingle() (booking databaseModel.BookingDetails, err error) {
+func (c *bookingOptions) GetSingle() (booking clientModel.BookingDetails, err error) {
 	if c.err != nil {
-		return databaseModel.BookingDetails{}, c.err
+		return booking, c.err
 	}
 	if c.bookingId == nil {
-		return databaseModel.BookingDetails{}, databaseError.ErrNotEnoughParameters
+		return booking, databaseError.ErrNotEnoughParameters
 	}
-	return databaseService.CurrentDatabaseConnector.GetSingleBooking(*c.bookingId)
+	book, err := databaseService.CurrentDatabaseConnector.GetSingleBooking(*c.bookingId)
+	if err != nil {
+		return booking, err
+	}
+	return clientModel.ConvertBookingToBookingDetails(book), err
 }

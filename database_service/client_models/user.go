@@ -13,8 +13,7 @@ var validate = validator.New()
 
 type jsonUser struct {
 	Id             *int    `json:"id"`
-	FirstName      *string `json:"first_name" validate:"required,min=2,max=100"`
-	LastName       *string `json:"last_name" validate:"required,min=2,max=100"`
+	Name           *string `json:"name" validate:"required,min=2,max=100"`
 	Password       *string `json:"password" validate:"required,min=6"`
 	Email          *string `json:"email" validate:"email,required"`
 	Token          *string `json:"token"`
@@ -29,8 +28,7 @@ type jsonUser struct {
 
 type User struct {
 	id             *int
-	firstName      *string
-	lastName       *string
+	name           *string
 	password       *string
 	email          *string
 	token          *string
@@ -87,12 +85,8 @@ func (user *User) SetVerified(verified bool) {
 	user.verified = verified
 }
 
-func (user *User) FirstName() *string {
-	return user.firstName
-}
-
-func (user *User) LastName() *string {
-	return user.lastName
+func (user *User) Name() *string {
+	return user.name
 }
 
 func (user *User) UserType() *string {
@@ -147,8 +141,7 @@ func (user *User) SetUserUpdatedAt(updatedAt time.Time) {
 func convertFromjsonUserToUser(jsUser jsonUser) (user User) {
 	user = User{}
 	user.id = jsUser.Id
-	user.firstName = jsUser.FirstName
-	user.lastName = jsUser.LastName
+	user.name = jsUser.Name
 	user.password = jsUser.Password
 	user.email = jsUser.Email
 	user.token = jsUser.Token
@@ -177,8 +170,7 @@ func UnmarshalJson(c *gin.Context) (user User, err error) {
 
 type UserProfile struct {
 	id             int
-	firstName      string
-	lastName       string
+	name           string
 	email          string
 	profilePicture string
 }
@@ -187,8 +179,7 @@ type UserProfile struct {
 func ConvertFromDatabaseUserToUserProfile(databaseuser databaseModel.User) (profile UserProfile) {
 	profile = UserProfile{}
 	profile.id = int(databaseuser.ID)
-	profile.firstName = databaseuser.FirstName
-	profile.lastName = databaseuser.LastName
+	profile.name = databaseuser.Name
 	profile.email = databaseuser.Email
 	if databaseuser.ProfilePicture.Valid {
 		profile.profilePicture = databaseuser.ProfilePicture.String
@@ -208,8 +199,7 @@ func ConvertFromAuthUserToDatabaseUser(user User) (databaseuser databaseModel.Us
 	} else {
 		databaseuser.ID = 0
 	}
-	databaseuser.FirstName = *user.firstName
-	databaseuser.LastName = *user.lastName
+	databaseuser.Name = *user.name
 	databaseuser.Password = *user.password
 	databaseuser.Email = *user.email
 	if user.profilePicture != nil {
@@ -247,8 +237,7 @@ func ConvertFromToDatabaseUserToAuthUser(databaseuser databaseModel.User) (usr U
 	usr.userUpdatedAt = databaseuser.UserUpdatedAt
 	databaseuserID := int(databaseuser.ID)
 	usr.id = &databaseuserID
-	usr.firstName = &databaseuser.FirstName
-	usr.lastName = &databaseuser.LastName
+	usr.name = &databaseuser.Name
 	usr.password = &databaseuser.Password
 	usr.email = &databaseuser.Email
 	if databaseuser.ProfilePicture.Valid {

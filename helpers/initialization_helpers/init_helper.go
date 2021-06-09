@@ -24,6 +24,7 @@ type config struct {
 	GoogleBucketName      *string `mapstructure:"google_bucket_name" validate:"required"`
 	IsMockDB              *bool   `mapstructure:"mock_database"`
 	IsMockStorage         *bool   `mapstructure:"mock_storage"`
+	DatabaseConfig        string  `mapstructure:"database_config"`
 }
 
 func getConfiguration() (conf config, err error) {
@@ -90,7 +91,7 @@ func Initialize() (err error) {
 	tokenHelper.InitJWT(*conf.JwtKey, *conf.AccessExpirationTime, *conf.RefreshExpirationTime)
 
 	// default is mock db
-	err = databaseService.InitDatabase(conf.IsMockDB == nil || *conf.IsMockDB)
+	err = databaseService.InitDatabase(conf.IsMockDB == nil || *conf.IsMockDB, conf.DatabaseConfig)
 	if err != nil {
 		return
 	}

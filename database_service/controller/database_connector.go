@@ -18,16 +18,16 @@ type DatabaseConnector interface {
 		Users model
 	*/
 
-	// GetUsers retrieves a list of all user model objects from the database.
-	GetUsers() (users []databaseModel.User, err error)
+	// // GetUsers retrieves a list of all user model objects from the database.
+	// GetUsers() (users []databaseModel.User, err error)
 	// GetUserByID retrieves a user model object by the user's ID from the database.
 	GetUserByID(userID int) (user databaseModel.User, err error)
 	// GetUserByEmail retrieves a user model object by the user's email from the database.
 	GetUserByEmail(email string) (user databaseModel.User, err error)
 	// CreateUser saves an user object into the database.
-	CreateUser(user databaseModel.User) (err error)
+	CreateUser(user databaseModel.User) (id int, err error)
 	// UpdateUser updates an user object into the database.
-	UpdateUser(user databaseModel.User) (err error)
+	UpdateUser(user databaseModel.User) (id int, err error)
 	// DeleteUserByID deletes an user object by the user's ID from the database.
 	DeleteUserByID(userID int) (err error)
 	// DeleteUserByEmail deletes an user object by the user's email from the database.
@@ -73,24 +73,25 @@ type DatabaseConnector interface {
 	*/
 
 	// GetSchools retrieves the list of schools from the database
-	GetSchools() (schools []databaseModel.School, err error)
+	// GetSchools() (schools []databaseModel.School, err error)
 	// GetSchoolByInstitutionAndSchoolCode retrieves a school from the database
-	GetSchoolByInstitutionAndSchoolCode(institution string, schoolCode string) (school databaseModel.School, err error)
+	// GetSchoolByInstitutionAndSchoolCode(institution string, schoolCode string) (school databaseModel.School, err error)
+	GetSchoolsFacultiesCourses() (schools []databaseModel.School, err error)
 
 	/*
 		SchoolCourses model
 	*/
 
 	// GetCoursesForSchool retrieves a list of course codes attached to a school by school courses ID
-	GetCoursesForSchool(school_id int) (schoolCoursesDetails databaseModel.SchoolCoursesDetails, err error)
+	// GetCoursesForSchool(school_id int) (schoolCoursesDetails databaseModel.SchoolCoursesDetails, err error)
 
 	/*
 		Booking model
 	*/
 	// GetSingleBooking gets a single booking details for a booking ID
-	GetSingleBooking(bookingID int) (booking databaseModel.BookingDetails, err error)
+	GetSingleBooking(bookingID int) (booking databaseModel.Booking, err error)
 	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
-	GetBookingsByID(userID int) (bookings []databaseModel.BookingDetails, err error)
+	GetBookingsByID(userID int) (bookings []databaseModel.Booking, err error)
 
 	// // GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
 	// GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []databaseModel.BookingDetails, err error)
@@ -101,9 +102,9 @@ type DatabaseConnector interface {
 	// GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
 
 	// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
-	GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.BookingDetails, err error)
+	GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error)
 	// CreateBooking saves a booking model object into the database
-	CreateBooking(availabilityID int, userID int, courseID int) (err error)
+	CreateBooking(availabilityID int, userID int, courseID int) (id int, err error)
 	// DeleteBooking deletes a booking model object into the database
 	DeleteBookingByID(bookingID int) (err error)
 
@@ -129,21 +130,21 @@ type DatabaseConnector interface {
 	GetAvailabilityByIDFromDateForSize(tutorId int, date time.Time, days int) (availabilities []databaseModel.Availability, err error)
 
 	// CreateTutorAvailability saves a tutor availability model object into the database
-	CreateTutorAvailability(tutorID int, date time.Time, timeID int) (err error)
+	CreateTutorAvailability(tutorID int, date time.Time, timeID int) (id int, err error)
 	// DeleteTutorAvailability deletes a tutor availability model object by ID from the database
 	DeleteTutorAvailabilityByID(availabilityID int) (err error)
 }
 
-func InitDatabase(isMock bool) (err error) {
+func InitDatabase(isMock bool, config string) (err error) {
 	if isMock {
 		// TODO: Chong Yan, please change the methods here for your mockdb if you'd still like to test with it
-		CurrentDatabaseConnector = InitMock()
+		// CurrentDatabaseConnector = InitMock()
 		return
 	}
 	// place the db that you want to instantiate here
 	// commenting this out until sqlite implement the required methods
 	// sqlitedb := &SQLiteDB{}
 	// sqlitedb.Init()
-	// CurrentDatabaseConnector = sqlitedb
+	CurrentDatabaseConnector, err = InitPostGres(config)
 	return
 }

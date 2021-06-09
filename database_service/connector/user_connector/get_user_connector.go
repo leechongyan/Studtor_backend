@@ -20,7 +20,7 @@ type UserConnector interface {
 	SetUserId(userId int) *userOptions
 	SetUserEmail(email string) *userOptions
 	SetUser(user userModel.User) *userOptions
-	Add() (err error)
+	Add() (id int, err error)
 	Delete() (err error)
 	GetUser() (user userModel.User, err error)
 	GetProfile() (user userModel.UserProfile, err error)
@@ -46,12 +46,12 @@ func (c *userOptions) SetUser(user userModel.User) *userOptions {
 	return c
 }
 
-func (c *userOptions) Add() (err error) {
+func (c *userOptions) Add() (id int, err error) {
 	if c.err != nil {
-		return c.err
+		return id, c.err
 	}
 	if c.user == nil {
-		return databaseError.ErrNotEnoughParameters
+		return id, databaseError.ErrNotEnoughParameters
 	}
 	// check whether should update or add new to database
 	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.user.Email())

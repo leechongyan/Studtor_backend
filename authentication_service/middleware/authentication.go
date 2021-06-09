@@ -13,8 +13,7 @@ import (
 func setGinVariables(c *gin.Context, claims *authHelper.SignedDetails) {
 	c.Set("email", claims.Email)
 	c.Set("id", strconv.Itoa(claims.ID))
-	c.Set("first_name", claims.FirstName)
-	c.Set("last_name", claims.LastName)
+	c.Set("name", claims.Name)
 	c.Set("user_type", claims.UserType)
 }
 

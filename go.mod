@@ -13,6 +13,7 @@ require (
 	google.golang.org/api v0.13.0
 	google.golang.org/appengine v1.6.1
 	google.golang.org/protobuf v1.26.0 // indirect
+	gorm.io/driver/postgres v1.1.0
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.21.10
 )

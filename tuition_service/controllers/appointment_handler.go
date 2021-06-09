@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	availabilityConnector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
 	bookingConnector "github.com/leechongyan/Studtor_backend/database_service/connector/booking_connector"
@@ -38,7 +39,7 @@ func PutAvailableTimeTutor() gin.HandlerFunc {
 
 		tutorId, _ := strconv.Atoi(c.GetString("id"))
 
-		err = availabilityConnector.Init().SetTutorId(tutorId).SetDate(slotQuery.Date).SetTimeId(*slotQuery.TimeId).Add()
+		_, err = availabilityConnector.Init().SetTutorId(tutorId).SetDate(slotQuery.Date).SetTimeId(*slotQuery.TimeId).Add()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -118,47 +119,12 @@ func getCourseFromID(courseId int) (course userModel.CourseWithSize, err error) 
 	return courseConnector.Init().SetCourseId(courseId).GetSingle()
 }
 
-func notifyBooking(availabilityId int, userId int, courseId int) (err error) {
-	// get availability details
-	availability, err := getAvailabilityFromID(availabilityId)
-	if err != nil {
-		return
-	}
-	// get tutor
-	tutor, err := getUserFromID(int(availability.TutorID))
-	if err != nil {
-		return
-	}
-
-	// get student
-	student, err := getUserFromID(userId)
-	if err != nil {
-		return
-	}
-
-	// get course name
-	course, err := getCourseFromID(courseId)
-	if err != nil {
-		return
-	}
-
-	return mailService.CurrentMailService.SendBookingConfirmation(student, tutor, course.CourseName(), availability.Date, timeslotHelper.ConvertSlotIdToTimeString(availability.TimeSlot))
+func notifyBooking(booking clientModel.BookingDetails) (err error) {
+	return mailService.CurrentMailService.SendBookingConfirmation(booking.StudentName(), booking.StudentEmail(), booking.TutorName(), booking.TutorEmail(), booking.CourseName(), booking.Date(), timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot()))
 }
 
-func notifyUnbooking(bookingDetails databaseModel.BookingDetails) (err error) {
-	// get tutor
-	tutor, err := getUserFromID(bookingDetails.TutorID)
-	if err != nil {
-		return
-	}
-
-	// get student
-	student, err := getUserFromID(bookingDetails.StudentID)
-	if err != nil {
-		return
-	}
-
-	return mailService.CurrentMailService.SendBookingCancellation(student, tutor, bookingDetails.CourseName, bookingDetails.Date, timeslotHelper.ConvertSlotIdToTimeString(bookingDetails.TimeSlot))
+func notifyUnbooking(booking clientModel.BookingDetails) (err error) {
+	return mailService.CurrentMailService.SendBookingCancellation(booking.StudentName(), booking.StudentEmail(), booking.TutorName(), booking.TutorEmail(), booking.CourseName(), booking.Date(), timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot()))
 }
 
 // Book an available timeslot with the tutor with the course id
@@ -178,14 +144,21 @@ func BookTimeTutor() gin.HandlerFunc {
 
 		uid, _ := strconv.Atoi(c.GetString("id"))
 
-		err = bookingConnector.Init().SetCourseId(courseId).SetUserId(uid).SetAvailabilityId(availabilityId).Add()
+		id, err := bookingConnector.Init().SetCourseId(courseId).SetUserId(uid).SetAvailabilityId(availabilityId).Add()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// get the full booking
+		book, err := bookingConnector.Init().SetBookingId(id).GetSingle()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// notify booking
-		err = notifyBooking(availabilityId, uid, courseId)
+		err = notifyBooking(book)
 
 		log.Printf("%v", err)
 

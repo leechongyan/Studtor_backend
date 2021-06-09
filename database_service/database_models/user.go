@@ -12,10 +12,9 @@ import (
 // User is the model for user ORM
 type User struct {
 	gorm.Model
-	ID             uint   `gorm:"primaryKey"`
-	Email          string `gorm:"primaryKey"`
-	FirstName      string
-	LastName       string
+	ID             uint
+	Name           string
+	Email          string
 	Password       string
 	Token          sql.NullString
 	UserType       string
@@ -25,4 +24,7 @@ type User struct {
 	Verified       bool
 	UserCreatedAt  time.Time
 	UserUpdatedAt  time.Time
+	Availabilities []Availability `gorm:"foreignKey:TutorID"`
+	Bookings       []Booking      `gorm:"foreignKey:StudentID"`
+	Courses        []Course       `gorm:"many2many:tutor_course;"`
 }

@@ -78,6 +78,12 @@ func main() {
 	// book an available time for a tutor
 	home.POST("/courses/:course_id/tutors/:tutor_id/availability/:availability_id", tuthandler.BookTimeTutor()) // done
 
+	// get all the notes of a course from a tutor
+	// home.GET("/courses/:course_id/tutors/:tutor_id/notes", tuthandler.GetTutorNotesForACourse()) // done
+
+	// get a note of a course from a tutor
+	// home.GET("/courses/:course_id/tutors/:tutor_id/notes/:note_id", tuthandler.GetTutorNote()) // done
+
 	// unbook a booking for a tutor (can be done by a student)
 	home.DELETE("/users/:user_id/bookings/:booking_id", tuthandler.UnbookTimeTutor()) // done
 

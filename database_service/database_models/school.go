@@ -9,8 +9,7 @@ import (
 // School is the model for schools ORM
 type School struct {
 	gorm.Model
-	ID          uint `gorm:"primaryKey"`
-	Institution string
-	SchoolCode  string
-	SchoolName  string
+	ID         uint
+	SchoolName string
+	Faculties  []Faculty
 }
