@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -8,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+
 	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	availabilityConnector "github.com/leechongyan/Studtor_backend/database_service/connector/availability_connector"
@@ -68,7 +71,7 @@ func DeleteAvailableTimeTutor() gin.HandlerFunc {
 		// tutor id is needed to check whether the availabilityid belongs to the tutor id
 		err = availabilityConnector.Init().SetTutorId(tutorId).SetAvailabilityId(availabilityId).Delete()
 		if err != nil {
-			if err == httpError.ErrUnauthorizedAccess {
+			if errors.Is(databaseError.ErrUnauthorizedAccess, err) {
 				c.JSON(http.StatusUnauthorized, err.Error())
 				return
 			}
@@ -146,6 +149,10 @@ func BookTimeTutor() gin.HandlerFunc {
 
 		id, err := bookingConnector.Init().SetCourseId(courseId).SetUserId(uid).SetAvailabilityId(availabilityId).Add()
 		if err != nil {
+			if errors.Is(err, databaseError.ErrInvalidAvailability) {
+				c.JSON(http.StatusBadRequest, err.Error())
+				return
+			}
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -192,7 +199,7 @@ func UnbookTimeTutor() gin.HandlerFunc {
 		// user id is needed to check whether the bookingid involves the user
 		err = bookingConnector.Init().SetUserId(userId).SetBookingId(bookingId).Delete()
 		if err != nil {
-			if err == httpError.ErrUnauthorizedAccess {
+			if errors.Is(err, databaseError.ErrUnauthorizedAccess) {
 				c.JSON(http.StatusUnauthorized, err.Error())
 				return
 			}

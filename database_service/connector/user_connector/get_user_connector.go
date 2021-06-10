@@ -67,7 +67,7 @@ func (c *userOptions) Add() (id int, err error) {
 	}
 	if err != nil {
 		// internal error
-		return id, databaseError.ErrDatabaseInternalError
+		return id, err
 	}
 	// user exists
 	return databaseService.CurrentDatabaseConnector.UpdateUser(databaseUser)
@@ -103,7 +103,7 @@ func (c *userOptions) GetUser() (user userModel.User, err error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return userModel.User{}, databaseError.ErrNoRecordFound
 		}
-		return userModel.User{}, databaseError.ErrDatabaseInternalError
+		return userModel.User{}, err
 	}
 	user = userModel.ConvertFromToDatabaseUserToAuthUser(databaseUser)
 	return
@@ -126,7 +126,7 @@ func (c *userOptions) GetProfile() (user userModel.UserProfile, err error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return userModel.UserProfile{}, databaseError.ErrNoRecordFound
 		}
-		return userModel.UserProfile{}, databaseError.ErrDatabaseInternalError
+		return userModel.UserProfile{}, err
 	}
 	user = userModel.ConvertFromDatabaseUserToUserProfile(databaseUser)
 	return

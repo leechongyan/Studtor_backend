@@ -77,7 +77,7 @@ func (c *courseOptions) GetSingle() (course userModel.CourseWithSize, err error)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return course, databaseError.ErrNoRecordFound
 		}
-		return course, databaseError.ErrDatabaseInternalError
+		return course, err
 	}
 	// convert to course with size
 	return userModel.ConvertFromWithoutSizeToWithSize(courseWithoutSize, tutorSize, studentSize), err
@@ -101,7 +101,7 @@ func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return courses, databaseError.ErrNoRecordFound
 		}
-		return courses, databaseError.ErrDatabaseInternalError
+		return courses, err
 	}
 	courses = make([]userModel.CourseWithSize, len(coursesWithoutSize))
 	for i, courseWithoutSize := range coursesWithoutSize {

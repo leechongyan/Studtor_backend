@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"sort"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 	"gorm.io/gorm"
 )
 
@@ -282,7 +282,7 @@ func (pgdb postgresdb) CreateBooking(availabilityID int, userID int, courseID in
 	}
 	// check whether this availability is occupied
 	if avail.Occupied {
-		return id, errors.New("IS OCCUPIED")
+		return id, databaseError.ErrInvalidAvailability
 	}
 	avail.Occupied = true
 	result = pgdb.db.Save(&avail)

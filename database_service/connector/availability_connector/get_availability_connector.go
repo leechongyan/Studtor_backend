@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
@@ -90,7 +89,7 @@ func (c *availabilityOptions) Delete() (err error) {
 			return databaseService.CurrentDatabaseConnector.DeleteTutorAvailabilityByID(*c.availabilityId)
 		}
 	}
-	return httpError.ErrUnauthorizedAccess
+	return databaseError.ErrUnauthorizedAccess
 }
 
 func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err error) {
@@ -115,7 +114,7 @@ func (c *availabilityOptions) GetSingle() (time databaseModel.Availability, err 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return time, databaseError.ErrNoRecordFound
 		}
-		return time, databaseError.ErrDatabaseInternalError
+		return time, err
 	}
 	return
 }

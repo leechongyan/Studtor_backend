@@ -62,7 +62,7 @@ func (c *tutorOptions) Add() (err error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return databaseError.ErrNoRecordFound
 		}
-		return databaseError.ErrDatabaseInternalError
+		return err
 	}
 	return
 }

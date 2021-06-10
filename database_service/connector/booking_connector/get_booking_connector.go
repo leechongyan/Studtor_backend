@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
@@ -102,7 +101,7 @@ func (c *bookingOptions) Delete() (err error) {
 		}
 	}
 
-	return httpError.ErrUnauthorizedAccess
+	return databaseError.ErrUnauthorizedAccess
 }
 
 func (c *bookingOptions) GetAll() (bookings []clientModel.BookingDetails, err error) {
@@ -137,7 +136,7 @@ func (c *bookingOptions) GetSingle() (booking clientModel.BookingDetails, err er
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return booking, databaseError.ErrNoRecordFound
 		}
-		return booking, databaseError.ErrDatabaseInternalError
+		return booking, err
 	}
 
 	return clientModel.ConvertBookingToBookingDetails(book), err

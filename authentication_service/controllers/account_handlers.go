@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -123,7 +124,7 @@ func SignUp() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, httpError.ErrExistentAccount.Error())
 			return
 		}
-		if err != nil && err == databaseError.ErrDatabaseInternalError {
+		if err != nil && !errors.Is(databaseError.ErrNoRecordFound, err) {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -160,7 +161,7 @@ func Verify() gin.HandlerFunc {
 
 		user, err := getUserAccountWithEmail(*verification.Email)
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -198,7 +199,7 @@ func Login() gin.HandlerFunc {
 		foundUser, err := getUserAccountWithEmail(*user.Email)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -243,7 +244,7 @@ func RefreshToken() gin.HandlerFunc {
 		foundUser, err := getUserAccountWithEmail(*refresh.Email)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -274,7 +275,7 @@ func Logout() gin.HandlerFunc {
 		foundUser, err := getUserAccountWithID(userId)
 		// check whether user exists
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -317,7 +318,7 @@ func GetUser() gin.HandlerFunc {
 		// check whether user exists
 		foundUser, err := getUserProfileWithID(userId)
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
@@ -336,7 +337,7 @@ func GetCurrentUser() gin.HandlerFunc {
 		// check whether user exists
 		foundUser, err := getUserProfileWithID(userId)
 		if err != nil {
-			if err == databaseError.ErrNoRecordFound {
+			if errors.Is(databaseError.ErrNoRecordFound, err) {
 				c.JSON(http.StatusUnauthorized, httpError.ErrNonExistentAccount.Error())
 				return
 			}
