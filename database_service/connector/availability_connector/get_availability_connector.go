@@ -1,12 +1,14 @@
 package availability_connector
 
 import (
+	"errors"
 	"time"
 
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+	"gorm.io/gorm"
 )
 
 type availabilityOptions struct {
@@ -103,10 +105,17 @@ func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err 
 
 func (c *availabilityOptions) GetSingle() (time databaseModel.Availability, err error) {
 	if c.err != nil {
-		return databaseModel.Availability{}, c.err
+		return time, c.err
 	}
 	if c.availabilityId == nil {
-		return databaseModel.Availability{}, databaseError.ErrNotEnoughParameters
+		return time, databaseError.ErrNotEnoughParameters
 	}
-	return databaseService.CurrentDatabaseConnector.GetSingleAvailability(*c.availabilityId)
+	time, err = databaseService.CurrentDatabaseConnector.GetSingleAvailability(*c.availabilityId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return time, databaseError.ErrNoRecordFound
+		}
+		return time, databaseError.ErrDatabaseInternalError
+	}
+	return
 }

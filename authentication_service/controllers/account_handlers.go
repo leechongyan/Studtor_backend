@@ -13,8 +13,8 @@ import (
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
 
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 	httpHelper "github.com/leechongyan/Studtor_backend/helpers/http_helpers"
 	mailService "github.com/leechongyan/Studtor_backend/mail_service"
 	storageService "github.com/leechongyan/Studtor_backend/storage_service"
@@ -44,7 +44,7 @@ func getUserProfileWithID(id int) (user userModel.UserProfile, err error) {
 }
 
 func saveUser(user userModel.User) (err error) {
-	err = userConnector.Init().SetUser(user).Add()
+	_, err = userConnector.Init().SetUser(user).Add()
 	return
 }
 
@@ -77,7 +77,7 @@ func verifyUser(user *userModel.User, verificationCode string) (err error) {
 
 func generateTokens(generateRefresh bool, user userModel.User) (token string, err error) {
 	// refresh token
-	token, refreshToken, err := authHelper.GenerateAllTokens(*user.ID(), *user.Email(), *user.FirstName(), *user.LastName(), *user.UserType())
+	token, refreshToken, err := authHelper.GenerateAllTokens(*user.ID(), *user.Email(), *user.Name(), *user.UserType())
 	if err != nil {
 		return
 	}

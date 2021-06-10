@@ -4,11 +4,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
 	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -95,7 +94,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 		if err == databaseError.ErrNoRecordFound {
 			return httpError.ErrNonExistentAccount
 		}
-		return database_errors.ErrDatabaseInternalError
+		return err
 	}
 
 	oldUser.SetToken(signedToken)
@@ -112,10 +111,7 @@ func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail st
 
 	// updating database
 	_, err = userConnector.SetUser(oldUser).Add()
-	if err != nil {
-		return database_errors.ErrDatabaseInternalError
-	}
-	return
+	return err
 }
 
 func ExtractTokenFromHeader(header string) (token string, err error) {

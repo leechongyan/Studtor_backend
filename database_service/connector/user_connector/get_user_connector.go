@@ -1,10 +1,13 @@
 package user_connector
 
 import (
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	"errors"
+
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+	"gorm.io/gorm"
 )
 
 // user can only access userModel
@@ -56,14 +59,15 @@ func (c *userOptions) Add() (id int, err error) {
 	// check whether should update or add new to database
 	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.user.Email())
 	// differentiate between no user and error in database
-	// if is database error
-	if err == databaseError.ErrDatabaseInternalError {
-		return
-	}
+
 	// if error is account does not exist then create user
 	databaseUser := userModel.ConvertFromAuthUserToDatabaseUser(*c.user)
-	if err == databaseError.ErrNoRecordFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return databaseService.CurrentDatabaseConnector.CreateUser(databaseUser)
+	}
+	if err != nil {
+		// internal error
+		return id, databaseError.ErrDatabaseInternalError
 	}
 	// user exists
 	return databaseService.CurrentDatabaseConnector.UpdateUser(databaseUser)
@@ -96,7 +100,10 @@ func (c *userOptions) GetUser() (user userModel.User, err error) {
 		return userModel.User{}, databaseError.ErrNotEnoughParameters
 	}
 	if err != nil {
-		return userModel.User{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return userModel.User{}, databaseError.ErrNoRecordFound
+		}
+		return userModel.User{}, databaseError.ErrDatabaseInternalError
 	}
 	user = userModel.ConvertFromToDatabaseUserToAuthUser(databaseUser)
 	return
@@ -116,7 +123,10 @@ func (c *userOptions) GetProfile() (user userModel.UserProfile, err error) {
 		return userModel.UserProfile{}, databaseError.ErrNotEnoughParameters
 	}
 	if err != nil {
-		return userModel.UserProfile{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return userModel.UserProfile{}, databaseError.ErrNoRecordFound
+		}
+		return userModel.UserProfile{}, databaseError.ErrDatabaseInternalError
 	}
 	user = userModel.ConvertFromDatabaseUserToUserProfile(databaseUser)
 	return

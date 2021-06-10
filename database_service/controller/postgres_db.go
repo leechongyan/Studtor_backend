@@ -83,28 +83,22 @@ func (pgdb postgresdb) DeleteUserByEmail(email string) (err error) {
 
 func (pgdb postgresdb) GetCoursesForTutor(tutorID int) (courses []databaseModel.Course, nStudents []int, nTutors []int, err error) {
 	user := databaseModel.User{}
-	result := pgdb.db.Preload("Courses").First(&user, tutorID)
+	result := pgdb.db.Preload("Courses").Preload("Courses.Tutors").First(&user, tutorID)
 	if result.Error != nil {
 		return courses, nStudents, nTutors, result.Error
 	}
 	// now query bookings
-	courses = make([]databaseModel.Course, len(user.Courses))
+	courses = user.Courses
 	nStudents = make([]int, len(user.Courses))
 	nTutors = make([]int, len(user.Courses))
-	for i, v := range user.Courses {
+	for i, v := range courses {
 		var count int64
-		course := databaseModel.Course{}
 		result = pgdb.db.Model(&databaseModel.Booking{}).Where(&databaseModel.Booking{CourseID: v.ID}).Distinct("StudentID").Count(&count)
 		if result.Error != nil {
 			return courses, nStudents, nTutors, result.Error
 		}
 		nStudents[i] = int(count)
-		result = pgdb.db.Preload("Tutors").First(&course, v.ID)
-		if result.Error != nil {
-			return courses, nStudents, nTutors, result.Error
-		}
-		nTutors[i] = len(course.Tutors)
-		courses[i] = course
+		nTutors[i] = len(v.Tutors)
 	}
 	return
 }
@@ -198,12 +192,12 @@ func (pgdb postgresdb) CreateTutorCourse(tutorID int, courseID int) (err error) 
 // DeleteTutorCourse deletes an tutor course object from the database.
 func (pgdb postgresdb) DeleteTutorCourse(tutorID int, courseID int) (err error) {
 	course := databaseModel.Course{}
-	result := pgdb.db.Preload("Tutors").First(&course, courseID)
+	result := pgdb.db.First(&course, courseID)
 	if result.Error != nil {
 		return result.Error
 	}
 	user := databaseModel.User{}
-	result = pgdb.db.Preload("Availabilities").Preload("Bookings").Preload("Courses").First(&user, tutorID)
+	result = pgdb.db.First(&user, tutorID)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -254,7 +248,7 @@ func (pgdb postgresdb) GetCourses() (courses []databaseModel.Course, nStudents [
 // GetSingleBooking gets a single booking details for a booking ID
 func (pgdb postgresdb) GetSingleBooking(bookingID int) (booking databaseModel.Booking, err error) {
 	book := databaseModel.Booking{}
-	result := pgdb.db.Preload("Availability").Preload("Course").First(&book, bookingID)
+	result := pgdb.db.Preload(clause.Associations).First(&book, bookingID)
 	return booking, result.Error
 }
 
@@ -319,13 +313,13 @@ func (pgdb postgresdb) DeleteBookingByID(bookingID int) (err error) {
 	if result.Error != nil {
 		return result.Error
 	}
-	avail := booking.Availability
-	avail.Occupied = false
-	result = pgdb.db.Save(&avail)
+	result = pgdb.db.Delete(&databaseModel.Booking{}, bookingID)
 	if result.Error != nil {
 		return result.Error
 	}
-	result = pgdb.db.Delete(&databaseModel.Booking{}, bookingID)
+	avail := booking.Availability
+	avail.Occupied = false
+	result = pgdb.db.Save(&avail)
 	return result.Error
 }
 
@@ -363,18 +357,12 @@ func (pgdb postgresdb) GetAvailabilityByIDFromDateForSize(tutorId int, date time
 
 // CreateTutorAvailability saves a tutor availability model object into the database
 func (pgdb postgresdb) CreateTutorAvailability(tutorID int, date time.Time, timeID int) (id int, err error) {
-	user := databaseModel.User{}
-	result := pgdb.db.Preload("Availabilities").Preload("Bookings").Preload("Courses").First(&user, tutorID)
-	if result.Error != nil {
-		return id, result.Error
-	}
 	avail := databaseModel.Availability{}
 	avail.Occupied = false
-	avail.Tutor = user
 	avail.TutorID = uint(tutorID)
 	avail.Date = date
 	avail.TimeSlot = timeID
-	result = pgdb.db.Create(&avail)
+	result := pgdb.db.Create(&avail)
 	return int(avail.ID), result.Error
 }
 

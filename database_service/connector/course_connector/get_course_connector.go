@@ -1,10 +1,13 @@
 package course_connector
 
 import (
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	"errors"
+
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+	"gorm.io/gorm"
 )
 
 // user can only access userModel
@@ -64,18 +67,20 @@ func (c *courseOptions) Delete() (err error) {
 
 func (c *courseOptions) GetSingle() (course userModel.CourseWithSize, err error) {
 	if c.err != nil {
-		return userModel.CourseWithSize{}, c.err
+		return course, c.err
 	}
 	if c.courseId == nil {
-		return userModel.CourseWithSize{}, databaseError.ErrNotEnoughParameters
+		return course, databaseError.ErrNotEnoughParameters
 	}
 	courseWithoutSize, studentSize, tutorSize, err := databaseService.CurrentDatabaseConnector.GetCourse(*c.courseId)
 	if err != nil {
-		return userModel.CourseWithSize{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return course, databaseError.ErrNoRecordFound
+		}
+		return course, databaseError.ErrDatabaseInternalError
 	}
 	// convert to course with size
-	course = userModel.ConvertFromWithoutSizeToWithSize(courseWithoutSize, tutorSize, studentSize)
-	return
+	return userModel.ConvertFromWithoutSizeToWithSize(courseWithoutSize, tutorSize, studentSize), err
 }
 
 func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error) {
@@ -93,7 +98,10 @@ func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error)
 		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
 	}
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return courses, databaseError.ErrNoRecordFound
+		}
+		return courses, databaseError.ErrDatabaseInternalError
 	}
 	courses = make([]userModel.CourseWithSize, len(coursesWithoutSize))
 	for i, courseWithoutSize := range coursesWithoutSize {

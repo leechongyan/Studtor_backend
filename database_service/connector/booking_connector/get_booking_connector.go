@@ -1,12 +1,14 @@
 package booking_connector
 
 import (
+	"errors"
 	"time"
 
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
 	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
 	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+	"gorm.io/gorm"
 )
 
 type bookingOptions struct {
@@ -130,8 +132,13 @@ func (c *bookingOptions) GetSingle() (booking clientModel.BookingDetails, err er
 		return booking, databaseError.ErrNotEnoughParameters
 	}
 	book, err := databaseService.CurrentDatabaseConnector.GetSingleBooking(*c.bookingId)
+
 	if err != nil {
-		return booking, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return booking, databaseError.ErrNoRecordFound
+		}
+		return booking, databaseError.ErrDatabaseInternalError
 	}
+
 	return clientModel.ConvertBookingToBookingDetails(book), err
 }

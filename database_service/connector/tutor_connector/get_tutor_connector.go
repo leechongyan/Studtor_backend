@@ -1,10 +1,13 @@
 package tutor_connector
 
 import (
-	databaseError "github.com/leechongyan/Studtor_backend/constants/errors/database_errors"
+	"errors"
+
 	userModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
+	"gorm.io/gorm"
 )
 
 type tutorOptions struct {
@@ -54,7 +57,14 @@ func (c *tutorOptions) Add() (err error) {
 	if c.tutorId == nil || c.courseId == nil {
 		return databaseError.ErrNotEnoughParameters
 	}
-	return databaseService.CurrentDatabaseConnector.CreateTutorCourse(*c.tutorId, *c.courseId)
+	err = databaseService.CurrentDatabaseConnector.CreateTutorCourse(*c.tutorId, *c.courseId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return databaseError.ErrNoRecordFound
+		}
+		return databaseError.ErrDatabaseInternalError
+	}
+	return
 }
 
 func (c *tutorOptions) Delete() (err error) {
