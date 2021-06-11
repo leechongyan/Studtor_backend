@@ -6,8 +6,8 @@ import (
 
 type Faculty struct {
 	gorm.Model
-	ID         uint
-	SchoolName string
-	Courses    []Course
-	SchoolID   uint
+	ID          uint
+	FacultyName string
+	Courses     []Course
+	SchoolID    uint
 }

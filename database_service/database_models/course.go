@@ -13,6 +13,6 @@ type Course struct {
 	ID         uint
 	CourseCode string
 	CourseName string
-	// FacultyID  uint
-	Tutors []User `gorm:"many2many:tutor_course;"`
+	FacultyID  uint
+	Tutors     []User `gorm:"many2many:tutor_course;"`
 }

@@ -88,7 +88,7 @@ func (c *userOptions) Delete() (err error) {
 
 func (c *userOptions) GetUser() (user userModel.User, err error) {
 	if c.err != nil {
-		return userModel.User{}, c.err
+		return user, c.err
 	}
 
 	var databaseUser databaseModel.User
@@ -97,21 +97,20 @@ func (c *userOptions) GetUser() (user userModel.User, err error) {
 	} else if c.email != nil {
 		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
 	} else {
-		return userModel.User{}, databaseError.ErrNotEnoughParameters
+		return user, databaseError.ErrNotEnoughParameters
 	}
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return userModel.User{}, databaseError.ErrNoRecordFound
+			return user, databaseError.ErrNoRecordFound
 		}
-		return userModel.User{}, err
+		return user, err
 	}
-	user = userModel.ConvertFromToDatabaseUserToAuthUser(databaseUser)
-	return
+	return userModel.ConvertFromToDatabaseUserToAuthUser(databaseUser), err
 }
 
 func (c *userOptions) GetProfile() (user userModel.UserProfile, err error) {
 	if c.err != nil {
-		return userModel.UserProfile{}, c.err
+		return user, c.err
 	}
 
 	var databaseUser databaseModel.User
@@ -120,14 +119,13 @@ func (c *userOptions) GetProfile() (user userModel.UserProfile, err error) {
 	} else if c.email != nil {
 		databaseUser, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.email)
 	} else {
-		return userModel.UserProfile{}, databaseError.ErrNotEnoughParameters
+		return user, databaseError.ErrNotEnoughParameters
 	}
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return userModel.UserProfile{}, databaseError.ErrNoRecordFound
+			return user, databaseError.ErrNoRecordFound
 		}
-		return userModel.UserProfile{}, err
+		return user, err
 	}
-	user = userModel.ConvertFromDatabaseUserToUserProfile(databaseUser)
-	return
+	return userModel.ConvertFromDatabaseUserToUserProfile(databaseUser), err
 }

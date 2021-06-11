@@ -146,5 +146,6 @@ func InitDatabase(isMock bool, config string) (err error) {
 	// sqlitedb := &SQLiteDB{}
 	// sqlitedb.Init()
 	CurrentDatabaseConnector, err = InitPostGres(config)
+
 	return
 }

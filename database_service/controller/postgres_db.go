@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm/clause"
 
+	csvModel "github.com/leechongyan/Studtor_backend/database_service/csv_models"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 	"gorm.io/gorm"
@@ -43,7 +44,10 @@ func InitPostGres(config string) (pgdb postgresdb, err error) {
 		return pgdb, err
 	}
 	err = pgdb.db.AutoMigrate(&databaseModel.Course{})
-	return pgdb, err
+	if err != nil {
+		return pgdb, err
+	}
+	return pgdb, CreateCourse(pgdb.db)
 }
 
 func (pgdb postgresdb) GetUserByID(userID int) (user databaseModel.User, err error) {
@@ -375,4 +379,32 @@ func (pgdb postgresdb) DeleteTutorAvailabilityByID(availabilityID int) (err erro
 func (pgdb postgresdb) GetSchoolsFacultiesCourses() (schools []databaseModel.School, err error) {
 	result := pgdb.db.Preload(clause.Associations).Preload("Faculties." + clause.Associations).Find(&schools)
 	return schools, result.Error
+}
+
+func CreateCourse(db *gorm.DB) (err error) {
+	schools, err := csvModel.ImportSchool()
+	if err != nil {
+		return err
+	}
+	faculties, err := csvModel.ImportFaculty()
+	if err != nil {
+		return err
+	}
+	courses, err := csvModel.ImportCourse()
+	if err != nil {
+		return err
+	}
+	// add schools first
+	result := db.Create(schools)
+	if result.Error != nil {
+		return result.Error
+	}
+	// add faculties next
+	result = db.Create(faculties)
+	if result.Error != nil {
+		return result.Error
+	}
+	// add courses last
+	result = db.Create(courses)
+	return result.Error
 }
