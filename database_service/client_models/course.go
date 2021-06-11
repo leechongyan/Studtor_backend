@@ -5,27 +5,18 @@ import (
 )
 
 type CourseWithSize struct {
-	id          int
-	courseCode  string
-	courseName  string
-	tutorSize   int
-	studentSize int
+	ID          int
+	CourseCode  string
+	CourseName  string
+	TutorSize   int
+	StudentSize int
 }
 
-func (course *CourseWithSize) ID() int {
-	return course.id
-}
-
-func (course *CourseWithSize) CourseName() string {
-	return course.courseName
-}
-
-func ConvertFromWithoutSizeToWithSize(courseWithoutSize databaseModel.Course, tutorSize int, studentSize int) (coureWithSize CourseWithSize) {
-	courseWithSize := CourseWithSize{}
-	courseWithSize.courseCode = courseWithoutSize.CourseCode
-	courseWithSize.courseName = courseWithoutSize.CourseName
-	courseWithSize.id = int(courseWithoutSize.ID)
-	courseWithSize.studentSize = studentSize
-	courseWithSize.tutorSize = tutorSize
+func ConvertFromWithoutSizeToWithSize(courseWithoutSize databaseModel.Course, tutorSize int, studentSize int) (courseWithSize CourseWithSize) {
+	courseWithSize.CourseCode = courseWithoutSize.CourseCode
+	courseWithSize.CourseName = courseWithoutSize.CourseName
+	courseWithSize.ID = int(courseWithoutSize.ID)
+	courseWithSize.StudentSize = studentSize
+	courseWithSize.TutorSize = tutorSize
 	return
 }

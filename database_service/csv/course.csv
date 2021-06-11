@@ -1,6 +1,6 @@
-﻿coursecode,coursename,facultyid
-CZ1003,Introductional to Computational Thinking,1
-CZ2001,Object Oriented Programming,1
-BC2402,Database Design,2
-CE1000,Python,3
-BUS1000,Finance,4
+﻿coursename,facultyid,coursecode
+Introductional to Computational Thinking,1,CZ1003
+Object Oriented Programming,1,CZ2001
+Database Design,2,BC2402
+Python,3,CE1000
+Finance,4,BUS1000

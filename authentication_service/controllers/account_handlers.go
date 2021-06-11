@@ -168,7 +168,7 @@ func Verify() gin.HandlerFunc {
 			return
 		}
 
-		// check whether verification code is correct
+		// check whether verification code is correctcc
 		err = verifyUser(&user, *verification.VKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, err.Error())
