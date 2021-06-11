@@ -22,7 +22,6 @@ func InitPostGres(config string) (pgdb postgresdb, err error) {
 	if err != nil {
 		return pgdb, err
 	}
-	// db.AutoMigrate(&User{}, &Faculty{}, &Availability{}, &Booking{}, &School{}, &Course{})
 	err = pgdb.db.AutoMigrate(&databaseModel.User{})
 	if err != nil {
 		return pgdb, err
@@ -47,7 +46,7 @@ func InitPostGres(config string) (pgdb postgresdb, err error) {
 	if err != nil {
 		return pgdb, err
 	}
-	return pgdb, CreateCourse(pgdb.db)
+	return pgdb, createCourse(pgdb.db)
 }
 
 func (pgdb postgresdb) GetUserByID(userID int) (user databaseModel.User, err error) {
@@ -381,7 +380,7 @@ func (pgdb postgresdb) GetSchoolsFacultiesCourses() (schools []databaseModel.Sch
 	return schools, result.Error
 }
 
-func CreateCourse(db *gorm.DB) (err error) {
+func createCourse(db *gorm.DB) (err error) {
 	schools, err := csvModel.ImportSchool()
 	if err != nil {
 		return err

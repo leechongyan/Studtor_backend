@@ -169,22 +169,22 @@ func UnmarshalJson(c *gin.Context) (user User, err error) {
 }
 
 type UserProfile struct {
-	id             int
-	name           string
-	email          string
-	profilePicture string
+	ID             int
+	Name           string
+	Email          string
+	ProfilePicture string
 }
 
 // conversion method from Userprofile
 func ConvertFromDatabaseUserToUserProfile(databaseuser databaseModel.User) (profile UserProfile) {
 	profile = UserProfile{}
-	profile.id = int(databaseuser.ID)
-	profile.name = databaseuser.Name
-	profile.email = databaseuser.Email
+	profile.ID = int(databaseuser.ID)
+	profile.Name = databaseuser.Name
+	profile.Email = databaseuser.Email
 	if databaseuser.ProfilePicture.Valid {
-		profile.profilePicture = databaseuser.ProfilePicture.String
+		profile.ProfilePicture = databaseuser.ProfilePicture.String
 	} else {
-		profile.profilePicture = ""
+		profile.ProfilePicture = ""
 	}
 	return profile
 }
@@ -240,6 +240,7 @@ func ConvertFromToDatabaseUserToAuthUser(databaseuser databaseModel.User) (usr U
 	usr.name = &databaseuser.Name
 	usr.password = &databaseuser.Password
 	usr.email = &databaseuser.Email
+
 	if databaseuser.ProfilePicture.Valid {
 		usr.profilePicture = &databaseuser.ProfilePicture.String
 	}
@@ -249,6 +250,9 @@ func ConvertFromToDatabaseUserToAuthUser(databaseuser databaseModel.User) (usr U
 	usr.userType = &databaseuser.UserType
 	if databaseuser.VKey.Valid {
 		usr.vKey = &databaseuser.VKey.String
+	}
+	if databaseuser.RefreshToken.Valid {
+		usr.refreshToken = &databaseuser.RefreshToken.String
 	}
 	usr.verified = databaseuser.Verified
 	return usr

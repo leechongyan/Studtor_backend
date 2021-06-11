@@ -57,11 +57,12 @@ func (c *userOptions) Add() (id int, err error) {
 		return id, databaseError.ErrNotEnoughParameters
 	}
 	// check whether should update or add new to database
-	_, err = databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.user.Email())
+	foundUser, err := databaseService.CurrentDatabaseConnector.GetUserByEmail(*c.user.Email())
 	// differentiate between no user and error in database
 
 	// if error is account does not exist then create user
 	databaseUser := userModel.ConvertFromAuthUserToDatabaseUser(*c.user)
+	databaseUser.ID = foundUser.ID
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return databaseService.CurrentDatabaseConnector.CreateUser(databaseUser)
 	}

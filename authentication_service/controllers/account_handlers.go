@@ -93,7 +93,6 @@ func isExpiredClient(user userModel.User) (expired bool) {
 	if user.RefreshToken() == nil {
 		return true
 	}
-
 	_, err := authHelper.ValidateToken(*user.RefreshToken())
 	return err != nil
 }
@@ -344,7 +343,6 @@ func GetCurrentUser() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
-
 		c.JSON(http.StatusOK, foundUser)
 	}
 }
