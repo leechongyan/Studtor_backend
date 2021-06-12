@@ -93,9 +93,9 @@ func (c *courseOptions) GetAll() (courses []userModel.CourseWithSize, err error)
 	var studentSizes []int
 
 	if c.tutorId != nil {
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForTutor(*c.tutorId)
+		coursesWithoutSize, studentSizes, tutorSizes, err = databaseService.CurrentDatabaseConnector.GetCoursesForTutor(*c.tutorId)
 	} else {
-		coursesWithoutSize, tutorSizes, studentSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
+		coursesWithoutSize, studentSizes, tutorSizes, err = databaseService.CurrentDatabaseConnector.GetCourses()
 	}
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

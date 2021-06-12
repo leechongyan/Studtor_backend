@@ -213,7 +213,7 @@ func (pgdb postgresdb) GetCourse(courseID int) (course databaseModel.Course, nSt
 		return course, nStudents, nTutors, result.Error
 	}
 	var count int64
-	result = pgdb.db.Model(&databaseModel.Booking{}).Where(&databaseModel.Booking{CourseID: uint(courseID)}).Distinct("UserID").Count(&count)
+	result = pgdb.db.Model(&databaseModel.Booking{}).Where(&databaseModel.Booking{CourseID: uint(courseID)}).Distinct("StudentID").Count(&count)
 	if result.Error != nil {
 		return course, nStudents, nTutors, result.Error
 	}
