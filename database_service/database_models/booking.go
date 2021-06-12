@@ -10,6 +10,7 @@ type Booking struct { // belongs to so TODO need to change
 	ID             uint
 	Student        User `gorm:"foreignKey:StudentID"`
 	StudentID      uint
+	TutorID        uint
 	Availability   Availability
 	AvailabilityID uint
 	Course         Course

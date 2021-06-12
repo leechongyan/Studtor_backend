@@ -87,8 +87,11 @@ func main() {
 	// unbook a booking for a tutor (can be done by a student)
 	home.DELETE("/users/:user_id/bookings/:booking_id", tuthandler.UnbookTimeTutor()) // done
 
-	// get all the booked time for a user or a tutor
-	home.GET("/users/:user_id/bookings", tuthandler.GetAllBookedTime()) // done
+	// get all the booked time for a student
+	home.GET("/user/bookings", tuthandler.GetAllStudentBookedTime()) // done
+
+	// get all the booked time for a tutor
+	home.GET("/tutors/:tutor_id/bookings", tuthandler.GetAllTutorBookedTime()) // done
 	// end of version v1
 
 	router.Run(":3000")

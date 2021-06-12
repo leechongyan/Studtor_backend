@@ -90,19 +90,18 @@ type DatabaseConnector interface {
 	*/
 	// GetSingleBooking gets a single booking details for a booking ID
 	GetSingleBooking(bookingID int) (booking databaseModel.Booking, err error)
-	// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
-	GetBookingsByID(userID int) (bookings []databaseModel.Booking, err error)
+	// GetBookingsForStudentByID retrieves a list of all bookings by a student, as indicated by userID, with no time constraints
+	GetBookingsForStudentByID(userID int) (bookings []databaseModel.Booking, err error)
 
-	// // GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
-	// GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-	// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, ending with time toTime
-	// GetBookingsByIDTo(userID int, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-	// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID,
-	// // starting from time fromTime and ending with time toTime
-	// GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
+	// GetBookingsForStudentByIDFromDateForSize retrieves a list of all bookings for a student from a date up to x days
+	GetBookingsForStudentByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error)
 
-	// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
-	GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error)
+	// GetBookingsForTutorByID retrieves a list of all bookings by a tutor, as indicated by userID, with no time constraints
+	GetBookingsForTutorByID(userID int) (bookings []databaseModel.Booking, err error)
+
+	// GetBookingsForTutorByIDFromDateForSize retrieves a list of all bookings for a tutor from a date up to x days
+	GetBookingsForTutorByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error)
+
 	// CreateBooking saves a booking model object into the database
 	CreateBooking(availabilityID int, userID int, courseID int) (id int, err error)
 	// DeleteBooking deletes a booking model object into the database

@@ -96,8 +96,11 @@ func (c *availabilityOptions) GetAll() (times []databaseModel.Availability, err 
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.tutorId == nil || c.date.IsZero() || c.days == nil {
+	if c.tutorId == nil {
 		return nil, databaseError.ErrNotEnoughParameters
+	}
+	if c.date.IsZero() || c.days == nil {
+		return databaseService.CurrentDatabaseConnector.GetAvailabilityByID(*c.tutorId)
 	}
 	return databaseService.CurrentDatabaseConnector.GetAvailabilityByIDFromDateForSize(*c.tutorId, c.date, *c.days)
 }

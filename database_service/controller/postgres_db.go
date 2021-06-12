@@ -256,23 +256,27 @@ func (pgdb postgresdb) GetSingleBooking(bookingID int) (booking databaseModel.Bo
 }
 
 // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
-func (pgdb postgresdb) GetBookingsByID(userID int) (bookings []databaseModel.Booking, err error) {
+func (pgdb postgresdb) GetBookingsForStudentByID(userID int) (bookings []databaseModel.Booking, err error) {
 	user := databaseModel.User{}
-	result := pgdb.db.Preload(clause.Associations).Preload("Bookings."+clause.Associations).Preload("Bookings.Availability."+clause.Associations).First(&user, userID)
+	result := pgdb.db.Preload(clause.Associations).Preload("StudentBookings."+clause.Associations).Preload("StudentBookings.Availability."+clause.Associations).First(&user, userID)
+	return user.StudentBookings, result.Error
+}
+
+func (pgdb postgresdb) GetBookingsForTutorByID(userID int) (bookings []databaseModel.Booking, err error) {
+	user := databaseModel.User{}
+	result := pgdb.db.Preload(clause.Associations).Preload("TutorBookings."+clause.Associations).Preload("TutorBookings.Availability."+clause.Associations).First(&user, userID)
+	return user.TutorBookings, result.Error
+}
+
+// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
+func (pgdb postgresdb) GetBookingsForStudentByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error) {
+	result := pgdb.db.Preload(clause.Associations).Preload("Availability."+clause.Associations).Where("student_id = ?", userID).Where("date BETWEEN ? AND ?", date, date.AddDate(0, 0, days)).Find(&bookings)
 	return bookings, result.Error
 }
 
-// // GetBookingsByIDFrom retrieves a list of all bookings by a user, as indicated by userID, starting from time fromTime
-// GetBookingsByIDFrom(userID int, fromTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, ending with time toTime
-// GetBookingsByIDTo(userID int, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-// // GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID,
-// // starting from time fromTime and ending with time toTime
-// GetBookingsByIDFromTo(userID int, fromTime time.Time, toTime time.Time) (bookings []databaseModel.BookingDetails, err error)
-
-// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
-func (pgdb postgresdb) GetBookingsByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error) {
-	return
+func (pgdb postgresdb) GetBookingsForTutorByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error) {
+	result := pgdb.db.Preload(clause.Associations).Preload("Availability."+clause.Associations).Where("tutor_id = ?", userID).Where("date BETWEEN ? AND ?", date, date.AddDate(0, 0, days)).Find(&bookings)
+	return bookings, result.Error
 }
 
 // CreateBooking saves a booking model object into the database
@@ -292,17 +296,7 @@ func (pgdb postgresdb) CreateBooking(availabilityID int, userID int, courseID in
 	if result.Error != nil {
 		return id, result.Error
 	}
-	// course := Course{}
-	// result = db.First(&course, courseID)
-	// if result.Error != nil {
-	// 	return result.Error
-	// }
-	// student := User{}
-	// result = db.First(&student, userID)
-	// if result.Error != nil {
-	// 	return result.Error
-	// }
-	booking := databaseModel.Booking{StudentID: uint(userID), AvailabilityID: uint(availabilityID), CourseID: uint(courseID)}
+	booking := databaseModel.Booking{StudentID: uint(userID), TutorID: avail.TutorID, AvailabilityID: uint(availabilityID), CourseID: uint(courseID)}
 
 	// create a booking
 	result = pgdb.db.Create(&booking)
@@ -337,25 +331,16 @@ func (pgdb postgresdb) GetAvailabilityByID(tutorID int) (availabilities []databa
 	return user.Availabilities, result.Error
 }
 
-// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, starting from time fromTime
-// GetAvailabilityByIDFrom(tutorID int, fromTime time.Time) (availabilities []databaseModel.Availability, err error)
-// GetAvailabilityByID retrieves a list of all available timeslots for a tutor, ending with time toTime
-// GetAvailabilityByIDTo(tutorID int, toTime time.Time) (availabilities []databaseModel.Availability, err error)
-
 // GetSingleAvailability gets an availability information based on the availability ID
 func (pgdb postgresdb) GetSingleAvailability(availabilityID int) (availability databaseModel.Availability, err error) {
-	avail := databaseModel.Availability{}
-	result := pgdb.db.Preload("Tutor").First(&avail, availabilityID)
-	return avail, result.Error
+	result := pgdb.db.First(&availability, availabilityID)
+	return availability, result.Error
 }
-
-// GetAvailabilityByID retrieves a list of all available timeslots for a tutor,
-// starting from time fromTime and ending with time toTime
-// GetAvailabilityByIDFromTo(tutorID int, fromTime time.Time, toTime time.Time) (availabilities []databaseModel.Availability, err error)
 
 // GetAvailabiltyByIDFromDateForSize retrieves a list of all available timeslots for a tutor from a date up to x days
 func (pgdb postgresdb) GetAvailabilityByIDFromDateForSize(tutorId int, date time.Time, days int) (availabilities []databaseModel.Availability, err error) {
-	return
+	result := pgdb.db.Where("tutor_id = ?", tutorId).Where("date BETWEEN ? AND ?", date, date.AddDate(0, 0, days)).Find(&availabilities)
+	return availabilities, result.Error
 }
 
 // CreateTutorAvailability saves a tutor availability model object into the database

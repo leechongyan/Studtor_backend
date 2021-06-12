@@ -6,6 +6,7 @@ import (
 
 	clientModel "github.com/leechongyan/Studtor_backend/database_service/client_models"
 	databaseService "github.com/leechongyan/Studtor_backend/database_service/controller"
+	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
 	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 	"gorm.io/gorm"
 )
@@ -18,6 +19,7 @@ type bookingOptions struct {
 	date           time.Time
 	days           *int
 	err            error
+	isTutor        bool
 }
 
 type BookingConnector interface {
@@ -28,6 +30,7 @@ type BookingConnector interface {
 	SetDate(date time.Time) *bookingOptions
 	SetTimeId(timeId int) *bookingOptions
 	SetDays(days int) *bookingOptions
+	SetIsTutor(isTutor bool) *bookingOptions
 	Add() (err error)
 	Delete() (err error)
 	GetAll() (bookings []clientModel.BookingDetails, err error)
@@ -69,6 +72,11 @@ func (c *bookingOptions) SetDays(days int) *bookingOptions {
 	return c
 }
 
+func (c *bookingOptions) SetIsTutor(isTutor bool) *bookingOptions {
+	c.isTutor = isTutor
+	return c
+}
+
 func (c *bookingOptions) Add() (id int, err error) {
 	if c.err != nil {
 		return id, c.err
@@ -90,13 +98,24 @@ func (c *bookingOptions) Delete() (err error) {
 		return databaseError.ErrNotEnoughParameters
 	}
 
-	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsByID(*c.userId)
+	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForTutorByID(*c.userId)
 	if err != nil {
 		return
 	}
 
 	for _, tutorBooking := range tutorBookings {
 		if tutorBooking.ID == uint(*c.bookingId) {
+			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
+		}
+	}
+
+	studentBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForStudentByID(*c.userId)
+	if err != nil {
+		return
+	}
+
+	for _, studentBooking := range studentBookings {
+		if studentBooking.ID == uint(*c.bookingId) {
 			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
 		}
 	}
@@ -108,11 +127,24 @@ func (c *bookingOptions) GetAll() (bookings []clientModel.BookingDetails, err er
 	if c.err != nil {
 		return nil, c.err
 	}
-	if c.userId == nil || c.date.IsZero() || c.days == nil {
+	if c.userId == nil {
 		return nil, databaseError.ErrNotEnoughParameters
 	}
+	var books []databaseModel.Booking
+	if c.date.IsZero() || c.days == nil {
+		if c.isTutor {
+			books, err = databaseService.CurrentDatabaseConnector.GetBookingsForTutorByID(*c.userId)
+		} else {
+			books, err = databaseService.CurrentDatabaseConnector.GetBookingsForStudentByID(*c.userId)
+		}
+	} else {
+		if c.isTutor {
+			books, err = databaseService.CurrentDatabaseConnector.GetBookingsForTutorByIDFromDateForSize(*c.userId, c.date, *c.days)
+		} else {
+			books, err = databaseService.CurrentDatabaseConnector.GetBookingsForStudentByIDFromDateForSize(*c.userId, c.date, *c.days)
+		}
+	}
 
-	books, err := databaseService.CurrentDatabaseConnector.GetBookingsByIDFromDateForSize(*c.userId, c.date, *c.days)
 	if err != nil {
 		return bookings, err
 	}

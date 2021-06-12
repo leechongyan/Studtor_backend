@@ -100,7 +100,17 @@ func GetAvailableTimeTutor() gin.HandlerFunc {
 			return
 		}
 
-		times, err := availabilityConnector.Init().SetTutorId(tutId).SetDays(*slotQuery.Days).SetDate(slotQuery.Date).GetAll()
+		availabilityConnector := availabilityConnector.Init().SetTutorId(tutId)
+
+		if !slotQuery.Date.IsZero() {
+			availabilityConnector.SetDate(slotQuery.Date)
+		}
+
+		if slotQuery.Days != nil {
+			availabilityConnector.SetDays(*slotQuery.Days)
+		}
+
+		times, err := availabilityConnector.GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -123,11 +133,11 @@ func getCourseFromID(courseId int) (course userModel.CourseWithSize, err error) 
 }
 
 func notifyBooking(booking clientModel.BookingDetails) (err error) {
-	return mailService.CurrentMailService.SendBookingConfirmation(booking.StudentName(), booking.StudentEmail(), booking.TutorName(), booking.TutorEmail(), booking.CourseName(), booking.Date(), timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot()))
+	return mailService.CurrentMailService.SendBookingConfirmation(booking.StudentName, booking.StudentEmail, booking.TutorName, booking.TutorEmail, booking.CourseName, booking.Date, timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot))
 }
 
 func notifyUnbooking(booking clientModel.BookingDetails) (err error) {
-	return mailService.CurrentMailService.SendBookingCancellation(booking.StudentName(), booking.StudentEmail(), booking.TutorName(), booking.TutorEmail(), booking.CourseName(), booking.Date(), timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot()))
+	return mailService.CurrentMailService.SendBookingCancellation(booking.StudentName, booking.StudentEmail, booking.TutorName, booking.TutorEmail, booking.CourseName, booking.Date, timeslotHelper.ConvertSlotIdToTimeString(booking.TimeSlot))
 }
 
 // Book an available timeslot with the tutor with the course id
@@ -217,9 +227,40 @@ func UnbookTimeTutor() gin.HandlerFunc {
 }
 
 // Get all the booked time of a user with pagination
-func GetAllBookedTime() gin.HandlerFunc {
+func GetAllStudentBookedTime() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.GetString("id") != c.Param("user_id") {
+		var slotQuery models.TimePaginatedQuery
+		err := httpHelper.ExtractGetRequestBody(c, &slotQuery)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		userId, _ := strconv.Atoi(c.GetString("id"))
+
+		bookingConnector := bookingConnector.Init().SetUserId(userId).SetIsTutor(false)
+
+		if !slotQuery.Date.IsZero() {
+			bookingConnector.SetDate(slotQuery.Date)
+		}
+
+		if slotQuery.Days != nil {
+			bookingConnector.SetDays(*slotQuery.Days)
+		}
+
+		times, err := bookingConnector.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, times)
+	}
+}
+
+// Get all the booked time of a user with pagination
+func GetAllTutorBookedTime() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetString("id") != c.Param("tutor_id") {
 			c.JSON(http.StatusUnauthorized, httpError.ErrUnauthorizedAccess.Error())
 			return
 		}
@@ -233,12 +274,21 @@ func GetAllBookedTime() gin.HandlerFunc {
 
 		userId, _ := strconv.Atoi(c.GetString("id"))
 
-		times, err := bookingConnector.Init().SetUserId(userId).SetDate(slotQuery.Date).SetDays(*slotQuery.Days).GetAll()
+		bookingConnector := bookingConnector.Init().SetUserId(userId).SetIsTutor(true)
+
+		if !slotQuery.Date.IsZero() {
+			bookingConnector.SetDate(slotQuery.Date)
+		}
+
+		if slotQuery.Days != nil {
+			bookingConnector.SetDays(*slotQuery.Days)
+		}
+
+		times, err := bookingConnector.GetAll()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
-
 		c.JSON(http.StatusOK, times)
 	}
 }

@@ -17,8 +17,8 @@ type TutorPaginatedQuery struct {
 // default end at end
 // need state just the date, time no need to specify
 type TimePaginatedQuery struct {
-	Date time.Time `form:"date" validate:"required"`
-	Days *int      `form:"days" validate:"required"`
+	Date time.Time `form:"date"`
+	Days *int      `form:"days"`
 }
 
 type TimeSlot struct {
