@@ -17,17 +17,9 @@ Configure the config file:
 * Please change the server email and password accordingly
 * Set expiration time in hours
 ```yml
-port: ":3000"
-
 jwtKey: "9761278367815487"
-accessExpirationTime: "1"
-refreshExpirationTime: "2"
-serverEmail: "studtorr@gmail.com"
-serverEmailPW: "password"
-
-google_bucket_name: "studtor"
-mock_database: "true"
-mock_storage: "true"
+accessExpirationTime: 1
+refreshExpirationTime: 2
 ```
 
 ## API Endpoints
@@ -41,8 +33,7 @@ Request Body:
 
 ```
 {
-    "first_name": "Jeff",
-    "last_name": "Lee",
+    "name": "Jeff Lee",
     "password": "password1",
     "email": "clee051@e.ntu.edu.sg",
     "user_type": "USER",
@@ -64,7 +55,7 @@ Request Body:
 ```
 {
     "email": "clee051@e.ntu.edu.sg",
-    "verification_key": "838291"
+    "verification_key": "123456"
 }
 ```
 
@@ -134,8 +125,7 @@ Expected Returns:
 ```
 {
     "ID": 0,
-    "FirsName": "Jeff",
-    "LastName": "Lee",
+    "Name": "Jeff Lee",
     "Email": "clee051@e.ntu.edu.sg",
     "ProfilePicture": "IMAGE_URL"
 }
@@ -153,8 +143,7 @@ Expected Returns:
 ```
 {
     "ID": 0,
-    "FirsName": "Jeff",
-    "LastName": "Lee",
+    "Name": "Jeff Lee",
     "Email": "clee051@e.ntu.edu.sg",
     "ProfilePicture": "IMAGE_URL"
 }

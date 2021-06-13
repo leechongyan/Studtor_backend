@@ -114,8 +114,11 @@ import(
 // call init to get the connector 
 connector := bookingConnector.Init()
 
-// get all booking for a user for 7 days
-bookings, err := bookingConnector.Init().SetUserId(1).SetDate("Set a start date").SetDays(7).GetAll()
+// get all booking for a tutor for 7 days
+bookings, err := bookingConnector.Init().SetIsTutor(true).SetUserId(1).SetDate("Set a start date").SetDays(7).GetAll()
+
+// get all booking for a student for 7 days
+bookings, err := bookingConnector.Init().SetIsTutor(False).SetUserId(1).SetDate("Set a start date").SetDays(7).GetAll()
 
 // add a booking for a student
 err := bookingConnector.Init().SetUserId(1).SetCourseId(2).SetAvailabilityId(3).Add()

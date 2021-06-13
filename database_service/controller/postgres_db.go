@@ -16,6 +16,14 @@ type postgresdb struct {
 	db *gorm.DB
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Initialise postgres connection, export schema and prepopulate courses, schools and faculties
 func InitPostGres(config string) (pgdb postgresdb, err error) {
 	pgdb.db, err = gorm.Open(postgres.Open(config), &gorm.Config{})
 	if err != nil {
@@ -48,6 +56,7 @@ func InitPostGres(config string) (pgdb postgresdb, err error) {
 	return pgdb, createCourse(pgdb.db)
 }
 
+// GetUserByID retrieves a user model object by the user's id from the database
 func (pgdb postgresdb) GetUserByID(userID int) (user databaseModel.User, err error) {
 	result := pgdb.db.Preload("Availabilities").Preload("Bookings").Preload("Courses").First(&user, userID)
 	return user, result.Error
@@ -83,13 +92,14 @@ func (pgdb postgresdb) DeleteUserByEmail(email string) (err error) {
 	return result.Error
 }
 
+// GetCoursesForTutor gets a list of courses for a tutor
 func (pgdb postgresdb) GetCoursesForTutor(tutorID int) (courses []databaseModel.Course, nStudents []int, nTutors []int, err error) {
 	user := databaseModel.User{}
 	result := pgdb.db.Preload("Courses").Preload("Courses.Tutors").First(&user, tutorID)
 	if result.Error != nil {
 		return courses, nStudents, nTutors, result.Error
 	}
-	// now query bookings
+
 	courses = user.Courses
 	nStudents = make([]int, len(user.Courses))
 	nTutors = make([]int, len(user.Courses))
@@ -113,13 +123,6 @@ func (pgdb postgresdb) GetTutorsForCourse(courseID int) (tutors []databaseModel.
 		return tutors, result.Error
 	}
 	return course.Tutors, err
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // GetTutorsForCourseFromIDOfSize retrieves a list of tutors for a particular course from the database,
@@ -176,8 +179,6 @@ func (pgdb postgresdb) GetTutorsForCourseOfSize(courseID int, size int) (tutors 
 // CreateTutorCourse saves a tutor_course model object into the database.
 // This function is called when a tutor registers interest to teach a course.
 func (pgdb postgresdb) CreateTutorCourse(tutorID int, courseID int) (err error) {
-	// retrieve Course from CourseID
-	// first retrieve tutor
 	course := databaseModel.Course{}
 	result := pgdb.db.First(&course, courseID)
 	if result.Error != nil {
@@ -206,6 +207,7 @@ func (pgdb postgresdb) DeleteTutorCourse(tutorID int, courseID int) (err error) 
 	return pgdb.db.Model(&course).Association("Tutors").Delete(user)
 }
 
+// GetCourse gets a course by its id
 func (pgdb postgresdb) GetCourse(courseID int) (course databaseModel.Course, nStudents int, nTutors int, err error) {
 	result := pgdb.db.Preload("Tutors").First(&course, courseID)
 	if result.Error != nil {
@@ -217,11 +219,6 @@ func (pgdb postgresdb) GetCourse(courseID int) (course databaseModel.Course, nSt
 		return course, nStudents, nTutors, result.Error
 	}
 	return course, int(count), len(course.Tutors), err
-}
-
-func (pgdb postgresdb) CreateCourse(course databaseModel.Course) (id int, err error) {
-	result := pgdb.db.Create(&course)
-	return id, result.Error
 }
 
 // GetCourses retrieves a list of all courses, along with the number of students
@@ -254,25 +251,27 @@ func (pgdb postgresdb) GetSingleBooking(bookingID int) (booking databaseModel.Bo
 	return booking, result.Error
 }
 
-// GetBookingsByID retrieves a list of all bookings by a user, as indicated by userID, with no time constraints
+// GetBookingsForStudentByID retrieves a list of all bookings by a student, as indicated by userID, with no time constraints
 func (pgdb postgresdb) GetBookingsForStudentByID(userID int) (bookings []databaseModel.Booking, err error) {
 	user := databaseModel.User{}
 	result := pgdb.db.Preload(clause.Associations).Preload("StudentBookings."+clause.Associations).Preload("StudentBookings.Availability."+clause.Associations).First(&user, userID)
 	return user.StudentBookings, result.Error
 }
 
+// GetBookingsForTutorByID retrieves a list of all bookings by a tutor, as indicated by userID, with no time constraints
 func (pgdb postgresdb) GetBookingsForTutorByID(userID int) (bookings []databaseModel.Booking, err error) {
 	user := databaseModel.User{}
 	result := pgdb.db.Preload(clause.Associations).Preload("TutorBookings."+clause.Associations).Preload("TutorBookings.Availability."+clause.Associations).First(&user, userID)
 	return user.TutorBookings, result.Error
 }
 
-// GetBookingsByIDFromDateForSize retrieves a list of all bookings for a user from a date up to x days
+// GetBookingsForStudentByIDFromDateForSize retrieves a list of all bookings for a student from a date up to x days
 func (pgdb postgresdb) GetBookingsForStudentByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error) {
 	result := pgdb.db.Preload(clause.Associations).Preload("Availability."+clause.Associations).Where("student_id = ?", userID).Where("date BETWEEN ? AND ?", date, date.AddDate(0, 0, days)).Find(&bookings)
 	return bookings, result.Error
 }
 
+// GetBookingsForTutorByIDFromDateForSize retrieves a list of all bookings for a tutor from a date up to x days
 func (pgdb postgresdb) GetBookingsForTutorByIDFromDateForSize(userID int, date time.Time, days int) (bookings []databaseModel.Booking, err error) {
 	result := pgdb.db.Preload(clause.Associations).Preload("Availability."+clause.Associations).Where("tutor_id = ?", userID).Where("date BETWEEN ? AND ?", date, date.AddDate(0, 0, days)).Find(&bookings)
 	return bookings, result.Error
@@ -355,11 +354,13 @@ func (pgdb postgresdb) DeleteTutorAvailabilityByID(availabilityID int) (err erro
 	return result.Error
 }
 
+// GetSchoolsFacultiesCourses retrieves a list of schools, with its faculties and courses
 func (pgdb postgresdb) GetSchoolsFacultiesCourses() (schools []databaseModel.School, err error) {
 	result := pgdb.db.Preload(clause.Associations).Preload("Faculties." + clause.Associations).Find(&schools)
 	return schools, result.Error
 }
 
+// createCourse creates all courses, tagging them with schools and faculties
 func createCourse(db *gorm.DB) (err error) {
 	schools, err := csvModel.ImportSchool()
 	if err != nil {
