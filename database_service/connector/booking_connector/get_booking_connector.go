@@ -86,7 +86,34 @@ func (c *bookingOptions) Add() (id int, err error) {
 		return id, databaseError.ErrNotEnoughParameters
 	}
 
+	// check whether availability is valid
+	err = isValidBooking(*c.availabilityId, *c.courseId)
+	if err != nil {
+		return id, err
+	}
+
 	return databaseService.CurrentDatabaseConnector.CreateBooking(*c.availabilityId, *c.userId, *c.courseId)
+}
+
+func isValidBooking(availabilityId int, courseId int) error {
+	avail, err := databaseService.CurrentDatabaseConnector.GetSingleAvailability(availabilityId)
+	if err != nil {
+		return err
+	}
+	if avail.Occupied {
+		// if is occupied then return error
+		return databaseError.ErrInvalidAvailability
+	}
+
+	courses := avail.Tutor.Courses
+	for _, course := range courses {
+		if int(course.ID) == courseId {
+			// if tutor teach the course, then return no error
+			return nil
+		}
+	}
+	return databaseError.ErrInvalidBooking
+
 }
 
 func (c *bookingOptions) Delete() (err error) {
@@ -98,25 +125,34 @@ func (c *bookingOptions) Delete() (err error) {
 		return databaseError.ErrNotEnoughParameters
 	}
 
-	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForTutorByID(*c.userId)
+	err = isValidUnbooking(*c.userId, *c.bookingId)
 	if err != nil {
-		return
+		return err
+	}
+
+	return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
+}
+
+func isValidUnbooking(userId int, bookingId int) error {
+	tutorBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForTutorByID(userId)
+	if err != nil {
+		return err
 	}
 
 	for _, tutorBooking := range tutorBookings {
-		if tutorBooking.ID == uint(*c.bookingId) {
-			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
+		if tutorBooking.ID == uint(bookingId) {
+			return nil
 		}
 	}
 
-	studentBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForStudentByID(*c.userId)
+	studentBookings, err := databaseService.CurrentDatabaseConnector.GetBookingsForStudentByID(userId)
 	if err != nil {
-		return
+		return err
 	}
 
 	for _, studentBooking := range studentBookings {
-		if studentBooking.ID == uint(*c.bookingId) {
-			return databaseService.CurrentDatabaseConnector.DeleteBookingByID(*c.bookingId)
+		if studentBooking.ID == uint(bookingId) {
+			return nil
 		}
 	}
 

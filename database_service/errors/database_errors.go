@@ -9,6 +9,7 @@ import "errors"
 var ErrInvalidAvailability = errors.New("availability is occupied")
 var ErrNoRecordFound = errors.New("no records found")
 var ErrUnauthorizedAccess = errors.New("unauthorized access")
+var ErrInvalidBooking = errors.New("Tutor does not teach this course")
 
 // Database connector errors
 // validation error

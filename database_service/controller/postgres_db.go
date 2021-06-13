@@ -9,7 +9,6 @@ import (
 
 	csvModel "github.com/leechongyan/Studtor_backend/database_service/csv_models"
 	databaseModel "github.com/leechongyan/Studtor_backend/database_service/database_models"
-	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 	"gorm.io/gorm"
 )
 
@@ -287,10 +286,6 @@ func (pgdb postgresdb) CreateBooking(availabilityID int, userID int, courseID in
 	if result.Error != nil {
 		return id, result.Error
 	}
-	// check whether this availability is occupied
-	if avail.Occupied {
-		return id, databaseError.ErrInvalidAvailability
-	}
 	avail.Occupied = true
 	result = pgdb.db.Save(&avail)
 	if result.Error != nil {
@@ -333,7 +328,7 @@ func (pgdb postgresdb) GetAvailabilityByID(tutorID int) (availabilities []databa
 
 // GetSingleAvailability gets an availability information based on the availability ID
 func (pgdb postgresdb) GetSingleAvailability(availabilityID int) (availability databaseModel.Availability, err error) {
-	result := pgdb.db.First(&availability, availabilityID)
+	result := pgdb.db.Preload(clause.Associations).Preload("Tutor."+clause.Associations).First(&availability, availabilityID)
 	return availability, result.Error
 }
 
