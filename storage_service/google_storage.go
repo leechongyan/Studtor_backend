@@ -7,7 +7,7 @@ import (
 	nurl "net/url"
 
 	"cloud.google.com/go/storage"
-	storageError "github.com/leechongyan/Studtor_backend/constants/errors/storage_errors"
+	storageError "github.com/leechongyan/Studtor_backend/storage_service/errors"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 )

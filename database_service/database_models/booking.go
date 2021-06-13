@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 // Follow conventions here: https://gorm.io/docs/models.html#Conventions
 
 // Booking is the model for bookings ORM
-type Booking struct { // belongs to so TODO need to change
+type Booking struct {
 	gorm.Model
 	ID             uint
 	Student        User `gorm:"foreignKey:StudentID"`
