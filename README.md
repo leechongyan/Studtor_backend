@@ -8,17 +8,17 @@ Configure the config file:
 * Please change the server email and password accordingly
 * Set expiration time in hours
 ```yml
-port: ":3000"
-
 jwtKey: "9761278367815487"
-accessExpirationTime: "1"
-refreshExpirationTime: "2"
+accessExpirationTime: 1
+refreshExpirationTime: 2
 serverEmail: "studtorr@gmail.com"
 serverEmailPW: "password"
 
+database_config: "host=localhost user=postgres password=? dbname=? port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
 google_bucket_name: "studtor"
-mock_database: "true"
-mock_storage: "true"
+mock_database: false
+mock_storage: false
 ```
 
 ## Usage
@@ -74,7 +74,9 @@ go run main.go
 
 ##### (DELETE) localhost:3000/v1/users/:user_id/bookings/:booking_id
 
-##### (GET) localhost:3000/v1/users/:user_id/bookings
+##### (GET) localhost:3000/v1/user/bookings
+
+##### (GET) localhost:3000/v1/tutors/1/bookings
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
