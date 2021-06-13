@@ -6,4 +6,8 @@ refreshExpirationTime: "2"
 serverEmail: "server_email"
 serverEmailPW: "server_email_password"
 
+database_config: "host=localhost user=postgres password=xxx dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+google_bucket_name: "studtor"
 mock_database: "true"
+mock_storage: "true"

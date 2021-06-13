@@ -18,5 +18,11 @@ config
 .vs
 .env
 
+# cred file
+cred.json
+
+# log file
+logs/*.log
+
 # Dependency directories (remove the comment below to include it)
 # vendor/

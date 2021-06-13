@@ -1,26 +1,23 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	authhandler "github.com/leechongyan/Studtor_backend/authentication_service/controllers"
-	"github.com/leechongyan/Studtor_backend/authentication_service/middleware"
-	"github.com/leechongyan/Studtor_backend/database_service"
-	"github.com/leechongyan/Studtor_backend/helpers"
+	authMiddleWare "github.com/leechongyan/Studtor_backend/authentication_service/middleware"
+	initialization_helper "github.com/leechongyan/Studtor_backend/helpers/initialization_helpers"
 	tuthandler "github.com/leechongyan/Studtor_backend/tuition_service/controllers"
-	"github.com/spf13/viper"
 )
 
 func main() {
-	router := gin.New()
-	router.Use(gin.Logger())
-
-	err := helpers.InitializeViper()
-	database_service.InitDatabase()
-
+	err := initialization_helper.Initialize()
 	if err != nil {
+		log.Fatalf("%v", err)
 		return
 	}
 
+	router := gin.Default()
 	// current version is v1
 	v1 := router.Group("/v1")
 
@@ -30,30 +27,72 @@ func main() {
 	authorized.POST("/verify", authhandler.Verify())
 	authorized.POST("/login", authhandler.Login())
 	authorized.POST("/refresh", authhandler.RefreshToken())
-	authorized.POST("/logout", authhandler.Logout())
 
 	// require token
 	home := v1.Group("/")
-	home.Use(middleware.Authentication())
+	home.Use(authMiddleWare.Authentication())
 
-	// ping to validate authorized status
-	home.GET("/", authhandler.GetMain())
+	home.POST("/user/logout", authhandler.Logout())
 
-	// for general usage
-	home.GET("/user/*user", authhandler.GetUser())
-	home.GET("/courses", tuthandler.GetAllCourses())
+	// get current user
+	home.GET("/user", authhandler.GetCurrentUser())
+	// get other user by their user id
+	home.GET("/users/:user_id", authhandler.GetUser())
 
-	// for tutor usage
-	home.POST("/putavailabletime", tuthandler.PutAvailableTimeTutor())
-	home.POST("/deleteavailabletime", tuthandler.DeleteAvailableTimeTutor())
+	// student usage
+	// get the filtering field for student
+	home.GET("/schools", tuthandler.GetSchools()) // done
 
-	// for student usage
-	home.GET("/tutors/*course", tuthandler.GetAllTutors())
-	home.GET("/availabletime/:tutor", tuthandler.GetAvailableTimeTutor())
-	home.POST("/book", tuthandler.BookTimeTutor())
-	home.POST("/unbook", tuthandler.UnbookTimeTutor())
-	home.GET("/bookedtime/:user", tuthandler.GetAllBookedTime())
+	// get a list of courses
+	home.GET("/courses", tuthandler.GetCourses()) // done
+
+	// get a course
+	home.GET("/courses/:course_id", tuthandler.GetSingleCourse()) // done
+
+	// get the tutors for a course
+	home.GET("/courses/:course_id/tutors", tuthandler.GetTutorsForCourse()) // done
+
+	// get a tutor for a course
+	home.GET("/courses/:course_id/tutors/:user_id", authhandler.GetUser()) // done
+
+	// tutors usage
+	// get a list of courses taught by a tutor
+	home.GET("/tutors/:tutor_id/courses", tuthandler.GetCoursesOfTutor()) // done
+
+	// register for a course for a tutor
+	home.POST("/tutors/:tutor_id/courses/:course_id", tuthandler.RegisterCourse()) // done
+
+	// deregister a course for a tutor
+	home.DELETE("/tutors/:tutor_id/courses/:course_id", tuthandler.DeregisterCourse()) // done
+
+	// making appointment
+	// put available time for tutor
+	home.POST("/tutors/:tutor_id/availability", tuthandler.PutAvailableTimeTutor()) // done
+
+	// delete available time for tutor
+	home.DELETE("/tutors/:tutor_id/availability/:availability_id", tuthandler.DeleteAvailableTimeTutor()) // done
+
+	// get availability for a tutor
+	home.GET("/tutors/:tutor_id/availability", tuthandler.GetAvailableTimeTutor()) // done
+
+	// book an available time for a tutor
+	home.POST("/courses/:course_id/tutors/:tutor_id/availability/:availability_id", tuthandler.BookTimeTutor()) // done
+
+	// get all the notes of a course from a tutor
+	// home.GET("/courses/:course_id/tutors/:tutor_id/notes", tuthandler.GetTutorNotesForACourse()) // done
+
+	// get a note of a course from a tutor
+	// home.GET("/courses/:course_id/tutors/:tutor_id/notes/:note_id", tuthandler.GetTutorNote()) // done
+
+	// unbook a booking for a tutor (can be done by a student)
+	home.DELETE("/users/:user_id/bookings/:booking_id", tuthandler.UnbookTimeTutor()) // done
+
+	// get all the booked time for a student
+	home.GET("/user/bookings", tuthandler.GetAllStudentBookedTime()) // done
+
+	// get all the booked time for a tutor
+	home.GET("/tutors/:tutor_id/bookings", tuthandler.GetAllTutorBookedTime()) // done
 	// end of version v1
 
-	router.Run(viper.GetString("port"))
+	router.Run(":3000")
 }

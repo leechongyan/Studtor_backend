@@ -1,138 +1,128 @@
 package account
 
 import (
-	"log"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/leechongyan/Studtor_backend/database_service"
-	"github.com/leechongyan/Studtor_backend/helpers"
-	"github.com/spf13/viper"
+	httpError "github.com/leechongyan/Studtor_backend/constants/errors/http_errors"
+	systemError "github.com/leechongyan/Studtor_backend/constants/errors/system_errors"
+	userConnector "github.com/leechongyan/Studtor_backend/database_service/connector/user_connector"
+	databaseError "github.com/leechongyan/Studtor_backend/database_service/errors"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+var jwtKey string
+var accessExpirationTime int
+var refreshExpirationTime int
+
 type SignedDetails struct {
-	Email      string
-	ID         int
-	First_name string
-	Last_name  string
-	User_type  string
+	Email    string
+	ID       int
+	Name     string
+	UserType string
 	jwt.StandardClaims
 }
 
-var SECRET_KEY string = viper.GetString("jwtKey")
+func InitJWT(jKey string, accessExpiration int, refreshExpiration int) {
+	jwtKey = jKey
+	accessExpirationTime = accessExpiration
+	refreshExpirationTime = refreshExpiration
+}
 
-func GenerateAllTokens(id int, email string, firstName string, lastName string, userType string) (signedToken string, signedRefreshToken string, err *helpers.RequestError) {
-	access_hr, _ := strconv.Atoi(viper.GetString("accessExpirationTime"))
-	refresh_hr, _ := strconv.Atoi(viper.GetString("refreshExpirationTime"))
-
+func GenerateAllTokens(id int, email string, name string, userType string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedDetails{
-		Email:      email,
-		ID:         id,
-		First_name: firstName,
-		Last_name:  lastName,
-		User_type:  userType,
+		Email:    email,
+		ID:       id,
+		Name:     name,
+		UserType: userType,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(access_hr)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(accessExpirationTime)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refresh_hr)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refreshExpirationTime)).Unix(),
 		},
 	}
 
-	token, e := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(jwtKey))
 
-	if e != nil {
-		log.Panic(err)
-		err = helpers.RaiseFailureGenerateClaim()
-		return
+	if err != nil {
+		return "", "", systemError.ErrClaimsGenerateFailure
 	}
 
-	refreshToken, e := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(jwtKey))
 
-	if e != nil {
-		log.Panic(err)
-		err = helpers.RaiseFailureGenerateClaim()
-		return
+	if err != nil {
+		return "", "", systemError.ErrClaimsGenerateFailure
 	}
 
 	return token, refreshToken, err
 }
 
-func ValidateToken(signedToken string) (claims *SignedDetails, err *helpers.RequestError) {
-	token, e := jwt.ParseWithClaims(
+func ValidateToken(signedToken string) (claims *SignedDetails, err error) {
+	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},
 		func(token *jwt.Token) (interface{}, error) {
-			return []byte(SECRET_KEY), nil
+			return []byte(jwtKey), nil
 		},
 	)
 
-	if e != nil {
-		err = helpers.RaiseCannotParseClaims()
-		return nil, err
+	if err != nil {
+		return nil, systemError.ErrClaimsParseFailure
 	}
 
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
-		err = helpers.RaiseInvalidToken()
-		return nil, err
+		return nil, httpError.ErrInvalidToken
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = helpers.RaiseExpiredToken()
-		return nil, err
+		return nil, httpError.ErrExpiredToken
 	}
 
 	return claims, nil
 }
 
-func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err *helpers.RequestError) {
-	oldUser, e := database_service.CurrentDatabaseConnector.GetUser(userEmail)
-
-	if e != nil {
-		err = helpers.RaiseUserNotInDatabase()
+func UpdateAllTokens(signedToken string, signedRefreshToken string, userEmail string) (err error) {
+	userConnector := userConnector.Init()
+	oldUser, err := userConnector.SetUserEmail(userEmail).GetUser()
+	if err != nil {
+		if err == databaseError.ErrNoRecordFound {
+			return httpError.ErrNonExistentAccount
+		}
 		return err
 	}
 
-	oldUser.Token = &signedToken
-	oldUser.Refresh_token = &signedRefreshToken
+	oldUser.SetToken(signedToken)
+	oldUser.SetRefreshToken(signedRefreshToken)
 
 	// if is a new creation
-	if oldUser.Created_at.IsZero() {
-		Created_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		oldUser.Created_at = Created_at
+	if oldUser.UserCreatedAt().IsZero() {
+		createdAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		oldUser.SetUserCreatedAt(createdAt)
 	}
 
-	Updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	oldUser.Updated_at = Updated_at
+	updatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	oldUser.SetUserUpdatedAt(updatedAt)
 
 	// updating database
-	e = database_service.CurrentDatabaseConnector.SaveUser(oldUser)
-	if e != nil {
-		err = helpers.RaiseCannotSaveUserInDatabase()
-		return err
-	}
-	// TODO: Connector to the database not mock object
-	return
+	_, err = userConnector.SetUser(oldUser).Add()
+	return err
 }
 
-func ExtractTokenFromHeader(header string) (token string, err *helpers.RequestError) {
+func ExtractTokenFromHeader(header string) (token string, err error) {
 	splitToken := strings.Split(header, " ")
 
 	if len(splitToken) != 2 {
-		err = helpers.RaiseInvalidTokenFormat()
-		return "", err
+		return "", httpError.ErrInvalidTokenFormat
 	}
 
 	if splitToken[0] != "Bearer" {
-		err = helpers.RaiseInvalidAuthorizationMethod()
-		return "", err
+		return "", httpError.ErrInvalidAuthorizationMethod
 	}
 
 	return splitToken[1], nil
